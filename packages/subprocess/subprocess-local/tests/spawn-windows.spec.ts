@@ -10,8 +10,8 @@ const { spawnMock } = vi.hoisted(() => ({
 
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>()
-  const wrapped: typeof spawnMock = (...args) => actual.spawn(...args)
-  spawnMock.mockImplementation(wrapped)
+  const wrapped = (...args: Parameters<typeof import('node:child_process').spawn>) => actual.spawn(...args)
+  spawnMock.mockImplementation(wrapped as any)
   return { ...actual, spawn: spawnMock }
 })
 
