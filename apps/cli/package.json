@@ -101,7 +101,15 @@
     "@dsh-selfuse/web-ui-git-graph": "workspace:*",
     "@dsh-selfuse/web-ui-settings": "workspace:*",
     "@dsh-selfuse/web-ui-task-board": "workspace:*",
-    "@dsh-selfuse/wsl-workspace": "workspace:*"
+    "@dsh-selfuse/wsl-workspace": "workspace:*",
+    "@dsh-selfuse/soul-md": "workspace:*",
+    "@deepseek-ai/dsh-web-shell-bridge": "workspace:*",
+    "@deepseek-ai/dsh-balance": "workspace:*",
+    "@deepseek-ai/dsh-file-changes": "workspace:*",
+    "@deepseek-ai/dsh-client-file-changes": "workspace:*",
+    "@deepseek-ai/dsh-shell-terminal": "workspace:*",
+    "@deepseek-ai/dsh-easy-setup": "workspace:*",
+    "@deepseek-ai/dsh-task-notify": "workspace:*"
   },
   "devDependencies": {
     "@deepseek-ai/dsh-agent": "workspace:^",

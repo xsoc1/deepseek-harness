@@ -19,6 +19,14 @@ bundles:
   - "@dsh-selfuse/wsl-workspace"
   - "@dsh-selfuse/memory-panel"
 patchPlugins:
+  - "@deepseek-ai/dsh-web-shell-bridge"
+  - "@deepseek-ai/dsh-balance"
+  - "@deepseek-ai/dsh-file-changes"
+  - "@deepseek-ai/dsh-client-file-changes"
+  - "@deepseek-ai/dsh-shell-terminal"
+  - "@deepseek-ai/dsh-easy-setup"
+  - "@deepseek-ai/dsh-task-notify"
+  - "@dsh-selfuse/soul-md"
   - "@dsh-selfuse/skill-router"
 skills:
   - math-research-dsh

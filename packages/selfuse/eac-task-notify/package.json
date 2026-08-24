@@ -1,0 +1,13 @@
+{
+  "name": "@deepseek-ai/dsh-task-notify",
+  "version": "0.1.0",
+  "private": true,
+  "description": "任务完成通知（web 版）：监听会话 turn/end 事件，弹 Windows 系统通知；子代理会话不通知",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": { "default": "./lib/index.js" },
+    "./package.json": "./package.json"
+  },
+  "license": "MIT"
+}

@@ -10,6 +10,7 @@
 - mineru
 - backup / git-workflow / undo / wsl-workspace
 - 本机自研：memory-panel（本地记忆面板）、skill-router（技能路由提示段）
+- 人设/桌面配套：soul-md（soul.md 人设卡）、EAC 桌面配套（web-shell-bridge / balance / file-changes / client-file-changes / shell-terminal / easy-setup / task-notify）
 
 ## 使用
 - 所有包已加入 `apps/cli/package.json` 的依赖，因此源码模式运行 dsh 时可直接在 profile 的 `dsh.profile.bundles` 中引用 `@dsh-selfuse/*`。

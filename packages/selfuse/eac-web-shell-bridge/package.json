@@ -1,0 +1,19 @@
+{
+  "name": "@deepseek-ai/dsh-web-shell-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "纯 web 环境的桌面壳桥：为 EAC 配套插件补全 window.dshDesktop（余额推送 / 文件一键还原 / 系统默认程序打开）",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": { "default": "./lib/index.js" },
+    "./client": { "default": "./lib/client.js" },
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "dsh": {
+    "client": {
+      "platform": "web"
+    }
+  }
+}
