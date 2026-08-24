@@ -1,0 +1,30 @@
+# dsh-selfuse single profile manifest (draft)
+# The generator will turn this into ~/.dsh/profiles/web/package.json,
+# cordis.patch.yml, settings.yaml and agent-presets.
+name: web
+bundles:
+  - "@deepseek-ai/dsh-base"
+  - "@deepseek-ai/dsh-web-app"
+  - "@dsh-selfuse/web-ui-all"
+  - "@dsh-selfuse/web-ui-settings"
+  - "@dsh-selfuse/web-ui-community-plugins"
+  - "@dsh-selfuse/web-ui-task-board"
+  - "@dsh-selfuse/web-ui-git-graph"
+  - "@dsh-selfuse/remote-web-ui"
+  - "@dsh-selfuse/ssh"
+  - "@dsh-selfuse/chat-recovery"
+  - "@dsh-selfuse/skin-center"
+  - "@dsh-selfuse/better-sidebar"
+  - "@dsh-selfuse/file-upload"
+  - "@dsh-selfuse/market"
+  - "@dsh-selfuse/mineru"
+  - "@dsh-selfuse/backup"
+  - "@dsh-selfuse/git-workflow"
+  - "@dsh-selfuse/undo"
+  - "@dsh-selfuse/wsl-workspace"
+  - "@dsh-selfuse/memory-panel"
+  - "@dsh-selfuse/skill-router"
+skills:
+  - math-research-dsh
+  - mattpocock-skills
+  - obsidian-skills
