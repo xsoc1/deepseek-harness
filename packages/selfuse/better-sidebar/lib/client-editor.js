@@ -7,7 +7,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	let react_dom = require("react-dom");
 	let _deepseek_ai_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 	let react_jsx_runtime = require("react/jsx-runtime");
-	//#region node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
+	//#region ../../../node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
 	function r(e) {
 		var t, f, n = "";
 		if ("string" == typeof e || "number" == typeof e) n += e;
@@ -22,11 +22,10 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return n;
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@marijn+find-cluster-break@1.0.3/node_modules/@marijn/find-cluster-break/src/index.js
-	let rangeFrom = [];
-	let rangeTo = [];
+	//#region ../../../node_modules/.pnpm/@marijn+find-cluster-break@1.0.4/node_modules/@marijn/find-cluster-break/src/index.js
+	let rangeFrom = [], rangeTo = [];
 	(() => {
-		let numbers = "lc,34,7n,7,7b,19,,,,2,,2,,,20,b,1c,l,g,,2t,7,2,6,2,2,,4,z,,u,r,2j,b,1m,9,9,,o,4,,9,,3,,5,17,3,3b,f,,w,1j,,,,4,8,4,,3,7,a,2,t,,1m,,,,2,4,8,,9,,a,2,q,,2,2,1l,,4,2,4,2,2,3,3,,u,2,3,,b,2,1l,,4,5,,2,4,,k,2,m,6,,,1m,,,2,,4,8,,7,3,a,2,u,,1n,,,,c,,9,,14,,3,,1l,3,5,3,,4,7,2,b,2,t,,1m,,2,,2,,3,,5,2,7,2,b,2,s,2,1l,2,,,2,4,8,,9,,a,2,t,,20,,4,,2,3,,,8,,29,,2,7,c,8,2q,,2,9,b,6,22,2,r,,,,,,1j,e,,5,,2,5,b,,10,9,,2u,4,,6,,2,2,2,p,2,4,3,g,4,d,,2,2,6,,f,,jj,3,qa,3,t,3,t,2,u,2,1s,2,,7,8,,2,b,9,,19,3,3b,2,y,,3a,3,4,2,9,,6,3,63,2,2,,1m,,,7,,,,,2,8,6,a,2,,1c,h,1r,4,1c,7,,,5,,14,9,c,2,w,4,2,2,,3,1k,,,2,3,,,3,1m,8,2,2,48,3,,d,,7,4,,6,,3,2,5i,1m,,5,ek,,5f,x,2da,3,3x,,2o,w,fe,6,2x,2,n9w,4,,a,w,2,28,2,7k,,3,,4,,p,2,5,,47,2,q,i,d,,12,8,p,b,1a,3,1c,,2,4,2,2,13,,1v,6,2,2,2,2,c,,8,,1b,,1f,,,3,2,2,5,2,,,16,2,8,,6m,,2,,4,,fn4,,kh,g,g,g,a6,2,gt,,6a,,45,5,1ae,3,,2,5,4,14,3,4,,4l,2,fx,4,ar,2,49,b,4w,,1i,f,1k,3,1d,4,2,2,1x,3,10,5,,8,1q,,c,2,1g,9,a,4,2,,2n,3,2,,,2,6,,4g,,3,8,l,2,1l,2,,,,,m,,e,7,3,5,5f,8,2,3,,,n,,29,,2,6,,,2,,,2,,2,6j,,2,4,6,2,,2,r,2,2d,8,2,,,2,2y,,,,2,6,,,2t,3,2,4,,5,77,9,,2,6t,,a,2,,,4,,40,4,2,2,4,,w,a,14,6,2,4,8,,9,6,2,3,1a,d,,2,ba,7,,6,,,2a,m,2,7,,2,,2,3e,6,3,,,2,,7,,,20,2,3,,,,9n,2,f0b,5,1n,7,t4,,1r,4,29,,f5k,2,43q,,,3,4,5,8,8,2,7,u,4,44,3,1iz,1j,4,1e,8,,e,,m,5,,f,11s,7,,h,2,7,,2,,5,79,7,c5,4,15s,7,31,7,240,5,gx7k,2o,3k,6o".split(",").map((s) => s ? parseInt(s, 36) : 1);
+		let numbers = "lc,34,7n,7,7b,19,,,,2,,2,,,20,b,1c,l,g,,2t,7,2,6,2,2,,4,z,,u,r,2j,b,1m,9,9,,o,4,,9,,3,,5,17,3,1n,9,16,o,,x,1i,3,,i,,7,a,2,t,3,1k,,,7,2,2,2,3,9,,a,2,q,,2,3,1k,,,5,4,2,2,3,3,,u,2,3,,b,3,1k,,,8,,3,,3,k,2,m,6,,3,1k,,,7,2,2,2,3,7,3,a,2,u,,1n,5,3,3,,4,9,,14,5,1j,,,7,,3,,4,7,2,b,2,t,3,1k,,,7,,3,,4,7,2,b,2,f,,c,4,1j,2,,7,,3,,4,9,,a,2,t,3,1y,,4,6,,,,8,i,2,1p,,,8,c,8,2q,,,a,b,7,21,2,r,,,,,,4,2,1d,k,,2,5,b,,10,9,,2u,b,,6,n,4,4,3,g,4,d,,,3,6,,f,,jj,3,qa,4,s,3,t,2,u,2,1s,w,9,,19,3,,,39,2,y,,3a,c,4,c,63,5,1l,a,,,,,2,o,2,,1c,1a,2,c,k,5,1b,h,12,9,c,3,u,d,1k,e,1c,k,48,3,,l,4,,6,,2,3,5i,1s,ek,,5f,x,2da,3,3x,,2o,w,fe,6,2x,2,n9w,4,,a,w,2,28,2,7k,,3,,4,,n,5,4,,2b,2,1e,i,q,i,d,,12,8,p,d,18,4,1b,e,10,,1v,e,c,,8,2,1a,,1f,,,3,2,2,5,2,,,15,5,5,2,6k,8,,2,fn4,,kh,g,g,g,a6,2,gt,,6a,,45,5,1ae,3,,2,5,4,14,3,4,,4l,2,fx,4,1t,5,8t,2,25,6,1y,b,1d,4,3e,3,1h,f,15,,2,2,a,4,19,b,7,,1p,3,10,e,g,2,18,,c,3,1c,e,8,4,,2,2k,c,6,,2,,4d,c,l,4,1j,2,,7,2,2,2,3,9,,a,2,2,7,3,5,1v,9,,,2,,,4,,5,,,e,2,2a,i,n,,29,k,6j,7,2,9,r,2,2a,h,2y,d,2t,3,2,a,74,f,6t,6,,2,2,4,,,,2,3x,7,2,7,3,,s,a,14,7,,4,8,,9,b,1a,g,5i,8,5j,8,,8,2a,m,,e,3e,6,3,,,2,,7,,,1u,5,,2,,5,9n,4,9,2,,,1c,7,3,5,n,,44l,,6,f,8ug,i,1xc,5,1n,7,t4,,,1j,7,4,29,,b,2,f57,2,3mp,1a,2,n,f2,5,3,6,8,8,2,7,u,4,44,3,1iz,1j,4,1e,8,,e,,m,5,,f,11s,7,,h,2,7,,2,,5,2s,,4g,7,af,,1p,4,e4,4,72,2,6r,,2,,7,2,5,,d6,7,31,7,240,5".split(",").map((s) => s ? parseInt(s, 36) : 1);
 		for (let i = 0, n = 0; i < numbers.length; i++) (i % 2 ? rangeTo : rangeFrom).push(n = n + numbers[i]);
 	})();
 	function isExtendingChar(code) {
@@ -93,7 +92,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return code < 65536 ? 1 : 2;
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+state@6.7.1/node_modules/@codemirror/state/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+state@6.7.1/node_modules/@codemirror/state/dist/index.js
 	/**
 	The data structure for documents. @nonabstract
 	*/
@@ -540,13 +539,12 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			} else if (done) {
 				this.done = true;
 				this.value = "";
-			} else if (lineBreak) {
-				if (this.afterBreak) this.value = "";
-				else {
-					this.afterBreak = true;
-					this.next();
-				}
-			} else {
+			} else if (lineBreak) if (this.afterBreak) this.value = "";
+			else {
+				this.afterBreak = true;
+				this.next();
+			}
+			else {
 				this.value = value;
 				this.afterBreak = false;
 			}
@@ -1830,8 +1828,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 					dynamicSlots.push((a) => dynamicFacetSlot(a, facet, providers));
 				}
 			}
-			let dynamic = dynamicSlots.map((f) => f(address));
-			return new Configuration(base, newCompartments, dynamic, address, staticValues, facets);
+			return new Configuration(base, newCompartments, dynamicSlots.map((f) => f(address)), address, staticValues, facets);
 		}
 	};
 	function flatten(extension, compartments, newCompartments) {
@@ -2987,7 +2984,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		if they are equivalent in the given range.
 		*/
 		static eq(oldSets, newSets, from = 0, to) {
-			if (to == null) to = 1e9 - 1;
+			if (to == null) to = 999999999;
 			let a = oldSets.filter((set) => !set.isEmpty && newSets.indexOf(set) < 0);
 			let b = newSets.filter((set) => !set.isEmpty && oldSets.indexOf(set) < 0);
 			if (a.length != b.length) return false;
@@ -3463,7 +3460,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return strict === true ? -1 : string.length;
 	}
 	//#endregion
-	//#region node_modules/.pnpm/style-mod@4.1.3/node_modules/style-mod/src/style-mod.js
+	//#region ../../../node_modules/.pnpm/style-mod@4.1.3/node_modules/style-mod/src/style-mod.js
 	const C = "ͼ";
 	const COUNT = typeof Symbol == "undefined" ? "__ͼ" : Symbol.for(C);
 	const SET = typeof Symbol == "undefined" ? "__styleSet" + Math.floor(Math.random() * 1e8) : Symbol("styleSet");
@@ -3555,7 +3552,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		}
 	};
 	//#endregion
-	//#region node_modules/.pnpm/w3c-keyname@2.2.8/node_modules/w3c-keyname/index.js
+	//#region ../../../node_modules/.pnpm/w3c-keyname@2.2.8/node_modules/w3c-keyname/index.js
 	var base = {
 		8: "Backspace",
 		9: "Tab",
@@ -3656,7 +3653,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return name;
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+view@6.43.8/node_modules/@codemirror/view/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+view@6.43.9/node_modules/@codemirror/view/dist/index.js
 	let nav = typeof navigator != "undefined" ? navigator : {
 		userAgent: "",
 		vendor: "",
@@ -4171,29 +4168,27 @@ globalThis.__dshChunks__["editor"] = (require) => {
 					if (side < 0 && rect.left < bounding.left + moveX) moveX = rect.left - (bounding.left + xMargin);
 				}
 			} else moveX = (x == "center" ? rect.left + (rect.right - rect.left) / 2 - (bounding.right - bounding.left) / 2 : x == "start" == ltr ? rect.left - xMargin : rect.right - (bounding.right - bounding.left) + xMargin) - bounding.left;
-			if (moveX || moveY) {
-				if (top) win.scrollBy(moveX, moveY);
-				else {
-					let movedX = 0, movedY = 0;
-					if (moveY) {
-						let start = cur.scrollTop;
-						cur.scrollTop += moveY / scaleY;
-						movedY = (cur.scrollTop - start) * scaleY;
-					}
-					if (moveX) {
-						let start = cur.scrollLeft;
-						cur.scrollLeft += moveX / scaleX;
-						movedX = (cur.scrollLeft - start) * scaleX;
-					}
-					rect = {
-						left: rect.left - movedX,
-						top: rect.top - movedY,
-						right: rect.right - movedX,
-						bottom: rect.bottom - movedY
-					};
-					if (movedX && Math.abs(movedX - moveX) < 1) x = "nearest";
-					if (movedY && Math.abs(movedY - moveY) < 1) y = "nearest";
+			if (moveX || moveY) if (top) win.scrollBy(moveX, moveY);
+			else {
+				let movedX = 0, movedY = 0;
+				if (moveY) {
+					let start = cur.scrollTop;
+					cur.scrollTop += moveY / scaleY;
+					movedY = (cur.scrollTop - start) * scaleY;
 				}
+				if (moveX) {
+					let start = cur.scrollLeft;
+					cur.scrollLeft += moveX / scaleX;
+					movedX = (cur.scrollLeft - start) * scaleX;
+				}
+				rect = {
+					left: rect.left - movedX,
+					top: rect.top - movedY,
+					right: rect.right - movedX,
+					bottom: rect.bottom - movedY
+				};
+				if (movedX && Math.abs(movedX - moveX) < 1) x = "nearest";
+				if (movedY && Math.abs(movedY - moveY) < 1) y = "nearest";
 			}
 			if (top) break;
 			if (rect.top < bounding.top || rect.bottom > bounding.bottom || rect.left < bounding.left || rect.right > bounding.right) rect = {
@@ -4379,8 +4374,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		Direction[Direction["RTL"] = 1] = "RTL";
 		return Direction;
 	})(Direction || (Direction = {}));
-	const LTR = Direction.LTR;
-	const RTL = Direction.RTL;
+	const LTR = Direction.LTR, RTL = Direction.RTL;
 	function dec(str) {
 		let result = [];
 		for (let i = 0; i < str.length; i++) result.push(1 << +str[i]);
@@ -4388,8 +4382,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	}
 	const LowTypes = /*@__PURE__*/ dec("88888888888888888888888888888888888666888888787833333333337888888000000000000000000000000008888880000000000000000000000000088888888888888888888888888888888888887866668888088888663380888308888800000000000000000000000800000000000000000000000000000008");
 	const ArabicTypes = /*@__PURE__*/ dec("4444448826627288999999999992222222222222222222222222222222222222222222222229999999999999999999994444444444644222822222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222999999949999999229989999223333333333");
-	const Brackets = /*@__PURE__*/ Object.create(null);
-	const BracketStack = [];
+	const Brackets = /*@__PURE__*/ Object.create(null), BracketStack = [];
 	for (let p of [
 		"()",
 		"[]",
@@ -4473,10 +4466,9 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			}
 			for (let i = from, prev = prevType, prevStrong = prevType; i < to; i++) {
 				let type = types[i];
-				if (type == 128) {
-					if (i < to - 1 && prev == types[i + 1] && prev & 24) type = types[i] = prev;
-					else types[i] = 256;
-				} else if (type == 64) {
+				if (type == 128) if (i < to - 1 && prev == types[i + 1] && prev & 24) type = types[i] = prev;
+				else types[i] = 256;
+				else if (type == 64) {
 					let end = i + 1;
 					while (end < to && types[end] == 64) end++;
 					let replace = i && prev == 8 || end < rTo && types[end] == 8 ? prevStrong == 1 ? 1 : 8 : 256;
@@ -4492,22 +4484,21 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		let oppositeType = outerType == 1 ? 2 : 1;
 		for (let iI = 0, sI = 0, context = 0; iI <= isolates.length; iI++) {
 			let from = iI ? isolates[iI - 1].to : rFrom, to = iI < isolates.length ? isolates[iI].from : rTo;
-			for (let i = from, ch, br, type; i < to; i++) if (br = Brackets[ch = line.charCodeAt(i)]) {
-				if (br < 0) {
-					for (let sJ = sI - 3; sJ >= 0; sJ -= 3) if (BracketStack[sJ + 1] == -br) {
-						let flags = BracketStack[sJ + 2];
-						let type = flags & 2 ? outerType : !(flags & 4) ? 0 : flags & 1 ? oppositeType : outerType;
-						if (type) types[i] = types[BracketStack[sJ]] = type;
-						sI = sJ;
-						break;
-					}
-				} else if (BracketStack.length == 189) break;
-				else {
-					BracketStack[sI++] = i;
-					BracketStack[sI++] = ch;
-					BracketStack[sI++] = context;
+			for (let i = from, ch, br, type; i < to; i++) if (br = Brackets[ch = line.charCodeAt(i)]) if (br < 0) {
+				for (let sJ = sI - 3; sJ >= 0; sJ -= 3) if (BracketStack[sJ + 1] == -br) {
+					let flags = BracketStack[sJ + 2];
+					let type = flags & 2 ? outerType : !(flags & 4) ? 0 : flags & 1 ? oppositeType : outerType;
+					if (type) types[i] = types[BracketStack[sJ]] = type;
+					sI = sJ;
+					break;
 				}
-			} else if ((type = types[i]) == 2 || type == 1) {
+			} else if (BracketStack.length == 189) break;
+			else {
+				BracketStack[sI++] = i;
+				BracketStack[sI++] = ch;
+				BracketStack[sI++] = context;
+			}
+			else if ((type = types[i]) == 2 || type == 1) {
 				let embed = type == outerType;
 				context = embed ? 0 : 1;
 				for (let sJ = sI - 3; sJ >= 0; sJ -= 3) {
@@ -5848,20 +5839,19 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			let activeMarks = getMarks(this.old), openMarks = this.openMarks;
 			this.old.advance(length, incEnd ? 1 : -1, {
 				skip: (tile, from, to) => {
-					if (tile.isWidget()) {
-						if (this.openWidget) this.builder.continueWidget(to - from);
-						else {
-							let widget = to > 0 || from < tile.length ? WidgetTile.of(tile.widget, this.view, to - from, tile.flags & 496, this.cache.maybeReuse(tile)) : this.cache.reuse(tile);
-							if (widget.flags & 256) {
-								widget.flags &= -2;
-								this.builder.addBlockWidget(widget);
-							} else {
-								this.builder.ensureLine(null);
-								this.builder.addInlineWidget(widget, activeMarks, openMarks);
-								openMarks = activeMarks.length;
-							}
+					if (tile.isWidget()) if (this.openWidget) this.builder.continueWidget(to - from);
+					else {
+						let widget = to > 0 || from < tile.length ? WidgetTile.of(tile.widget, this.view, to - from, tile.flags & 496, this.cache.maybeReuse(tile)) : this.cache.reuse(tile);
+						if (widget.flags & 256) {
+							widget.flags &= -2;
+							this.builder.addBlockWidget(widget);
+						} else {
+							this.builder.ensureLine(null);
+							this.builder.addInlineWidget(widget, activeMarks, openMarks);
+							openMarks = activeMarks.length;
 						}
-					} else if (tile.isText()) {
+					}
+					else if (tile.isText()) {
 						this.builder.ensureLine(null);
 						if (!from && to == tile.length && !this.cache.reused.has(tile)) this.builder.addText(tile.text, activeMarks, openMarks, this.cache.reuse(tile));
 						else {
@@ -6071,12 +6061,10 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		update(update) {
 			var _a;
 			let changedRanges = update.changedRanges;
-			if (this.minWidth > 0 && changedRanges.length) {
-				if (!changedRanges.every(({ fromA, toA }) => toA < this.minWidthFrom || fromA > this.minWidthTo)) this.minWidth = this.minWidthFrom = this.minWidthTo = 0;
-				else {
-					this.minWidthFrom = update.changes.mapPos(this.minWidthFrom, 1);
-					this.minWidthTo = update.changes.mapPos(this.minWidthTo, 1);
-				}
+			if (this.minWidth > 0 && changedRanges.length) if (!changedRanges.every(({ fromA, toA }) => toA < this.minWidthFrom || fromA > this.minWidthTo)) this.minWidth = this.minWidthFrom = this.minWidthTo = 0;
+			else {
+				this.minWidthFrom = update.changes.mapPos(this.minWidthFrom, 1);
+				this.minWidthTo = update.changes.mapPos(this.minWidthTo, 1);
 			}
 			this.updateEditContextFormatting(update);
 			let readCompositionAt = -1;
@@ -6236,10 +6224,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 					for (;;) {
 						let parent = node.parentNode;
 						if (parent == tile.dom) break;
-						if (bias == 0 && parent.firstChild != parent.lastChild) {
-							if (node == parent.firstChild) bias = -1;
-							else bias = 1;
-						}
+						if (bias == 0 && parent.firstChild != parent.lastChild) if (node == parent.firstChild) bias = -1;
+						else bias = 1;
 						node = parent;
 					}
 					if (bias < 0) after = node;
@@ -6759,10 +6745,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			} else {
 				let from = skipAtomicRanges(atoms, range.from, -1);
 				let to = skipAtomicRanges(atoms, range.to, 1);
-				if (from != range.from || to != range.to) {
-					if (range.undirectional) updated = EditorSelection.undirectionalRange(range.from, range.to);
-					else updated = EditorSelection.range(range.from == range.anchor ? from : to, range.from == range.head ? from : to);
-				}
+				if (from != range.from || to != range.to) if (range.undirectional) updated = EditorSelection.undirectionalRange(range.from, range.to);
+				else updated = EditorSelection.range(range.from == range.anchor ? from : to, range.from == range.head ? from : to);
 			}
 			if (updated) {
 				if (!ranges) ranges = sel.ranges.slice();
@@ -7736,9 +7720,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		}
 	}
 	const BadMouseDetail = browser.ie && browser.ie_version <= 11;
-	let lastMouseDown = null;
-	let lastMouseDownCount = 0;
-	let lastMouseDownTime = 0;
+	let lastMouseDown = null, lastMouseDownCount = 0, lastMouseDownTime = 0;
 	function getClickType(event) {
 		if (!BadMouseDetail) return event.detail;
 		let last = lastMouseDown, lastTime = lastMouseDownTime;
@@ -8229,21 +8211,20 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		static of(nodes) {
 			if (nodes.length == 1) return nodes[0];
 			let i = 0, j = nodes.length, before = 0, after = 0;
-			for (;;) if (i == j) {
-				if (before > after * 2) {
-					let split = nodes[i - 1];
-					if (split.break) nodes.splice(--i, 1, split.left, null, split.right);
-					else nodes.splice(--i, 1, split.left, split.right);
-					j += 1 + split.break;
-					before -= split.size;
-				} else if (after > before * 2) {
-					let split = nodes[j];
-					if (split.break) nodes.splice(j, 1, split.left, null, split.right);
-					else nodes.splice(j, 1, split.left, split.right);
-					j += 2 + split.break;
-					after -= split.size;
-				} else break;
-			} else if (before < after) {
+			for (;;) if (i == j) if (before > after * 2) {
+				let split = nodes[i - 1];
+				if (split.break) nodes.splice(--i, 1, split.left, null, split.right);
+				else nodes.splice(--i, 1, split.left, split.right);
+				j += 1 + split.break;
+				before -= split.size;
+			} else if (after > before * 2) {
+				let split = nodes[j];
+				if (split.break) nodes.splice(j, 1, split.left, null, split.right);
+				else nodes.splice(j, 1, split.left, split.right);
+				j += 2 + split.break;
+				after -= split.size;
+			} else break;
+			else if (before < after) {
 				let next = nodes[i++];
 				if (next) before += next.size;
 			} else {
@@ -8953,7 +8934,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 					if (scrollTarget.y == "center") topPos = (block.top + block.bottom) / 2 - viewHeight / 2;
 					else if (scrollTarget.y == "start" || scrollTarget.y == "nearest" && head < viewport.from) topPos = block.top;
 					else topPos = block.bottom - viewHeight;
-					viewport = new Viewport(map.lineAt(topPos - 500, QueryType.ByHeight, oracle, 0, 0).from, map.lineAt(topPos + viewHeight + 500, QueryType.ByHeight, oracle, 0, 0).to);
+					viewport = new Viewport(map.lineAt(topPos - 1e3 / 2, QueryType.ByHeight, oracle, 0, 0).from, map.lineAt(topPos + viewHeight + 1e3 / 2, QueryType.ByHeight, oracle, 0, 0).to);
 				}
 			}
 			return viewport;
@@ -8967,7 +8948,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			let { top } = this.heightMap.lineAt(from, QueryType.ByPos, this.heightOracle, 0, 0);
 			let { bottom } = this.heightMap.lineAt(to, QueryType.ByPos, this.heightOracle, 0, 0);
 			let { visibleTop, visibleBottom } = this;
-			return (from == 0 || top <= visibleTop - Math.max(10, Math.min(-bias, 250))) && (to == this.state.doc.length || bottom >= visibleBottom + Math.max(10, Math.min(bias, 250))) && top > visibleTop - 2e3 && bottom < visibleBottom + 2e3;
+			return (from == 0 || top <= visibleTop - Math.max(10, Math.min(-bias, 250))) && (to == this.state.doc.length || bottom >= visibleBottom + Math.max(10, Math.min(bias, 250))) && top > visibleTop - 2 * 1e3 && bottom < visibleBottom + 2 * 1e3;
 		}
 		mapLineGaps(gaps, changes) {
 			if (!gaps.length || changes.empty) return gaps;
@@ -9235,9 +9216,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	}
 	const theme = /*@__PURE__*/ Facet.define({ combine: (strs) => strs.join(" ") });
 	const darkTheme = /*@__PURE__*/ Facet.define({ combine: (values) => values.indexOf(true) > -1 });
-	const baseThemeID = /*@__PURE__*/ StyleModule.newName();
-	const baseLightID = /*@__PURE__*/ StyleModule.newName();
-	const baseDarkID = /*@__PURE__*/ StyleModule.newName();
+	const baseThemeID = /*@__PURE__*/ StyleModule.newName(), baseLightID = /*@__PURE__*/ StyleModule.newName(), baseDarkID = /*@__PURE__*/ StyleModule.newName();
 	const lightDarkIDs = {
 		"&light": "." + baseLightID,
 		"&dark": "." + baseDarkID
@@ -9784,20 +9763,18 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		}
 		addWindowListeners(win) {
 			win.addEventListener("resize", this.onResize);
-			if (this.printQuery) {
-				if (this.printQuery.addEventListener) this.printQuery.addEventListener("change", this.onPrint);
-				else this.printQuery.addListener(this.onPrint);
-			} else win.addEventListener("beforeprint", this.onPrint);
+			if (this.printQuery) if (this.printQuery.addEventListener) this.printQuery.addEventListener("change", this.onPrint);
+			else this.printQuery.addListener(this.onPrint);
+			else win.addEventListener("beforeprint", this.onPrint);
 			win.addEventListener("scroll", this.onScroll);
 			win.document.addEventListener("selectionchange", this.onSelectionChange);
 		}
 		removeWindowListeners(win) {
 			win.removeEventListener("scroll", this.onScroll);
 			win.removeEventListener("resize", this.onResize);
-			if (this.printQuery) {
-				if (this.printQuery.removeEventListener) this.printQuery.removeEventListener("change", this.onPrint);
-				else this.printQuery.removeListener(this.onPrint);
-			} else win.removeEventListener("beforeprint", this.onPrint);
+			if (this.printQuery) if (this.printQuery.removeEventListener) this.printQuery.removeEventListener("change", this.onPrint);
+			else this.printQuery.removeListener(this.onPrint);
+			else win.removeEventListener("beforeprint", this.onPrint);
 			win.document.removeEventListener("selectionchange", this.onSelectionChange);
 		}
 		update(update) {
@@ -9969,16 +9946,14 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			update.changes.iterChanges((fromA, toA, _fromB, _toB, insert) => {
 				if (abort) return;
 				let dLen = insert.length - (toA - fromA);
-				if (pending && toA >= pending.to) {
-					if (pending.from == fromA && pending.to == toA && pending.insert.eq(insert)) {
-						pending = this.pendingContextChange = null;
-						off += dLen;
-						this.to += dLen;
-						return;
-					} else {
-						pending = null;
-						this.revertPending(update.state);
-					}
+				if (pending && toA >= pending.to) if (pending.from == fromA && pending.to == toA && pending.insert.eq(insert)) {
+					pending = this.pendingContextChange = null;
+					off += dLen;
+					this.to += dLen;
+					return;
+				} else {
+					pending = null;
+					this.revertPending(update.state);
 				}
 				fromA += off;
 				toA += off;
@@ -10032,7 +10007,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		}
 		rangeIsValid(state) {
 			let { head } = state.selection.main;
-			return !(this.from > 0 && head - this.from < 500 || this.to < state.doc.length && this.to - head < 500 || this.to - this.from > 3e4);
+			return !(this.from > 0 && head - this.from < 500 || this.to < state.doc.length && this.to - head < 500 || this.to - this.from > 1e4 * 3);
 		}
 		toEditorPos(contextPos, clipLen = this.to - this.from) {
 			contextPos = Math.min(contextPos, clipLen);
@@ -10341,15 +10316,13 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			this.viewState.scrollAnchorHeight = -1;
 			try {
 				for (let i = 0;; i++) {
-					if (scrollAnchorHeight < 0) {
-						if (isScrolledToBottom(scroll || this.win)) {
-							scrollAnchorPos = -1;
-							scrollAnchorHeight = this.viewState.heightMap.height;
-						} else {
-							let block = this.viewState.scrollAnchorAt(scrollOffset);
-							scrollAnchorPos = block.from;
-							scrollAnchorHeight = block.top;
-						}
+					if (scrollAnchorHeight < 0) if (isScrolledToBottom(scroll || this.win)) {
+						scrollAnchorPos = -1;
+						scrollAnchorHeight = this.viewState.heightMap.height;
+					} else {
+						let block = this.viewState.scrollAnchorAt(scrollOffset);
+						scrollAnchorPos = block.from;
+						scrollAnchorHeight = block.top;
 					}
 					this.updateState = 1;
 					let changed = this.viewState.measure();
@@ -10388,21 +10361,20 @@ globalThis.__dshChunks__["editor"] = (require) => {
 					}
 					if (redrawn) this.docView.updateSelection(true);
 					if (!update.viewportChanged && this.measureRequests.length == 0) {
-						if (this.viewState.editorHeight) {
-							if (this.viewState.scrollTarget) {
-								this.docView.scrollIntoView(this.viewState.scrollTarget);
-								this.viewState.scrollTarget = null;
+						if (this.viewState.editorHeight) if (this.viewState.scrollTarget) {
+							this.docView.scrollIntoView(this.viewState.scrollTarget);
+							this.viewState.scrollTarget = null;
+							scrollAnchorHeight = -1;
+							continue;
+						} else {
+							let diff = ((scrollAnchorPos < 0 ? this.viewState.heightMap.height : this.viewState.lineBlockAt(scrollAnchorPos).top) - scrollAnchorHeight) / this.scaleY;
+							if ((diff > 1 || diff < -1) && !(browser.ios && this.inputState.lastIOSMomentumScroll > Date.now() - 100) && (scroll == this.scrollDOM || this.hasFocus || Math.max(this.inputState.lastWheelEvent, this.inputState.lastTouchTime) > Date.now() - 100)) {
+								scrollOffset = scrollOffset + diff;
+								if (!scroll) this.win.scrollBy(0, diff);
+								else if (scrollAnchorPos < 0) scroll.scrollTop = scroll.scrollHeight;
+								else scroll.scrollTop += diff;
 								scrollAnchorHeight = -1;
 								continue;
-							} else {
-								let diff = ((scrollAnchorPos < 0 ? this.viewState.heightMap.height : this.viewState.lineBlockAt(scrollAnchorPos).top) - scrollAnchorHeight) / this.scaleY;
-								if ((diff > 1 || diff < -1) && !(browser.ios && this.inputState.lastIOSMomentumScroll > Date.now() - 100) && (scroll == this.scrollDOM || this.hasFocus || Math.max(this.inputState.lastWheelEvent, this.inputState.lastTouchTime) > Date.now() - 100)) {
-									scrollOffset = scrollOffset + diff;
-									if (scroll) scroll.scrollTop += diff;
-									else this.win.scrollBy(0, diff);
-									scrollAnchorHeight = -1;
-									continue;
-								}
 							}
 						}
 						break;
@@ -11158,10 +11130,9 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			else if (/^a(lt)?$/i.test(mod)) alt = true;
 			else if (/^(c|ctrl|control)$/i.test(mod)) ctrl = true;
 			else if (/^s(hift)?$/i.test(mod)) shift = true;
-			else if (/^mod$/i.test(mod)) {
-				if (platform == "mac") meta = true;
-				else ctrl = true;
-			} else throw new Error("Unrecognized modifier name: " + mod);
+			else if (/^mod$/i.test(mod)) if (platform == "mac") meta = true;
+			else ctrl = true;
+			else throw new Error("Unrecognized modifier name: " + mod);
 		}
 		if (alt) result = "Alt-" + result;
 		if (ctrl) result = "Ctrl-" + result;
@@ -11615,10 +11586,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 					}
 				}
 				if (!marker) break;
-				if (marker.toDOM) {
-					if (matched) domPos = domPos.nextSibling;
-					else this.dom.insertBefore(marker.toDOM(view), domPos);
-				}
+				if (marker.toDOM) if (matched) domPos = domPos.nextSibling;
+				else this.dom.insertBefore(marker.toDOM(view), domPos);
 				if (matched) iOld++;
 			}
 			this.dom.className = cls;
@@ -11713,7 +11682,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return last;
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+common@1.5.2/node_modules/@lezer/common/dist/index.js
+	//#region ../../../node_modules/.pnpm/@lezer+common@1.5.2/node_modules/@lezer/common/dist/index.js
 	/**
 	The default maximum length of a `TreeBuffer` node.
 	*/
@@ -11970,8 +11939,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			return new NodeSet(newTypes);
 		}
 	};
-	const CachedNode = /* @__PURE__ */ new WeakMap();
-	const CachedInnerNode = /* @__PURE__ */ new WeakMap();
+	const CachedNode = /* @__PURE__ */ new WeakMap(), CachedInnerNode = /* @__PURE__ */ new WeakMap();
 	/**
 	Options that control iteration. Can be combined with the `|`
 	operator to enable multiple ones.
@@ -13016,10 +12984,9 @@ globalThis.__dshChunks__["editor"] = (require) => {
 				let nodeStart = fork.start;
 				fork.next();
 				while (fork.pos > startPos) {
-					if (fork.size < 0) {
-						if (fork.size == -3 || fork.size == -4) localSkipped += 4;
-						else break scan;
-					} else if (fork.id >= minRepeatType) localSkipped += 4;
+					if (fork.size < 0) if (fork.size == -3 || fork.size == -4) localSkipped += 4;
+					else break scan;
+					else if (fork.id >= minRepeatType) localSkipped += 4;
 					fork.next();
 				}
 				start = nodeStart;
@@ -13572,19 +13539,15 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			}
 			pos = Math.min(nextA, nextB);
 			if (pos == 1e9) break;
-			if (nextA == pos) {
-				if (!inA) inA = true;
-				else {
-					inA = false;
-					iA++;
-				}
+			if (nextA == pos) if (!inA) inA = true;
+			else {
+				inA = false;
+				iA++;
 			}
-			if (nextB == pos) {
-				if (!inB) inB = true;
-				else {
-					inB = false;
-					iB++;
-				}
+			if (nextB == pos) if (!inB) inB = true;
+			else {
+				inB = false;
+				iB++;
 			}
 		}
 		return result;
@@ -13607,7 +13570,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return result;
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+highlight@1.2.3/node_modules/@lezer/highlight/dist/index.js
+	//#region ../../../node_modules/.pnpm/@lezer+highlight@1.2.3/node_modules/@lezer/highlight/dist/index.js
 	let nextTagID = 0;
 	/**
 	Highlighting tags are markers that denote a highlighting category.
@@ -13949,20 +13912,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return rule || null;
 	}
 	const t$1 = Tag$1.define;
-	const comment = t$1();
-	const name = t$1();
-	const typeName = t$1(name);
-	const propertyName = t$1(name);
-	const literal = t$1();
-	const string = t$1(literal);
-	const number = t$1(literal);
-	const content = t$1();
-	const heading = t$1(content);
-	const keyword = t$1();
-	const operator = t$1();
-	const punctuation = t$1();
-	const bracket = t$1(punctuation);
-	const meta = t$1();
+	const comment = t$1(), name = t$1(), typeName = t$1(name), propertyName = t$1(name), literal = t$1(), string = t$1(literal), number = t$1(literal), content = t$1(), heading = t$1(content), keyword = t$1(), operator = t$1(), punctuation = t$1(), bracket = t$1(punctuation), meta = t$1();
 	/**
 	The default set of highlighting [tags](#highlight.Tag).
 	
@@ -14480,7 +14430,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		}
 	]);
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+language@6.12.4/node_modules/@codemirror/language/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+language@6.12.4/node_modules/@codemirror/language/dist/index.js
 	var _a;
 	/**
 	Node prop stored in a parser's top syntax node to provide the
@@ -15204,20 +15154,18 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		lineAt(pos, bias = 1) {
 			let line = this.state.doc.lineAt(pos);
 			let { simulateBreak, simulateDoubleBreak } = this.options;
-			if (simulateBreak != null && simulateBreak >= line.from && simulateBreak <= line.to) {
-				if (simulateDoubleBreak && simulateBreak == pos) return {
-					text: "",
-					from: pos
-				};
-				else if (bias < 0 ? simulateBreak < pos : simulateBreak <= pos) return {
-					text: line.text.slice(simulateBreak - line.from),
-					from: simulateBreak
-				};
-				else return {
-					text: line.text.slice(0, simulateBreak - line.from),
-					from: line.from
-				};
-			}
+			if (simulateBreak != null && simulateBreak >= line.from && simulateBreak <= line.to) if (simulateDoubleBreak && simulateBreak == pos) return {
+				text: "",
+				from: pos
+			};
+			else if (bias < 0 ? simulateBreak < pos : simulateBreak <= pos) return {
+				text: line.text.slice(simulateBreak - line.from),
+				from: simulateBreak
+			};
+			else return {
+				text: line.text.slice(0, simulateBreak - line.from),
+				from: line.from
+			};
 			return line;
 		}
 		/**
@@ -15566,8 +15514,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	};
 	const treeHighlighter = /*@__PURE__*/ Prec.high(/*@__PURE__*/ ViewPlugin.fromClass(TreeHighlighter, { decorations: (v) => v.decorations }));
 	tags$1.meta, tags$1.link, tags$1.heading, tags$1.emphasis, tags$1.strong, tags$1.strikethrough, tags$1.keyword, tags$1.atom, tags$1.bool, tags$1.url, tags$1.contentSeparator, tags$1.labelName, tags$1.literal, tags$1.inserted, tags$1.string, tags$1.deleted, tags$1.regexp, tags$1.escape, tags$1.string, tags$1.variableName, tags$1.variableName, tags$1.typeName, tags$1.namespace, tags$1.className, tags$1.variableName, tags$1.macroName, tags$1.propertyName, tags$1.comment, tags$1.invalid;
-	const DefaultScanDist = 1e4;
-	const DefaultBrackets = "()[]{}";
+	const DefaultScanDist = 1e4, DefaultBrackets = "()[]{}";
 	/**
 	When larger syntax nodes, such as HTML tags, are marked as
 	opening/closing, it can be a bit messy to treat the whole node as
@@ -16154,10 +16101,9 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			for (let part of name.split(".")) {
 				let value = extra[part] || tags$1[part];
 				if (!value) warnForPart(part, `Unknown highlighting tag ${part}`);
-				else if (typeof value == "function") {
-					if (!found.length) warnForPart(part, `Modifier ${part} used at start of tag`);
-					else found = found.map(value);
-				} else if (found.length) warnForPart(part, `Tag ${part} used as modifier`);
+				else if (typeof value == "function") if (!found.length) warnForPart(part, `Modifier ${part} used at start of tag`);
+				else found = found.map(value);
+				else if (found.length) warnForPart(part, `Tag ${part} used as modifier`);
 				else found = Array.isArray(value) ? value : [value];
 			}
 			for (let tag of found) tags$1$1.push(tag);
@@ -16186,7 +16132,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	}
 	Direction.RTL, Direction.LTR;
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+commands@6.10.4/node_modules/@codemirror/commands/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+commands@6.11.0/node_modules/@codemirror/commands/dist/index.js
 	/**
 	Comment or uncomment the current selection. Will use line comments
 	if available, otherwise falling back to block comments.
@@ -16248,7 +16194,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			}
 		};
 		let startText, endText;
-		if (to - from <= 100) startText = endText = state.sliceDoc(from, to);
+		if (to - from <= 2 * SearchMargin) startText = endText = state.sliceDoc(from, to);
 		else {
 			startText = state.sliceDoc(from, from + SearchMargin);
 			endText = state.sliceDoc(to - SearchMargin, to);
@@ -17013,7 +16959,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	Expand the selection to cover entire lines.
 	*/
 	const selectLine = ({ state, dispatch }) => {
-		let ranges = selectedLineBlocks(state).map(({ from, to }) => EditorSelection.range(from, Math.min(to + 1, state.doc.length)));
+		let ranges = selectedLineBlocks(state).map(({ from, to }) => EditorSelection.undirectionalRange(from, Math.min(to + 1, state.doc.length)));
 		dispatch(state.update({
 			selection: EditorSelection.create(ranges),
 			userEvent: "select"
@@ -17035,7 +16981,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			}
 			for (let cur = stack; cur; cur = cur.next) {
 				let { node } = cur;
-				if ((node.from < range.from && node.to >= range.to || node.to > range.to && node.from <= range.from) && cur.next) return EditorSelection.range(node.to, node.from);
+				if ((node.from < range.from && node.to >= range.to || node.to > range.to && node.from <= range.from) && cur.next) return EditorSelection.undirectionalRange(node.from, node.to);
 			}
 			return range;
 		});
@@ -17805,7 +17751,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	- Shift-Ctrl-k (Shift-Cmd-k on macOS): [`deleteLine`](https://codemirror.net/6/docs/ref/#commands.deleteLine)
 	- Shift-Ctrl-\\ (Shift-Cmd-\\ on macOS): [`cursorMatchingBracket`](https://codemirror.net/6/docs/ref/#commands.cursorMatchingBracket)
 	- Ctrl-/ (Cmd-/ on macOS): [`toggleComment`](https://codemirror.net/6/docs/ref/#commands.toggleComment).
-	- Shift-Alt-a: [`toggleBlockComment`](https://codemirror.net/6/docs/ref/#commands.toggleBlockComment).
+	- Shift-Alt-a (Shift-Ctrl-a on macOS): [`toggleBlockComment`](https://codemirror.net/6/docs/ref/#commands.toggleBlockComment).
 	- Ctrl-m (Alt-Shift-m on macOS): [`toggleTabFocusMode`](https://codemirror.net/6/docs/ref/#commands.toggleTabFocusMode).
 	*/
 	const defaultKeymap = /*@__PURE__*/ [
@@ -17889,6 +17835,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		},
 		{
 			key: "Alt-A",
+			mac: "Ctrl-A",
 			run: toggleBlockComment
 		},
 		{
@@ -18015,7 +17962,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return encodeHtmlUrl(scope.sessionId, path);
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+lr@1.4.10/node_modules/@lezer/lr/dist/index.js
+	//#region ../../../node_modules/.pnpm/@lezer+lr@1.4.10/node_modules/@lezer/lr/dist/index.js
 	/**
 	A parse stack. These are used internally by the parser to track
 	parsing progress. They also provide some properties and methods
@@ -18978,12 +18925,10 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		addActions(stack, token, end, index) {
 			let { state } = stack, { parser } = stack.p, { data } = parser;
 			for (let set = 0; set < 2; set++) for (let i = parser.stateSlot(state, set ? 2 : 1);; i += 3) {
-				if (data[i] == 65535) {
-					if (data[i + 1] == 1) i = pair(data, i + 2);
-					else {
-						if (index == 0 && data[i + 1] == 2) index = this.putAction(pair(data, i + 2), token, end, index);
-						break;
-					}
+				if (data[i] == 65535) if (data[i + 1] == 1) i = pair(data, i + 2);
+				else {
+					if (index == 0 && data[i + 1] == 2) index = this.putAction(pair(data, i + 2), token, end, index);
+					break;
 				}
 				if (data[i] == token) index = this.putAction(pair(data, i + 1), token, end, index);
 			}
@@ -19071,12 +19016,10 @@ globalThis.__dshChunks__["editor"] = (require) => {
 					let stack = newStacks[i];
 					for (let j = i + 1; j < newStacks.length; j++) {
 						let other = newStacks[j];
-						if (stack.sameState(other) || stack.buffer.length > 500 && other.buffer.length > 500) {
-							if ((stack.score - other.score || stack.buffer.length - other.buffer.length) > 0) newStacks.splice(j--, 1);
-							else {
-								newStacks.splice(i--, 1);
-								continue outer;
-							}
+						if (stack.sameState(other) || stack.buffer.length > 500 && other.buffer.length > 500) if ((stack.score - other.score || stack.buffer.length - other.buffer.length) > 0) newStacks.splice(j--, 1);
+						else {
+							newStacks.splice(i--, 1);
+							continue outer;
 						}
 					}
 				}
@@ -19336,11 +19279,9 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		hasAction(state, terminal) {
 			let data = this.data;
 			for (let set = 0; set < 2; set++) for (let i = this.stateSlot(state, set ? 2 : 1), next;; i += 3) {
-				if ((next = data[i]) == 65535) {
-					if (data[i + 1] == 1) next = data[i = pair(data, i + 2)];
-					else if (data[i + 1] == 2) return pair(data, i + 2);
-					else break;
-				}
+				if ((next = data[i]) == 65535) if (data[i + 1] == 1) next = data[i = pair(data, i + 2)];
+				else if (data[i + 1] == 2) return pair(data, i + 2);
+				else break;
 				if (next == terminal || next == 0) return pair(data, i + 1);
 			}
 			return 0;
@@ -19370,10 +19311,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			let deflt = this.stateSlot(state, 4);
 			let result = deflt ? action(deflt) : void 0;
 			for (let i = this.stateSlot(state, 1); result == null; i += 3) {
-				if (this.data[i] == 65535) {
-					if (this.data[i + 1] == 1) i = pair(this.data, i + 2);
-					else break;
-				}
+				if (this.data[i] == 65535) if (this.data[i + 1] == 1) i = pair(this.data, i + 2);
+				else break;
 				result = action(pair(this.data, i + 1));
 			}
 			return result;
@@ -19385,10 +19324,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		nextStates(state) {
 			let result = [];
 			for (let i = this.stateSlot(state, 1);; i += 3) {
-				if (this.data[i] == 65535) {
-					if (this.data[i + 1] == 1) i = pair(this.data, i + 2);
-					else break;
-				}
+				if (this.data[i] == 65535) if (this.data[i + 1] == 1) i = pair(this.data, i + 2);
+				else break;
 				if ((this.data[i + 2] & 1) == 0) {
 					let value = this.data[i + 1];
 					if (!result.some((v, i) => i & 1 && v == value)) result.push(this.data[i], value);
@@ -19506,19 +19443,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return spec.get;
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+javascript@1.5.4/node_modules/@lezer/javascript/dist/index.js
-	const noSemi = 316;
-	const noSemiType = 317;
-	const incdec = 1;
-	const incdecPrefix = 2;
-	const questionDot = 3;
-	const JSXStartTag = 4;
-	const insertSemi = 318;
-	const spaces = 320;
-	const newline$4 = 321;
-	const LineComment$1 = 5;
-	const BlockComment$1 = 6;
-	const Dialect_jsx = 0;
+	//#region ../../../node_modules/.pnpm/@lezer+javascript@1.5.4/node_modules/@lezer/javascript/dist/index.js
+	const noSemi = 316, noSemiType = 317, incdec = 1, incdecPrefix = 2, questionDot = 3, JSXStartTag = 4, insertSemi = 318, spaces = 320, newline$4 = 321, LineComment$1 = 5, BlockComment$1 = 6, Dialect_jsx = 0;
 	const space$5 = [
 		9,
 		10,
@@ -19546,17 +19472,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		8287,
 		12288
 	];
-	const braceR = 125;
-	const semicolon$2 = 59;
-	const slash$2 = 47;
-	const star = 42;
-	const plus = 43;
-	const minus = 45;
-	const lt = 60;
-	const comma = 44;
-	const question$1 = 63;
-	const dot$1 = 46;
-	const bracketL$1 = 91;
+	const braceR = 125, semicolon$2 = 59, slash$2 = 47, star = 42, plus = 43, minus = 45, lt = 60, comma = 44, question$1 = 63, dot$1 = 46, bracketL$1 = 91;
 	const trackNewline = new ContextTracker({
 		start: false,
 		shift(context, term) {
@@ -19992,7 +19908,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 15201
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+autocomplete@6.20.3/node_modules/@codemirror/autocomplete/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+autocomplete@6.20.3/node_modules/@codemirror/autocomplete/dist/index.js
 	/**
 	An instance of this is passed to completion source functions.
 	*/
@@ -20491,7 +20407,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	closedBracket.endSide = -1;
 	typeof navigator == "object" && navigator.userAgent;
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-javascript@6.2.5/node_modules/@codemirror/lang-javascript/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-javascript@6.2.5/node_modules/@codemirror/lang-javascript/dist/index.js
 	/**
 	A collection of JavaScript-related
 	[snippets](https://codemirror.net/6/docs/ref/#autocomplete.snippet).
@@ -20860,7 +20776,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return true;
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+json@1.0.3/node_modules/@lezer/json/dist/index.js
+	//#region ../../../node_modules/.pnpm/@lezer+json@1.0.3/node_modules/@lezer/json/dist/index.js
 	const jsonHighlighting = styleTags({
 		String: tags$1.string,
 		Number: tags$1.number,
@@ -20910,7 +20826,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 0
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-json@6.0.2/node_modules/@codemirror/lang-json/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-json@6.0.2/node_modules/@codemirror/lang-json/dist/index.js
 	/**
 	A language provider that provides JSON parsing.
 	*/
@@ -20936,11 +20852,10 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return new LanguageSupport(jsonLanguage);
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+markdown@1.7.2/node_modules/@lezer/markdown/dist/index.js
+	//#region ../../../node_modules/.pnpm/@lezer+markdown@1.7.2/node_modules/@lezer/markdown/dist/index.js
 	var CompositeBlock = class CompositeBlock {
 		static create(type, value, from, parentHash, end) {
-			let hash = parentHash + (parentHash << 8) + type + (value << 4) | 0;
-			return new CompositeBlock(type, value, from, hash, end, [], []);
+			return new CompositeBlock(type, value, from, parentHash + (parentHash << 8) + type + (value << 4) | 0, end, [], []);
 		}
 		constructor(type, value, from, hash, end, children, positions) {
 			this.type = type;
@@ -21251,9 +21166,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		while (pos < line.text.length && space$4(line.text.charCodeAt(pos))) pos++;
 		return pos == line.text.length ? end : -1;
 	}
-	const EmptyLine = /^[ \t]*$/;
-	const CommentEnd = /-->/;
-	const ProcessingEnd = /\?>/;
+	const EmptyLine = /^[ \t]*$/, CommentEnd = /-->/, ProcessingEnd = /\?>/;
 	const HTMLBlockStyle = [
 		[/^<(?:script|pre|style)(?:\s|>|$)/i, /<\/(?:script|pre|style)>/i],
 		[/^\s*<!--/, CommentEnd],
@@ -22066,8 +21979,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		resolve: "Emphasis",
 		mark: "EmphasisMark"
 	};
-	const LinkStart = {};
-	const ImageStart = {};
+	const LinkStart = {}, ImageStart = {};
 	var InlineDelimiter = class {
 		constructor(type, from, to, side) {
 			this.type = type;
@@ -22887,40 +22799,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		}]
 	};
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+html@1.3.13/node_modules/@lezer/html/dist/index.js
-	const scriptText = 55;
-	const StartCloseScriptTag = 1;
-	const styleText = 56;
-	const StartCloseStyleTag = 2;
-	const textareaText = 57;
-	const StartCloseTextareaTag = 3;
-	const EndTag = 4;
-	const SelfClosingEndTag = 5;
-	const StartTag$1 = 6;
-	const StartScriptTag = 7;
-	const StartStyleTag = 8;
-	const StartTextareaTag = 9;
-	const StartSelfClosingTag = 10;
-	const StartCloseTag$1 = 11;
-	const NoMatchStartCloseTag = 12;
-	const MismatchedStartCloseTag = 13;
-	const missingCloseTag = 58;
-	const IncompleteTag = 14;
-	const IncompleteCloseTag = 15;
-	const commentContent$1$1 = 59;
-	const Element$2 = 21;
-	const TagName = 23;
-	const Attribute = 24;
-	const AttributeName = 25;
-	const AttributeValue = 27;
-	const UnquotedAttributeValue = 28;
-	const ScriptText = 29;
-	const StyleText = 32;
-	const TextareaText = 35;
-	const OpenTag$1 = 37;
-	const CloseTag = 38;
-	const Dialect_noMatch = 0;
-	const Dialect_selfClosing = 1;
+	//#region ../../../node_modules/.pnpm/@lezer+html@1.3.13/node_modules/@lezer/html/dist/index.js
+	const scriptText = 55, StartCloseScriptTag = 1, styleText = 56, StartCloseStyleTag = 2, textareaText = 57, StartCloseTextareaTag = 3, EndTag = 4, SelfClosingEndTag = 5, StartTag$1 = 6, StartScriptTag = 7, StartStyleTag = 8, StartTextareaTag = 9, StartSelfClosingTag = 10, StartCloseTag$1 = 11, NoMatchStartCloseTag = 12, MismatchedStartCloseTag = 13, missingCloseTag = 58, IncompleteTag = 14, IncompleteCloseTag = 15, commentContent$1$1 = 59, Element$2 = 21, TagName = 23, Attribute = 24, AttributeName = 25, AttributeValue = 27, UnquotedAttributeValue = 28, ScriptText = 29, StyleText = 32, TextareaText = 35, OpenTag$1 = 37, CloseTag = 38, Dialect_noMatch = 0, Dialect_selfClosing = 1;
 	const selfClosers$1 = {
 		area: true,
 		base: true,
@@ -23029,9 +22909,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	function nameChar$1(ch) {
 		return ch == 45 || ch == 46 || ch == 58 || ch >= 65 && ch <= 90 || ch == 95 || ch >= 97 && ch <= 122 || ch >= 161;
 	}
-	let cachedName$1 = null;
-	let cachedInput$1 = null;
-	let cachedPos$1 = 0;
+	let cachedName$1 = null, cachedInput$1 = null, cachedPos$1 = 0;
 	function tagNameAfter$1(input, offset) {
 		let pos = input.pos + offset;
 		if (cachedPos$1 == pos && cachedInput$1 == input) return cachedName$1;
@@ -23045,12 +22923,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		cachedPos$1 = pos;
 		return cachedName$1 = name ? name.toLowerCase() : next == question || next == bang ? void 0 : null;
 	}
-	const lessThan = 60;
-	const greaterThan = 62;
-	const slash$1 = 47;
-	const question = 63;
-	const bang = 33;
-	const dash$1 = 45;
+	const lessThan = 60, greaterThan = 62, slash$1 = 47, question = 63, bang = 33, dash$1 = 45;
 	function ElementContext$1(name, parent) {
 		this.name = name;
 		this.parent = parent;
@@ -23358,15 +23231,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		});
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+css@1.3.6/node_modules/@lezer/css/dist/index.js
-	const descendantOp = 148;
-	const Unit = 1;
-	const identifier$3 = 149;
-	const callee = 150;
-	const VariableName = 2;
-	const queryIdentifier = 151;
-	const queryVariableName = 3;
-	const QueryCallee = 4;
+	//#region ../../../node_modules/.pnpm/@lezer+css@1.3.6/node_modules/@lezer/css/dist/index.js
+	const descendantOp = 148, Unit = 1, identifier$3 = 149, callee = 150, VariableName = 2, queryIdentifier = 151, queryVariableName = 3, QueryCallee = 4;
 	const space$3 = [
 		9,
 		10,
@@ -23394,18 +23260,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		8287,
 		12288
 	];
-	const colon = 58;
-	const parenL = 40;
-	const underscore = 95;
-	const bracketL = 91;
-	const dash = 45;
-	const period = 46;
-	const hash$1 = 35;
-	const percent = 37;
-	const ampersand = 38;
-	const backslash$1 = 92;
-	const newline$3 = 10;
-	const asterisk = 42;
+	const colon = 58, parenL = 40, underscore = 95, bracketL = 91, dash = 45, period = 46, hash$1 = 35, percent = 37, ampersand = 38, backslash$1 = 92, newline$3 = 10, asterisk = 42;
 	function isAlpha$1(ch) {
 		return ch >= 65 && ch <= 90 || ch >= 97 && ch <= 122 || ch >= 161;
 	}
@@ -23621,7 +23476,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 2444
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-css@6.3.1/node_modules/@codemirror/lang-css/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-css@6.3.1/node_modules/@codemirror/lang-css/dist/index.js
 	let _properties = null;
 	function properties$1() {
 		if (!_properties && typeof document == "object" && document.body) {
@@ -24388,8 +24243,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		type: "keyword",
 		label
 	}));
-	const identifier$2 = /^(\w[\w-]*|-\w[\w-]*|)$/;
-	const variable = /^-(-[\w-]*)?$/;
+	const identifier$2 = /^(\w[\w-]*|-\w[\w-]*|)$/, variable = /^-(-[\w-]*)?$/;
 	function isVarArg(node, doc) {
 		var _a;
 		if (node.name == "(" || node.type.isError) node = node.parent || node;
@@ -24530,7 +24384,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return new LanguageSupport(cssLanguage, cssLanguage.data.of({ autocomplete: cssCompletionSource }));
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-html@6.4.12/node_modules/@codemirror/lang-html/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-html@6.4.12/node_modules/@codemirror/lang-html/dist/index.js
 	const Targets = [
 		"_blank",
 		"_self",
@@ -25205,10 +25059,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return name ? doc.sliceString(name.from, Math.min(name.to, max)) : "";
 	}
 	function findParentElement$1(tree, skip = false) {
-		for (; tree; tree = tree.parent) if (tree.name == "Element") {
-			if (skip) skip = false;
-			else return tree;
-		}
+		for (; tree; tree = tree.parent) if (tree.name == "Element") if (skip) skip = false;
+		else return tree;
 		return null;
 	}
 	function allowedChildren(doc, tree, schema) {
@@ -25526,7 +25378,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return true;
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-markdown@6.5.2/node_modules/@codemirror/lang-markdown/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-markdown@6.5.2/node_modules/@codemirror/lang-markdown/dist/index.js
 	const data = /*@__PURE__*/ defineLanguageFacet({ commentTokens: { block: {
 		open: "<!--",
 		close: "-->"
@@ -25988,76 +25840,10 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return true;
 	} });
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+python@1.1.19/node_modules/@lezer/python/dist/index.js
-	const printKeyword = 1;
-	const indent = 194;
-	const dedent = 195;
-	const newline$1 = 196;
-	const blankLineStart = 197;
-	const newlineBracketed = 198;
-	const eof$2 = 199;
-	const stringContent = 200;
-	const Escape = 2;
-	const replacementStart = 3;
-	const stringEnd = 201;
-	const ParenL$2 = 24;
-	const ParenthesizedExpression = 25;
-	const TupleExpression = 49;
-	const ComprehensionExpression = 50;
-	const BracketL$2 = 55;
-	const ArrayExpression = 56;
-	const ArrayComprehensionExpression = 57;
-	const BraceL$2 = 59;
-	const DictionaryExpression = 60;
-	const DictionaryComprehensionExpression = 61;
-	const SetExpression = 62;
-	const SetComprehensionExpression = 63;
-	const ArgList = 65;
-	const subscript = 238;
-	const String$1$2 = 71;
-	const stringStart = 241;
-	const stringStartD = 242;
-	const stringStartL = 243;
-	const stringStartLD = 244;
-	const stringStartR = 245;
-	const stringStartRD = 246;
-	const stringStartRL = 247;
-	const stringStartRLD = 248;
-	const FormatString = 72;
-	const stringStartF = 249;
-	const stringStartFD = 250;
-	const stringStartFL = 251;
-	const stringStartFLD = 252;
-	const stringStartFR = 253;
-	const stringStartFRD = 254;
-	const stringStartFRL = 255;
-	const stringStartFRLD = 256;
-	const FormatReplacement = 73;
-	const nestedFormatReplacement = 77;
-	const importList = 263;
-	const TypeParamList = 112;
-	const ParamList = 130;
-	const SequencePattern = 151;
-	const MappingPattern = 152;
-	const PatternArgList = 155;
-	const newline$2 = 10;
-	const carriageReturn$1 = 13;
-	const space$2 = 32;
-	const tab$1 = 9;
-	const hash = 35;
-	const parenOpen = 40;
-	const dot = 46;
-	const braceOpen = 123;
-	const braceClose = 125;
-	const singleQuote = 39;
-	const doubleQuote = 34;
-	const backslash = 92;
-	const letter_o = 111;
-	const letter_x = 120;
-	const letter_N = 78;
-	const letter_u = 117;
-	const letter_U = 85;
-	const bracketed = /* @__PURE__ */ new Set([
+	//#region ../../../node_modules/.pnpm/@lezer+python@1.1.19/node_modules/@lezer/python/dist/index.js
+	const printKeyword = 1, indent = 194, dedent = 195, newline$1 = 196, blankLineStart = 197, newlineBracketed = 198, eof$2 = 199, stringContent = 200, Escape = 2, replacementStart = 3, stringEnd = 201, ParenL$2 = 24, ParenthesizedExpression = 25, TupleExpression = 49, ComprehensionExpression = 50, BracketL$2 = 55, ArrayExpression = 56, ArrayComprehensionExpression = 57, BraceL$2 = 59, DictionaryExpression = 60, DictionaryComprehensionExpression = 61, SetExpression = 62, SetComprehensionExpression = 63, ArgList = 65, subscript = 238, String$1$2 = 71, stringStart = 241, stringStartD = 242, stringStartL = 243, stringStartLD = 244, stringStartR = 245, stringStartRD = 246, stringStartRL = 247, stringStartRLD = 248, FormatString = 72, stringStartF = 249, stringStartFD = 250, stringStartFL = 251, stringStartFLD = 252, stringStartFR = 253, stringStartFRD = 254, stringStartFRL = 255, stringStartFRLD = 256, FormatReplacement = 73, nestedFormatReplacement = 77, importList = 263, TypeParamList = 112, ParamList = 130, SequencePattern = 151, MappingPattern = 152, PatternArgList = 155;
+	const newline$2 = 10, carriageReturn$1 = 13, space$2 = 32, tab$1 = 9, hash = 35, parenOpen = 40, dot = 46, braceOpen = 123, braceClose = 125, singleQuote = 39, doubleQuote = 34, backslash = 92, letter_o = 111, letter_x = 120, letter_N = 78, letter_u = 117, letter_U = 85;
+	const bracketed = new Set([
 		ParenthesizedExpression,
 		TupleExpression,
 		ComprehensionExpression,
@@ -26112,18 +25898,11 @@ globalThis.__dshChunks__["editor"] = (require) => {
 				input.advance();
 				chars++;
 			}
-			if (depth != context.indent && input.next != newline$2 && input.next != carriageReturn$1 && input.next != hash) {
-				if (depth < context.indent) input.acceptToken(dedent, -chars);
-				else input.acceptToken(indent);
-			}
+			if (depth != context.indent && input.next != newline$2 && input.next != carriageReturn$1 && input.next != hash) if (depth < context.indent) input.acceptToken(dedent, -chars);
+			else input.acceptToken(indent);
 		}
 	});
-	const cx_Bracketed = 1;
-	const cx_String = 2;
-	const cx_DoubleQuote = 4;
-	const cx_Long = 8;
-	const cx_Raw = 16;
-	const cx_Format = 32;
+	const cx_Bracketed = 1, cx_String = 2, cx_DoubleQuote = 4, cx_Long = 8, cx_Raw = 16, cx_Format = 32;
 	function Context$1(parent, indent, flags) {
 		this.parent = parent;
 		this.indent = indent;
@@ -26192,16 +25971,15 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		let format = (flags & cx_Format) > 0;
 		let start = input.pos;
 		for (;;) if (input.next < 0) break;
-		else if (format && input.next == braceOpen) {
-			if (input.peek(1) == braceOpen) input.advance(2);
-			else {
-				if (input.pos == start) {
-					input.acceptToken(replacementStart, 1);
-					return;
-				}
-				break;
+		else if (format && input.next == braceOpen) if (input.peek(1) == braceOpen) input.advance(2);
+		else {
+			if (input.pos == start) {
+				input.acceptToken(replacementStart, 1);
+				return;
 			}
-		} else if (escapes && input.next == backslash) {
+			break;
+		}
+		else if (escapes && input.next == backslash) {
 			if (input.pos == start) {
 				input.advance();
 				let escaped = input.next;
@@ -26445,7 +26223,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 7668
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-python@6.2.1/node_modules/@codemirror/lang-python/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-python@6.2.1/node_modules/@codemirror/lang-python/dist/index.js
 	const cache$1 = /*@__PURE__*/ new NodeWeakMap();
 	const ScopeNodes$1 = /*@__PURE__*/ new Set([
 		"Script",
@@ -26872,26 +26650,15 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return new LanguageSupport(pythonLanguage, [pythonLanguage.data.of({ autocomplete: localCompletionSource$1 }), pythonLanguage.data.of({ autocomplete: globalCompletion })]);
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+xml@1.0.6/node_modules/@lezer/xml/dist/index.js
-	const StartTag = 1;
-	const StartCloseTag = 2;
-	const MissingCloseTag = 3;
-	const mismatchedStartCloseTag = 4;
-	const incompleteStartCloseTag = 5;
-	const commentContent$1 = 36;
-	const piContent$1 = 37;
-	const cdataContent$1 = 38;
-	const Element$1 = 11;
-	const OpenTag = 13;
+	//#region ../../../node_modules/.pnpm/@lezer+xml@1.0.6/node_modules/@lezer/xml/dist/index.js
+	const StartTag = 1, StartCloseTag = 2, MissingCloseTag = 3, mismatchedStartCloseTag = 4, incompleteStartCloseTag = 5, commentContent$1 = 36, piContent$1 = 37, cdataContent$1 = 38, Element$1 = 11, OpenTag = 13;
 	function nameChar(ch) {
 		return ch == 45 || ch == 46 || ch == 58 || ch >= 65 && ch <= 90 || ch == 95 || ch >= 97 && ch <= 122 || ch >= 161;
 	}
 	function isSpace$2(ch) {
 		return ch == 9 || ch == 10 || ch == 13 || ch == 32;
 	}
-	let cachedName = null;
-	let cachedInput = null;
-	let cachedPos = 0;
+	let cachedName = null, cachedInput = null, cachedPos = 0;
 	function tagNameAfter(input, offset) {
 		let pos = input.pos + offset;
 		if (cachedInput == input && cachedPos == pos) return cachedName;
@@ -27023,7 +26790,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 0
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-xml@6.1.0/node_modules/@codemirror/lang-xml/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-xml@6.1.0/node_modules/@codemirror/lang-xml/dist/index.js
 	function tagName(doc, tag) {
 		let name = tag && tag.getChild("TagName");
 		return name ? doc.sliceString(name.from, name.to) : "";
@@ -27334,35 +27101,9 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return true;
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+yaml@1.0.4/node_modules/@lezer/yaml/dist/index.js
-	const blockEnd = 63;
-	const eof$1 = 64;
-	const DirectiveEnd = 1;
-	const DocEnd = 2;
-	const sequenceStartMark = 3;
-	const sequenceContinueMark = 4;
-	const explicitMapStartMark = 5;
-	const explicitMapContinueMark = 6;
-	const flowMapMark = 7;
-	const mapStartMark = 65;
-	const mapContinueMark = 66;
-	const Literal = 8;
-	const QuotedLiteral = 9;
-	const Anchor = 10;
-	const Alias = 11;
-	const Tag = 12;
-	const BlockLiteralContent = 13;
-	const BracketL$1 = 19;
-	const FlowSequence = 20;
-	const Colon = 29;
-	const BraceL$1 = 33;
-	const FlowMapping = 34;
-	const BlockLiteralHeader = 47;
-	const type_Top = 0;
-	const type_Seq = 1;
-	const type_Map = 2;
-	const type_Flow = 3;
-	const type_Lit = 4;
+	//#region ../../../node_modules/.pnpm/@lezer+yaml@1.0.4/node_modules/@lezer/yaml/dist/index.js
+	const blockEnd = 63, eof$1 = 64, DirectiveEnd = 1, DocEnd = 2, sequenceStartMark = 3, sequenceContinueMark = 4, explicitMapStartMark = 5, explicitMapContinueMark = 6, flowMapMark = 7, mapStartMark = 65, mapContinueMark = 66, Literal = 8, QuotedLiteral = 9, Anchor = 10, Alias = 11, Tag = 12, BlockLiteralContent = 13, BracketL$1 = 19, FlowSequence = 20, Colon = 29, BraceL$1 = 33, FlowMapping = 34, BlockLiteralHeader = 47;
+	const type_Top = 0, type_Seq = 1, type_Map = 2, type_Flow = 3, type_Lit = 4;
 	var Context = class {
 		constructor(parent, depth, type) {
 			this.parent = parent;
@@ -27418,14 +27159,10 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		if (input.next == -1 && stack.canShift(eof$1)) return input.acceptToken(eof$1);
 		let prev = input.peek(-1);
 		if ((isBreakSpace(prev) || prev < 0) && stack.context.type != type_Flow) {
-			if (three(input, 45)) {
-				if (stack.canShift(blockEnd)) input.acceptToken(blockEnd);
-				else return input.acceptToken(DirectiveEnd, 3);
-			}
-			if (three(input, 46)) {
-				if (stack.canShift(blockEnd)) input.acceptToken(blockEnd);
-				else return input.acceptToken(DocEnd, 3);
-			}
+			if (three(input, 45)) if (stack.canShift(blockEnd)) input.acceptToken(blockEnd);
+			else return input.acceptToken(DirectiveEnd, 3);
+			if (three(input, 46)) if (stack.canShift(blockEnd)) input.acceptToken(blockEnd);
+			else return input.acceptToken(DocEnd, 3);
 			let depth = 0;
 			while (input.next == 32) {
 				depth++;
@@ -27514,12 +27251,10 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			let ch = input.next;
 			if (ch < 0) break;
 			input.advance();
-			if (ch == quote) {
-				if (ch == 39) {
-					if (input.next == 39) input.advance();
-					else break;
-				} else break;
-			} else if (ch == 92 && quote == 34) {
+			if (ch == quote) if (ch == 39) if (input.next == 39) input.advance();
+			else break;
+			else break;
+			else if (ch == 92 && quote == 34) {
 				if (input.next >= 0) input.advance();
 			} else if (isBreakSpace(ch)) {
 				if (scan) return false;
@@ -27713,32 +27448,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	}
 	tags$1.meta;
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-sql@6.10.0/node_modules/@codemirror/lang-sql/dist/index.js
-	const whitespace = 36;
-	const LineComment = 1;
-	const BlockComment = 2;
-	const String$1$1 = 3;
-	const Number$2 = 4;
-	const Bool = 5;
-	const Null = 6;
-	const ParenL$1 = 7;
-	const ParenR$1 = 8;
-	const BraceL = 9;
-	const BraceR = 10;
-	const BracketL = 11;
-	const BracketR = 12;
-	const Semi = 13;
-	const Dot$1 = 14;
-	const Operator = 15;
-	const Punctuation = 16;
-	const SpecialVar = 17;
-	const Identifier$1 = 18;
-	const QuotedIdentifier = 19;
-	const Keyword = 20;
-	const Type = 21;
-	const Bits = 22;
-	const Bytes = 23;
-	const Builtin = 24;
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-sql@6.10.0/node_modules/@codemirror/lang-sql/dist/index.js
+	const whitespace = 36, LineComment = 1, BlockComment = 2, String$1$1 = 3, Number$2 = 4, Bool = 5, Null = 6, ParenL$1 = 7, ParenR$1 = 8, BraceL = 9, BraceR = 10, BracketL = 11, BracketR = 12, Semi = 13, Dot$1 = 14, Operator = 15, Punctuation = 16, SpecialVar = 17, Identifier$1 = 18, QuotedIdentifier = 19, Keyword = 20, Type = 21, Bits = 22, Bytes = 23, Builtin = 24;
 	function isAlpha(ch) {
 		return ch >= 65 && ch <= 90 || ch >= 97 && ch <= 122 || ch >= 48 && ch <= 57;
 	}
@@ -28082,8 +27793,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			apply: void 0
 		}));
 	}
-	const Span = /^\w*$/;
-	const QuotedSpan = /^[`'"\[]?\w*[`'"\]]?$/;
+	const Span = /^\w*$/, QuotedSpan = /^[`'"\[]?\w*[`'"\]]?$/;
 	function isSelfTag(namespace) {
 		return namespace.self && typeof namespace.self.label == "string";
 	}
@@ -28268,7 +27978,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		*/
 		static define(spec) {
 			let d = dialect(spec, spec.keywords, spec.types, spec.builtin);
-			let language = LRLanguage.define({
+			return new SQLDialect(d, LRLanguage.define({
 				name: "sql",
 				parser: parser$5.configure({ tokenizers: [{
 					from: tokens,
@@ -28291,8 +28001,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 						"`"
 					] }
 				}
-			});
-			return new SQLDialect(d, language, spec);
+			}), spec);
 		}
 	};
 	function defaultKeyword(label, type) {
@@ -28333,7 +28042,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 	*/
 	const StandardSQL = /*@__PURE__*/ SQLDialect.define({});
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+java@1.1.3/node_modules/@lezer/java/dist/index.js
+	//#region ../../../node_modules/.pnpm/@lezer+java@1.1.3/node_modules/@lezer/java/dist/index.js
 	const javaHighlighting = styleTags({
 		null: tags$1.null,
 		instanceof: tags$1.operatorKeyword,
@@ -28563,7 +28272,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 7144
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-java@6.0.2/node_modules/@codemirror/lang-java/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-java@6.0.2/node_modules/@codemirror/lang-java/dist/index.js
 	/**
 	A language provider based on the [Lezer Java
 	parser](https://github.com/lezer-parser/java), extended with
@@ -28609,25 +28318,9 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return new LanguageSupport(javaLanguage);
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+cpp@1.1.6/node_modules/@lezer/cpp/dist/index.js
-	const RawString$1 = 1;
-	const templateArgsEndFallback = 2;
-	const MacroName = 3;
-	const R = 82;
-	const L = 76;
-	const u = 117;
-	const U = 85;
-	const a = 97;
-	const z = 122;
-	const A = 65;
-	const Z = 90;
-	const Underscore = 95;
-	const Zero = 48;
-	const Quote$1 = 34;
-	const ParenL = 40;
-	const ParenR = 41;
-	const Space = 32;
-	const GreaterThan$1 = 62;
+	//#region ../../../node_modules/.pnpm/@lezer+cpp@1.1.6/node_modules/@lezer/cpp/dist/index.js
+	const RawString$1 = 1, templateArgsEndFallback = 2, MacroName = 3;
+	const R = 82, L = 76, u = 117, U = 85, a = 97, z = 122, A = 65, Z = 90, Underscore = 95, Zero = 48, Quote$1 = 34, ParenL = 40, ParenR = 41, Space = 32, GreaterThan$1 = 62;
 	const rawString = new ExternalTokenizer((input) => {
 		if (input.next == L || input.next == U) input.advance();
 		else if (input.next == u) {
@@ -29038,7 +28731,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 24852
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-cpp@6.0.3/node_modules/@codemirror/lang-cpp/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-cpp@6.0.3/node_modules/@codemirror/lang-cpp/dist/index.js
 	/**
 	A language provider based on the [Lezer C++
 	parser](https://github.com/lezer-parser/cpp), extended with
@@ -29092,25 +28785,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return new LanguageSupport(cppLanguage);
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+rust@1.0.2/node_modules/@lezer/rust/dist/index.js
-	const closureParamDelim = 1;
-	const tpOpen = 2;
-	const tpClose = 3;
-	const RawString = 4;
-	const Float = 5;
-	const _b = 98;
-	const _e = 101;
-	const _f = 102;
-	const _r = 114;
-	const _E = 69;
-	const Dot = 46;
-	const Plus = 43;
-	const Minus = 45;
-	const Hash = 35;
-	const Quote = 34;
-	const Pipe = 124;
-	const LessThan = 60;
-	const GreaterThan = 62;
+	//#region ../../../node_modules/.pnpm/@lezer+rust@1.0.2/node_modules/@lezer/rust/dist/index.js
+	const closureParamDelim = 1, tpOpen = 2, tpClose = 3, RawString = 4, Float = 5, _b = 98, _e = 101, _f = 102, _r = 114, _E = 69, Dot = 46, Plus = 43, Minus = 45, Hash = 35, Quote = 34, Pipe = 124, LessThan = 60, GreaterThan = 62;
 	function isNum(ch) {
 		return ch >= 48 && ch <= 57;
 	}
@@ -29437,7 +29113,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 15596
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-rust@6.0.2/node_modules/@codemirror/lang-rust/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-rust@6.0.2/node_modules/@codemirror/lang-rust/dist/index.js
 	/**
 	A syntax provider based on the [Lezer Rust
 	parser](https://github.com/lezer-parser/rust), extended with
@@ -29480,28 +29156,9 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return new LanguageSupport(rustLanguage);
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+go@1.0.1/node_modules/@lezer/go/dist/index.js
-	const insertedSemi = 177;
-	const space$1 = 179;
-	const identifier = 184;
-	const String$1 = 12;
-	const closeParen$1 = 13;
-	const Number$1 = 17;
-	const Rune = 20;
-	const closeBrace$1 = 25;
-	const closeBracket = 53;
-	const IncDecOp = 95;
-	const _return$1 = 142;
-	const _break$1 = 144;
-	const _continue$1 = 145;
-	const fallthrough = 148;
-	const newline = 10;
-	const carriageReturn = 13;
-	const space = 32;
-	const tab = 9;
-	const slash = 47;
-	const closeParen = 41;
-	const closeBrace = 125;
+	//#region ../../../node_modules/.pnpm/@lezer+go@1.0.1/node_modules/@lezer/go/dist/index.js
+	const insertedSemi = 177, space$1 = 179, identifier = 184, String$1 = 12, closeParen$1 = 13, Number$1 = 17, Rune = 20, closeBrace$1 = 25, closeBracket = 53, IncDecOp = 95, _return$1 = 142, _break$1 = 144, _continue$1 = 145, fallthrough = 148;
+	const newline = 10, carriageReturn = 13, space = 32, tab = 9, slash = 47, closeParen = 41, closeBrace = 125;
 	const semicolon$1 = new ExternalTokenizer((input, stack) => {
 		for (let scan = 0, next = input.next;;) {
 			if (stack.context && (next < 0 || next == newline || next == carriageReturn || next == slash && input.peek(scan + 1) == slash) || next == closeParen || next == closeBrace) input.acceptToken(insertedSemi);
@@ -29509,7 +29166,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			next = input.peek(++scan);
 		}
 	}, { contextual: true });
-	let trackedTokens = /* @__PURE__ */ new Set([
+	let trackedTokens = new Set([
 		IncDecOp,
 		identifier,
 		Rune,
@@ -29720,7 +29377,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 5451
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-go@6.0.1/node_modules/@codemirror/lang-go/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-go@6.0.1/node_modules/@codemirror/lang-go/dist/index.js
 	/**
 	A collection of Go-related [snippets](https://codemirror.net/6/docs/ref/#autocomplete.snippet).
 	*/
@@ -29952,74 +29609,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return new LanguageSupport(goLanguage, [goLanguage.data.of({ autocomplete: ifNotIn(dontComplete, completeFromList(completions)) }), goLanguage.data.of({ autocomplete: localCompletionSource })]);
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@lezer+php@1.0.5/node_modules/@lezer/php/dist/index.js
-	const castOpen = 1;
-	const HeredocString = 2;
-	const interpolatedStringContent = 275;
-	const EscapeSequence = 3;
-	const afterInterpolation = 276;
-	const automaticSemicolon = 277;
-	const eof = 278;
-	const abstract = 4;
-	const and = 5;
-	const array = 6;
-	const as = 7;
-	const Boolean = 8;
-	const _break = 9;
-	const _case = 10;
-	const _catch = 11;
-	const clone = 12;
-	const _const = 13;
-	const _continue = 14;
-	const _default = 15;
-	const declare = 16;
-	const _do = 17;
-	const echo = 18;
-	const _else = 19;
-	const elseif = 20;
-	const enddeclare = 21;
-	const endfor = 22;
-	const endforeach = 23;
-	const endif = 24;
-	const endswitch = 25;
-	const endwhile = 26;
-	const _enum = 27;
-	const _extends = 28;
-	const final = 29;
-	const _finally = 30;
-	const fn = 31;
-	const _for = 32;
-	const foreach = 33;
-	const from$1 = 34;
-	const _function = 35;
-	const global = 36;
-	const goto = 37;
-	const _if = 38;
-	const _implements = 39;
-	const include = 40;
-	const include_once = 41;
-	const _instanceof = 42;
-	const insteadof = 43;
-	const _interface = 44;
-	const list = 45;
-	const match = 46;
-	const namespace = 47;
-	const _new = 48;
-	const _null = 49;
-	const or = 50;
-	const print = 51;
-	const readonly = 52;
-	const _require = 53;
-	const require_once = 54;
-	const _return = 55;
-	const _switch = 56;
-	const _throw = 57;
-	const trait = 58;
-	const _try = 59;
-	const unset = 60;
-	const use = 61;
-	const _var = 62;
-	const Visibility = 63;
+	//#region ../../../node_modules/.pnpm/@lezer+php@1.0.5/node_modules/@lezer/php/dist/index.js
+	const castOpen = 1, HeredocString = 2, interpolatedStringContent = 275, EscapeSequence = 3, afterInterpolation = 276, automaticSemicolon = 277, eof = 278, abstract = 4, and = 5, array = 6, as = 7, Boolean = 8, _break = 9, _case = 10, _catch = 11, clone = 12, _const = 13, _continue = 14, _default = 15, declare = 16, _do = 17, echo = 18, _else = 19, elseif = 20, enddeclare = 21, endfor = 22, endforeach = 23, endif = 24, endswitch = 25, endwhile = 26, _enum = 27, _extends = 28, final = 29, _finally = 30, fn = 31, _for = 32, foreach = 33, from$1 = 34, _function = 35, global = 36, goto = 37, _if = 38, _implements = 39, include = 40, include_once = 41, _instanceof = 42, insteadof = 43, _interface = 44, list = 45, match = 46, namespace = 47, _new = 48, _null = 49, or = 50, print = 51, readonly = 52, _require = 53, require_once = 54, _return = 55, _switch = 56, _throw = 57, trait = 58, _try = 59, unset = 60, use = 61, _var = 62, Visibility = 63;
 	const keywordMap = {
 		abstract,
 		and,
@@ -30195,10 +29786,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 			if (input.next == 34 || input.next < 0 || input.next == 36 && (isIdentifierStart(input.peek(1)) || input.peek(1) == 123) || input.next == 123 && input.peek(1) == 36) break;
 			else if (input.next == 92) {
 				let escaped = scanEscape(input);
-				if (escaped) {
-					if (content) break;
-					else return input.acceptToken(EscapeSequence, escaped);
-				}
+				if (escaped) if (content) break;
+				else return input.acceptToken(EscapeSequence, escaped);
 			} else if (!content && (input.next == 91 || input.next == 45 && input.peek(1) == 62 && isIdentifierStart(input.peek(2)) || input.next == 63 && input.peek(1) == 45 && input.peek(2) == 62 && isIdentifierStart(input.peek(3))) && stack.canShift(afterInterpolation)) break;
 			input.advance();
 		}
@@ -30405,7 +29994,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		tokenPrec: 29889
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+lang-php@6.0.2/node_modules/@codemirror/lang-php/dist/index.js
+	//#region ../../../node_modules/.pnpm/@codemirror+lang-php@6.0.2/node_modules/@codemirror/lang-php/dist/index.js
 	/**
 	A language provider based on the [Lezer PHP
 	parser](https://github.com/lezer-parser/php), extended with
@@ -30477,7 +30066,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		}), support);
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/shell.js
+	//#region ../../../node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/shell.js
 	var words$1 = {};
 	function define(style, dict) {
 		for (var i = 0; i < dict.length; i++) words$1[dict[i]] = style;
@@ -30699,7 +30288,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		}
 	};
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/toml.js
+	//#region ../../../node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/toml.js
 	const toml = {
 		name: "toml",
 		startState: function() {
@@ -30757,7 +30346,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		languageData: { commentTokens: { line: "#" } }
 	};
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/nginx.js
+	//#region ../../../node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/nginx.js
 	function words(str) {
 		var obj = {}, words = str.split(" ");
 		for (var i = 0; i < words.length; ++i) obj[words[i]] = true;
@@ -30861,10 +30450,9 @@ globalThis.__dshChunks__["editor"] = (require) => {
 				else if (!context || context == "@media{") style = "tag";
 			}
 			if (context == "rule" && /^[\{\};]$/.test(type)) state.stack.pop();
-			if (type == "{") {
-				if (context == "@media") state.stack[state.stack.length - 1] = "@media{";
-				else state.stack.push("{");
-			} else if (type == "}") state.stack.pop();
+			if (type == "{") if (context == "@media") state.stack[state.stack.length - 1] = "@media{";
+			else state.stack.push("{");
+			else if (type == "}") state.stack.pop();
 			else if (type == "@media") state.stack.push("@media");
 			else if (context == "{" && type != "comment") state.stack.push("rule");
 			return style;
@@ -30877,7 +30465,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		languageData: { indentOnInput: /^\s*\}$/ }
 	};
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/simple-mode.js
+	//#region ../../../node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/simple-mode.js
 	function simpleMode(states) {
 		ensureState(states, "start");
 		var states_ = {}, meta = states.languageData || {}, hasIndentation = false;
@@ -31001,7 +30589,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		};
 	}
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/dockerfile.js
+	//#region ../../../node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/dockerfile.js
 	var from = "from";
 	var fromRegex = new RegExp("^(\\s*)\\b(" + from + ")\\b", "i");
 	var shells = [
@@ -31028,9 +30616,7 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		"stopsignal",
 		"healthcheck",
 		"shell"
-	]).join("|") + ")";
-	var instructionOnlyLine = new RegExp("^(\\s*)" + instructionRegex + "(\\s*)(#.*)?$", "i");
-	var instructionWithArguments = new RegExp("^(\\s*)" + instructionRegex + "(\\s+)", "i");
+	]).join("|") + ")", instructionOnlyLine = new RegExp("^(\\s*)" + instructionRegex + "(\\s*)(#.*)?$", "i"), instructionWithArguments = new RegExp("^(\\s*)" + instructionRegex + "(\\s+)", "i");
 	const dockerFile = simpleMode({
 		start: [
 			{
@@ -31205,19 +30791,17 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		languageData: { commentTokens: { line: "#" } }
 	});
 	//#endregion
-	//#region node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/properties.js
+	//#region ../../../node_modules/.pnpm/@codemirror+legacy-modes@6.5.3/node_modules/@codemirror/legacy-modes/mode/properties.js
 	const properties = {
 		name: "properties",
 		token: function(stream, state) {
 			var sol = stream.sol() || state.afterSection;
 			var eol = stream.eol();
 			state.afterSection = false;
-			if (sol) {
-				if (state.nextMultiline) {
-					state.inMultiline = true;
-					state.nextMultiline = false;
-				} else state.position = "def";
-			}
+			if (sol) if (state.nextMultiline) {
+				state.inMultiline = true;
+				state.nextMultiline = false;
+			} else state.position = "def";
 			if (eol && !state.nextMultiline) {
 				state.inMultiline = false;
 				state.position = "def";
@@ -32088,8 +31672,8 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		return text;
 	}
 	//#endregion
-	//#region \0dsh-css:/home/huangzy/tools/community-plugins/DSH-better-sidebar/src/client/sidebar.module.css.mjs
-	const css = ".vtXgCG_toggleCluster{z-index:55;flex-direction:row;gap:4px;display:flex;position:fixed;top:3px;right:10px}.vtXgCG_panel:not(.vtXgCG_panelHidden) .vtXgCG_tabBar{padding-right:72px}.vtXgCG_toggleButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;transition:background var(--ds-transition-duration-slow) var(--ds-ease-in-out), color var(--ds-transition-duration-slow) var(--ds-ease-in-out);background:0 0;border:none;border-radius:50%;justify-content:center;align-items:center;display:flex}.vtXgCG_toggleButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.vtXgCG_toggleButton:disabled{opacity:.4;cursor:default}.vtXgCG_panel{z-index:50;background:var(--dsw-specific-sidebar-fill);border-left:1px solid var(--dsw-alias-border-l2);transition:transform var(--ds-transition-duration-slow) var(--ds-ease-in-out), width var(--ds-transition-duration-slow) var(--ds-ease-in-out);flex-direction:column;display:flex;position:fixed;top:0;bottom:0;right:0}.vtXgCG_panelHidden{pointer-events:none;visibility:hidden;transition:transform var(--ds-transition-duration-slow) var(--ds-ease-in-out), width var(--ds-transition-duration-slow) var(--ds-ease-in-out), visibility 0s linear var(--ds-transition-duration-slow);transform:translate(102%)}.vtXgCG_panel[data-dragging]{transition:none}.vtXgCG_panelResize{cursor:col-resize;z-index:2;touch-action:none;width:8px;position:absolute;top:0;bottom:0;left:-4px}.vtXgCG_panelResizeActive{background:var(--dsw-alias-interactive-bg-hover-accent)}.vtXgCG_panelBody{flex:1;min-width:0;min-height:0;display:flex}.vtXgCG_bottomPanel{z-index:50;background:var(--dsw-specific-sidebar-fill);border-top:1px solid var(--dsw-alias-border-l2);transition:transform var(--ds-transition-duration-slow) var(--ds-ease-in-out), height var(--ds-transition-duration-slow) var(--ds-ease-in-out);flex-direction:column;display:flex;position:fixed;bottom:0}.vtXgCG_bottomPanelHidden{pointer-events:none;visibility:hidden;transition:transform var(--ds-transition-duration-slow) var(--ds-ease-in-out), height var(--ds-transition-duration-slow) var(--ds-ease-in-out), visibility 0s linear var(--ds-transition-duration-slow);transform:translateY(102%)}.vtXgCG_bottomPanel[data-dragging]{transition:none}.vtXgCG_bottomResize{cursor:row-resize;z-index:2;touch-action:none;height:8px;position:absolute;top:-4px;left:0;right:0}.vtXgCG_bottomResizeActive{background:var(--dsw-alias-interactive-bg-hover-accent)}.vtXgCG_bottomClose{z-index:4;width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex;position:absolute;top:3px;right:6px}.vtXgCG_bottomClose:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.vtXgCG_bottomPanel .vtXgCG_tabBar{padding-right:40px}body[data-dsh-title-bar-compat] .vtXgCG_toggleCluster{top:calc(var(--dsh-title-bar-strip,40px) + 3px)}body[data-dsh-title-bar-compat] .vtXgCG_panel{padding-top:var(--dsh-title-bar-strip,40px)}.vtXgCG_cornerHandle{z-index:52;cursor:nwse-resize;touch-action:none;width:12px;height:12px;position:fixed}.vtXgCG_cornerHandle:hover,.vtXgCG_cornerHandle[data-dragging]{background:var(--dsw-alias-interactive-bg-hover-accent)}.vtXgCG_iconButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex}.vtXgCG_iconButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.vtXgCG_iconButton:disabled{opacity:.4;cursor:default}.vtXgCG_workbench,.vtXgCG_split{flex:1;min-width:0;min-height:0;display:flex}.vtXgCG_splitRow{flex-direction:row}.vtXgCG_splitCol{flex-direction:column}.vtXgCG_splitChild{display:flex;position:relative;overflow:hidden}.vtXgCG_divider{z-index:3;touch-action:none;flex:none;position:relative}.vtXgCG_dividerRow:after,.vtXgCG_dividerCol:after{content:\"\";background:var(--dsw-alias-border-l2);transition:background var(--ds-transition-duration-slow) var(--ds-ease-in-out);position:absolute}.vtXgCG_dividerRow{cursor:col-resize;width:7px;margin:0 -2px}.vtXgCG_dividerRow:after{width:1px;top:0;bottom:0;left:50%;transform:translate(-50%)}.vtXgCG_dividerCol{cursor:row-resize;height:7px;margin:-2px 0}.vtXgCG_dividerCol:after{height:1px;top:50%;left:0;right:0;transform:translateY(-50%)}.vtXgCG_divider:hover:after,.vtXgCG_dividerActive:after{background:var(--dsw-alias-interactive-bg-hover-accent)}.vtXgCG_pane{background:var(--dsw-alias-bg-base);flex-direction:column;flex:1;min-width:0;min-height:0;display:flex;position:relative}.vtXgCG_paneDrop{outline:1px solid var(--dsw-alias-interactive-bg-hover-accent);outline-offset:-1px}.vtXgCG_dropOverlay{z-index:6;pointer-events:none;background:var(--dsw-alias-interactive-bg-hover-accent);opacity:.5;position:absolute}.vtXgCG_dropLeft{width:25%;top:0;bottom:0;left:0}.vtXgCG_dropRight{width:25%;top:0;bottom:0;right:0}.vtXgCG_dropUp{height:25%;top:0;left:0;right:0}.vtXgCG_dropDown{height:25%;bottom:0;left:0;right:0}.vtXgCG_dropCenter{outline:2px dashed var(--dsw-alias-interactive-bg-hover-accent);outline-offset:-2px;background:0 0;inset:25%}.vtXgCG_paneContent{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.vtXgCG_paneTab{flex-direction:column;flex:1;min-height:0;display:flex}.vtXgCG_paneTabHidden{display:none}.vtXgCG_paneEmptyCards{flex:1;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));align-content:start;gap:8px;min-height:0;padding:12px;display:grid;overflow:hidden}.vtXgCG_paneCard{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:0;color:var(--dsw-alias-label-secondary);font:var(--dsw-font-xxs-strong-12);cursor:pointer;text-align:center;border-radius:8px;flex-direction:column;justify-content:center;align-items:center;gap:6px;padding:12px 8px;display:flex}.vtXgCG_paneCard:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l2)}.vtXgCG_paneCard:disabled{opacity:.45;cursor:default}.vtXgCG_tabBar{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:stretch;height:34px;display:flex}.vtXgCG_tabBarDrop{outline:1px dashed var(--dsw-alias-interactive-bg-hover-accent);outline-offset:-1px}.vtXgCG_tabList{scrollbar-width:none;flex:1;min-width:0;display:flex;overflow-x:auto}.vtXgCG_tabList::-webkit-scrollbar{display:none}.vtXgCG_tab{min-width:64px;max-width:160px;font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-secondary);border-right:1px solid var(--dsw-alias-border-l1);cursor:pointer;user-select:none;background:0 0;flex:none;align-items:center;gap:4px;padding:0 4px 0 10px;display:flex}.vtXgCG_tab:hover{background:var(--dsw-alias-interactive-bg-hover)}.vtXgCG_tabActive{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-active)}.vtXgCG_tabTitle{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}.vtXgCG_tabBadge{min-width:16px;height:15px;font:var(--dsw-font-xxxs-strong-11);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-brand-primary);border-radius:8px;flex:none;justify-content:center;align-items:center;padding:0 4px;display:inline-flex}.vtXgCG_tabClose{width:18px;height:18px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:none;border-radius:4px;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex}.vtXgCG_tabClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.vtXgCG_tabBarPlus{background:var(--dsw-alias-bg-layer-1);width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;border:none;border-radius:5px;flex:none;justify-content:center;align-self:center;align-items:center;margin:0 6px;padding:0;display:inline-flex;position:sticky;right:0}.vtXgCG_tabBarPlus:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.vtXgCG_explorer{flex-direction:column;flex:1;min-height:0;display:flex}.vtXgCG_explorerHeader{flex:none;justify-content:space-between;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;display:flex}.vtXgCG_explorerRoot{font:var(--dsw-font-s-14);color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.vtXgCG_explorerBody{flex:1;min-height:0;padding:2px 6px 8px;overflow-y:auto}.vtXgCG_explorerRow{width:100%;height:34px;font:var(--dsw-font-s-14);color:var(--dsw-alias-label-primary);text-align:left;cursor:pointer;white-space:nowrap;animation:vtXgCG_dsh-row-in .15s var(--ds-ease-in-out);background:0 0;border:none;border-radius:8px;align-items:center;gap:6px;padding:0 8px;display:flex}.vtXgCG_explorerRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.vtXgCG_explorerDir{font:var(--dsw-font-s-strong-14)}.vtXgCG_explorerHidden{opacity:.45}.vtXgCG_explorerName{text-overflow:ellipsis;overflow:hidden}.vtXgCG_explorerRef{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);height:20px;color:var(--dsw-alias-label-tertiary);font:var(--dsw-font-xxxs-strong-11);cursor:pointer;border-radius:999px;flex:none;align-items:center;padding:0 8px;display:none}.vtXgCG_explorerRef:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.vtXgCG_explorerRow:hover .vtXgCG_explorerRef,.vtXgCG_explorerRow:focus-within .vtXgCG_explorerRef{display:inline-flex}.vtXgCG_explorerCopied{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary);flex:none}.vtXgCG_explorerError{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);cursor:default}@keyframes vtXgCG_dsh-row-in{0%{opacity:0}}.vtXgCG_explorerEmpty{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary);text-align:center;padding:16px}.vtXgCG_editor{flex-direction:column;flex:1;min-height:0;display:flex}.vtXgCG_editorHeader{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;align-items:center;gap:6px;padding:4px 8px;display:flex}.vtXgCG_editorTitle{min-width:0;font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;flex:1;overflow:hidden}.vtXgCG_editorStatus{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary)}.vtXgCG_editorStatusError{color:var(--dsw-alias-state-error-primary)}.vtXgCG_dirtyDot{background:var(--dsw-alias-state-warn-primary);border-radius:50%;flex:none;width:7px;height:7px}.vtXgCG_editorPlaceholder{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary);text-align:center;flex:1;justify-content:center;align-items:center;padding:16px;display:flex}.vtXgCG_orphanedType{opacity:.7;overflow-wrap:anywhere;margin-top:8px;font-size:12px;display:block}.vtXgCG_editorBinary{text-align:center;flex-direction:column;flex:1;justify-content:center;align-items:center;gap:12px;padding:24px 16px;display:flex}.vtXgCG_editorBinaryNotice{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary)}.vtXgCG_editorDownloadLink{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxs-strong-12);cursor:pointer;transition:background var(--ds-transition-duration-slow) var(--ds-ease-in-out), border-color var(--ds-transition-duration-slow) var(--ds-ease-in-out);border-radius:6px;align-items:center;gap:6px;padding:6px 14px;text-decoration:none;display:inline-flex}.vtXgCG_editorDownloadLink:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l2)}.vtXgCG_editorError{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);padding:12px 16px}.vtXgCG_editorBanner{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);flex:none;padding:4px 12px}.vtXgCG_sandboxStatus{font:var(--dsw-font-xxxs-11);flex:none;align-items:center;gap:8px;padding:4px 10px;display:flex}.vtXgCG_sandboxStatusOn{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border-bottom:1px solid var(--dsw-alias-border-l1)}.vtXgCG_sandboxStatusOff{color:var(--dsw-alias-state-error-primary);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);border-bottom:1px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 45%, transparent)}.vtXgCG_sandboxDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:6px;height:6px}.vtXgCG_sandboxStatusOff .vtXgCG_sandboxDot{background:var(--dsw-alias-state-error-primary)}.vtXgCG_sandboxStatusText{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}.vtXgCG_sandboxAction{border:1px solid var(--dsw-alias-border-l2);font:inherit;color:inherit;cursor:pointer;background:0 0;border-radius:6px;flex:none;padding:2px 8px}.vtXgCG_sandboxAction:hover{background:var(--dsw-alias-interactive-bg-hover)}.vtXgCG_editorHtml{background:var(--dsw-alias-bg-base);border:none;flex:1;width:100%;min-height:0}.vtXgCG_browser{flex-direction:column;flex:1;min-height:0;display:flex}.vtXgCG_browserBar{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;align-items:center;gap:4px;padding:6px 8px;display:flex}.vtXgCG_browserInput{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:0;height:28px;color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxs-12);border-radius:6px;flex:1;padding:0 10px}.vtXgCG_browserInput:focus{border-color:var(--dsw-alias-border-l2);outline:none}.vtXgCG_browserMessage{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);flex:none;padding:4px 12px}.vtXgCG_browserFrame{background:var(--dsw-alias-bg-base);border:none;flex:1;width:100%;min-height:0}.vtXgCG_browserStart{text-align:center;min-height:0;font:var(--dsw-font-xs-13);color:var(--dsw-alias-label-tertiary);flex:1;justify-content:center;align-items:center;padding:20px;display:flex}.vtXgCG_browserBlocked{text-align:center;min-height:0;color:var(--dsw-alias-state-warn-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:6px;padding:24px;display:flex}.vtXgCG_browserBlockedTitle{font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-primary)}.vtXgCG_browserBlockedDesc{max-width:280px;font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-secondary)}.vtXgCG_browserBlockedActions{gap:8px;margin-top:6px;display:flex}.vtXgCG_browserBlockedButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxxs-11);cursor:pointer;border-radius:6px;padding:4px 12px}.vtXgCG_browserBlockedButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.vtXgCG_editorCm{background:0 0;flex:1;min-height:0;overflow:hidden}.vtXgCG_editorCmHidden{display:none}.vtXgCG_editorCm .cm-editor{height:100%}.vtXgCG_editorCm .cm-editor.cm-focused{outline:none}.vtXgCG_editorModeToggle{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);border-radius:6px;flex:none;align-items:center;gap:2px;padding:2px;display:inline-flex}.vtXgCG_editorModeButton{color:var(--dsw-alias-label-tertiary);font:var(--dsw-font-xxxs-11);cursor:pointer;background:0 0;border:none;border-radius:4px;padding:2px 8px}.vtXgCG_editorModeButton:hover{color:var(--dsw-alias-label-primary)}.vtXgCG_editorModeActive{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}.vtXgCG_editorImageWrap{flex:1;justify-content:center;align-items:center;min-height:0;padding:12px;display:flex;overflow:auto}.vtXgCG_editorImage{object-fit:contain;max-width:100%;max-height:100%}.vtXgCG_editorMd{min-height:0;font:var(--dsw-font-xs-13);flex:1;padding:10px 14px;overflow-y:auto}.vtXgCG_selectionPopup{z-index:60;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);height:28px;color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxxs-strong-11);white-space:nowrap;cursor:pointer;border-radius:6px;align-items:center;padding:0 10px;display:inline-flex;position:fixed;transform:translate(-50%,calc(-100% - 8px))}.vtXgCG_selectionPopup:hover{background:var(--dsw-alias-interactive-bg-hover)}.vtXgCG_editorPdf{background:var(--dsw-alias-bg-base);flex-direction:column;flex:1;min-height:0;display:flex}.vtXgCG_editorPdfToolbar{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;justify-content:flex-end;padding:6px 8px;display:flex}.vtXgCG_editorPdfStage{flex:1;min-height:0;display:flex;position:relative}.vtXgCG_editorPdfFrame{background:var(--dsw-alias-bg-base);border:none;flex:1;width:100%;min-height:0}.vtXgCG_editorPdfFrameBlocked{pointer-events:none}.vtXgCG_editorPdfDragShield{z-index:4;pointer-events:none;background:0 0;position:absolute;inset:0}.vtXgCG_editorPdfDragShieldActive{pointer-events:auto}body[data-dsh-tab-dragging] .vtXgCG_editorPdfFrame{pointer-events:none!important}body[data-dsh-tab-dragging] .vtXgCG_editorPdfDragShield{pointer-events:auto!important}.vtXgCG_terminalWrap{background:var(--dsw-alias-bg-base);flex-direction:column;flex:1;min-height:0;display:flex;position:relative}.vtXgCG_terminal{flex:1;min-height:0;padding:6px 4px 6px 8px}.vtXgCG_terminal .xterm{height:100%}.vtXgCG_terminalBanner{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);flex-wrap:wrap;flex:none;align-items:center;gap:8px;padding:3px 10px;display:flex}.vtXgCG_terminalBannerUrl{word-break:break-all;opacity:.85;flex-basis:100%;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.vtXgCG_boundaryError{z-index:50;background:var(--dsw-alias-bg-layer-1);border-left:1px solid var(--dsw-alias-border-l2);font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);flex-direction:column;align-items:flex-start;gap:8px;padding:16px;display:flex;position:fixed;top:0;bottom:0;right:0;overflow:auto}.vtXgCG_terminalRetry{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font:var(--dsw-font-xxxs-strong-11);cursor:pointer;border-radius:999px;flex:none;padding:1px 8px}.vtXgCG_terminalRetry:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.vtXgCG_tabBoundaryError{min-height:0;font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);flex-direction:column;flex:1;align-items:flex-start;gap:8px;padding:12px 16px;display:flex;overflow:auto}.vtXgCG_git{flex-direction:column;flex:1;min-width:0;min-height:0;display:flex;overflow:hidden auto}.vtXgCG_gitHeader{flex:none;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;display:flex}.vtXgCG_gitBranchSelect{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;height:26px;color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxs-12);border-radius:6px;flex:1;padding:0 6px}.vtXgCG_gitSection{border-top:1px solid var(--dsw-alias-border-l1)}.vtXgCG_gitSectionHeader{font:var(--dsw-font-xxxs-strong-11);color:var(--dsw-alias-label-tertiary);text-transform:uppercase;justify-content:space-between;align-items:center;padding:6px 12px 4px;display:flex}.vtXgCG_gitLink{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-brand-primary);cursor:pointer;background:0 0;border:none;padding:0}.vtXgCG_gitLink:hover:not(:disabled){text-decoration:underline}.vtXgCG_gitLink:disabled{opacity:.4;cursor:default}.vtXgCG_gitRow{min-height:34px;animation:vtXgCG_dsh-row-in .15s var(--ds-ease-in-out);border-radius:8px;align-items:center;gap:6px;margin:0 6px;padding:0 8px;display:flex}.vtXgCG_gitRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.vtXgCG_gitRowSelected{background:var(--dsw-alias-interactive-bg-active)}.vtXgCG_gitRowMain{cursor:pointer;text-align:left;background:0 0;border:none;flex:1;align-items:center;gap:8px;min-width:0;padding:3px 0;display:flex}.vtXgCG_gitBadge{width:20px;height:16px;font:var(--dsw-font-xxxs-strong-11);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-radius:4px;flex:none;justify-content:center;align-items:center;display:inline-flex}.vtXgCG_gitName{text-overflow:ellipsis;white-space:nowrap;min-width:0;font:var(--dsw-font-s-14);color:var(--dsw-alias-label-primary);flex:1;overflow:hidden}.vtXgCG_gitEmpty{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary);padding:4px 12px 8px}.vtXgCG_gitPlaceholder{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary);text-align:center;padding:16px}.vtXgCG_gitError{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;padding:8px 12px}.vtXgCG_gitDiff{border-top:1px solid var(--dsw-alias-border-l1);padding:8px}.vtXgCG_gitDiffTab{flex-direction:column;flex:1;min-width:0;min-height:0;display:flex;overflow:hidden auto}.vtXgCG_gitDiffTabHeader{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;display:flex}.vtXgCG_gitDiffTabTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-primary);flex:1;overflow:hidden}.vtXgCG_gitDiffFile{align-items:baseline;gap:6px;padding:8px 2px 2px;display:flex}.vtXgCG_gitDiffFilePath{font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.vtXgCG_gitDiffFileOld{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary);text-overflow:ellipsis;white-space:nowrap;flex:none;max-width:40%;overflow:hidden}.vtXgCG_gitDiffFileTag{border:1px solid var(--dsw-alias-border-l2);font:var(--dsw-font-xxxs-strong-11);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:0 6px}.vtXgCG_gitDiffHunk{font:var(--dsw-font-markdown-code-block-small);color:var(--dsw-alias-label-tertiary);gap:8px;padding:3px 2px;display:flex}.vtXgCG_gitDiffHunkHeader{color:var(--dsw-alias-label-secondary);flex:none}.vtXgCG_gitDiffHunkSection{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.vtXgCG_gitDiffLine{font:var(--dsw-font-markdown-code-block-small);white-space:pre-wrap;overflow-wrap:anywhere;align-items:stretch;min-width:0;line-height:20px;display:flex}.vtXgCG_gitDiffNum{text-align:right;width:36px;color:var(--dsw-alias-label-tertiary);user-select:none;flex:none;padding-right:8px}.vtXgCG_gitDiffCode{flex:1;min-width:0;overflow:visible}.vtXgCG_gitDiffCtx{color:var(--dsw-alias-label-primary)}.vtXgCG_gitDiffDel{color:var(--dsw-alias-state-error-primary);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 12%, transparent)}.vtXgCG_gitDiffAdd{color:var(--dsw-alias-state-success-primary);background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 12%, transparent)}.vtXgCG_gitDiffMeta{padding-left:2px}.vtXgCG_gitDiffMetaText{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary);font-style:italic}.vtXgCG_gitDiffExpand{width:100%;font:var(--dsw-font-xxs-12);color:var(--dsw-alias-brand-primary);cursor:pointer;text-align:center;background:0 0;border:none;margin:4px 0;display:block}.vtXgCG_gitDiffExpand:hover{background:var(--dsw-alias-interactive-bg-hover)}.vtXgCG_gitConfirmDesc{font:var(--dsw-font-s-14);color:var(--dsw-alias-label-primary);white-space:pre-wrap;margin:0}.vtXgCG_gitCommit{border-top:1px solid var(--dsw-alias-border-l1);align-items:center;gap:6px;padding:8px 12px;display:flex}.vtXgCG_gitCommitInput{flex:1;min-width:0}.vtXgCG_gitCommitButton{background:var(--dsw-alias-button-primary-fill);height:26px;color:var(--dsw-alias-label-primary-inverted);font:var(--dsw-font-xxs-strong-12);cursor:pointer;border:none;border-radius:6px;flex:none;padding:0 12px}.vtXgCG_gitCommitButton:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.vtXgCG_gitCommitButton:disabled{opacity:.45;cursor:default}.vtXgCG_gitLogRow{cursor:pointer;border-radius:8px;flex-direction:column;gap:2px;padding:5px 12px;display:flex}.vtXgCG_gitLogRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.vtXgCG_gitLogLine1{align-items:baseline;gap:8px;min-width:0;display:flex}.vtXgCG_gitLogHash{font:var(--dsw-font-markdown-code-block-small);color:var(--dsw-alias-label-tertiary);flex:none}.vtXgCG_gitLogLine2{flex-wrap:wrap;align-items:center;gap:6px;min-width:0;display:flex}.vtXgCG_gitLogRef{border:1px solid var(--dsw-alias-border-l2);font:var(--dsw-font-xxxs-strong-11);color:var(--dsw-alias-brand-primary);white-space:nowrap;border-radius:999px;flex:none;padding:0 5px}.vtXgCG_gitLogSubject{text-overflow:ellipsis;white-space:nowrap;min-width:0;font:var(--dsw-font-s-14);color:var(--dsw-alias-label-primary);flex:1;overflow:hidden}.vtXgCG_gitLogMeta{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary)}.vtXgCG_gitLogMore{border:1px solid var(--dsw-alias-border-l2);width:calc(100% - 24px);font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;margin:4px 12px 8px;padding:6px 0;display:block}.vtXgCG_gitLogMore:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.vtXgCG_gitLogMore:disabled{opacity:.5;cursor:default}.vtXgCG_producedRow{flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0;display:flex}.vtXgCG_producedLabel{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary)}.vtXgCG_producedChip{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);max-width:200px;color:var(--dsw-alias-label-secondary);font:var(--dsw-font-xxs-12);cursor:pointer;border-radius:999px;align-items:center;gap:4px;padding:2px 8px;display:inline-flex;overflow:hidden}.vtXgCG_producedChip:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.vtXgCG_producedChip span{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.vtXgCG_producedMore{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary)}.vtXgCG_toggleButton:focus-visible,.vtXgCG_bottomClose:focus-visible,.vtXgCG_iconButton:focus-visible,.vtXgCG_tab:focus-visible,.vtXgCG_tabClose:focus-visible,.vtXgCG_tabBarPlus:focus-visible,.vtXgCG_paneCard:focus-visible,.vtXgCG_explorerRow:focus-visible,.vtXgCG_explorerRef:focus-visible,.vtXgCG_gitRowMain:focus-visible,.vtXgCG_gitLink:focus-visible,.vtXgCG_gitCommitButton:focus-visible,.vtXgCG_gitLogRow:focus-visible,.vtXgCG_gitLogMore:focus-visible,.vtXgCG_gitDiffExpand:focus-visible,.vtXgCG_terminalRetry:focus-visible,.vtXgCG_editorModeButton:focus-visible,.vtXgCG_editorDownloadLink:focus-visible,.vtXgCG_editorPptxButton:focus-visible,.vtXgCG_editorDocxZoomRange:focus-visible{outline:2px solid var(--dsw-alias-interactive-bg-hover-accent);outline-offset:-1px}@media (prefers-reduced-motion:reduce){.vtXgCG_panel,.vtXgCG_panelHidden,.vtXgCG_bottomPanel,.vtXgCG_bottomPanelHidden,.vtXgCG_toggleCluster,.vtXgCG_toggleButton,.vtXgCG_tab,.vtXgCG_tabBarPlus,.vtXgCG_paneCard,.vtXgCG_explorerRow,.vtXgCG_gitRow,.vtXgCG_divider,.vtXgCG_dividerRow:after,.vtXgCG_dividerCol:after{transition:none;animation:none}}@media (width<=767px){.vtXgCG_panel:not(.vtXgCG_panelHidden) .vtXgCG_tabBar{padding-right:40px}.vtXgCG_tab{min-width:48px;max-width:128px}}";
+	//#region \0dsh-css:/home/huangzy/tools/deepseek-harness/packages/selfuse/better-sidebar/src/client/sidebar.module.css.mjs
+	const css = ".IRArfW_toggleCluster{z-index:55;flex-direction:row;gap:4px;display:flex;position:fixed;top:3px;right:10px}.IRArfW_panel:not(.IRArfW_panelHidden) .IRArfW_tabBar{padding-right:72px}.IRArfW_toggleButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;transition:background var(--ds-transition-duration-slow) var(--ds-ease-in-out), color var(--ds-transition-duration-slow) var(--ds-ease-in-out);background:0 0;border:none;border-radius:50%;justify-content:center;align-items:center;display:flex}.IRArfW_toggleButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.IRArfW_toggleButton:disabled{opacity:.4;cursor:default}.IRArfW_panel{z-index:50;background:var(--dsw-specific-sidebar-fill);border-left:1px solid var(--dsw-alias-border-l2);transition:transform var(--ds-transition-duration-slow) var(--ds-ease-in-out), width var(--ds-transition-duration-slow) var(--ds-ease-in-out);flex-direction:column;display:flex;position:fixed;top:0;bottom:0;right:0}.IRArfW_panelHidden{pointer-events:none;visibility:hidden;transition:transform var(--ds-transition-duration-slow) var(--ds-ease-in-out), width var(--ds-transition-duration-slow) var(--ds-ease-in-out), visibility 0s linear var(--ds-transition-duration-slow);transform:translate(102%)}.IRArfW_panel[data-dragging]{transition:none}.IRArfW_panelResize{cursor:col-resize;z-index:2;touch-action:none;width:8px;position:absolute;top:0;bottom:0;left:-4px}.IRArfW_panelResizeActive{background:var(--dsw-alias-interactive-bg-hover-accent)}.IRArfW_panelBody{flex:1;min-width:0;min-height:0;display:flex}.IRArfW_bottomPanel{z-index:50;background:var(--dsw-specific-sidebar-fill);border-top:1px solid var(--dsw-alias-border-l2);transition:transform var(--ds-transition-duration-slow) var(--ds-ease-in-out), height var(--ds-transition-duration-slow) var(--ds-ease-in-out);flex-direction:column;display:flex;position:fixed;bottom:0}.IRArfW_bottomPanelHidden{pointer-events:none;visibility:hidden;transition:transform var(--ds-transition-duration-slow) var(--ds-ease-in-out), height var(--ds-transition-duration-slow) var(--ds-ease-in-out), visibility 0s linear var(--ds-transition-duration-slow);transform:translateY(102%)}.IRArfW_bottomPanel[data-dragging]{transition:none}.IRArfW_bottomResize{cursor:row-resize;z-index:2;touch-action:none;height:8px;position:absolute;top:-4px;left:0;right:0}.IRArfW_bottomResizeActive{background:var(--dsw-alias-interactive-bg-hover-accent)}.IRArfW_bottomClose{z-index:4;width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex;position:absolute;top:3px;right:6px}.IRArfW_bottomClose:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.IRArfW_bottomPanel .IRArfW_tabBar{padding-right:40px}body[data-dsh-title-bar-compat] .IRArfW_toggleCluster{top:calc(var(--dsh-title-bar-strip,40px) + 3px)}body[data-dsh-title-bar-compat] .IRArfW_panel{padding-top:var(--dsh-title-bar-strip,40px)}.IRArfW_cornerHandle{z-index:52;cursor:nwse-resize;touch-action:none;width:12px;height:12px;position:fixed}.IRArfW_cornerHandle:hover,.IRArfW_cornerHandle[data-dragging]{background:var(--dsw-alias-interactive-bg-hover-accent)}.IRArfW_iconButton{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex}.IRArfW_iconButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.IRArfW_iconButton:disabled{opacity:.4;cursor:default}.IRArfW_workbench,.IRArfW_split{flex:1;min-width:0;min-height:0;display:flex}.IRArfW_splitRow{flex-direction:row}.IRArfW_splitCol{flex-direction:column}.IRArfW_splitChild{display:flex;position:relative;overflow:hidden}.IRArfW_divider{z-index:3;touch-action:none;flex:none;position:relative}.IRArfW_dividerRow:after,.IRArfW_dividerCol:after{content:\"\";background:var(--dsw-alias-border-l2);transition:background var(--ds-transition-duration-slow) var(--ds-ease-in-out);position:absolute}.IRArfW_dividerRow{cursor:col-resize;width:7px;margin:0 -2px}.IRArfW_dividerRow:after{width:1px;top:0;bottom:0;left:50%;transform:translate(-50%)}.IRArfW_dividerCol{cursor:row-resize;height:7px;margin:-2px 0}.IRArfW_dividerCol:after{height:1px;top:50%;left:0;right:0;transform:translateY(-50%)}.IRArfW_divider:hover:after,.IRArfW_dividerActive:after{background:var(--dsw-alias-interactive-bg-hover-accent)}.IRArfW_pane{background:var(--dsw-alias-bg-base);flex-direction:column;flex:1;min-width:0;min-height:0;display:flex;position:relative}.IRArfW_paneDrop{outline:1px solid var(--dsw-alias-interactive-bg-hover-accent);outline-offset:-1px}.IRArfW_dropOverlay{z-index:6;pointer-events:none;background:var(--dsw-alias-interactive-bg-hover-accent);opacity:.5;position:absolute}.IRArfW_dropLeft{width:25%;top:0;bottom:0;left:0}.IRArfW_dropRight{width:25%;top:0;bottom:0;right:0}.IRArfW_dropUp{height:25%;top:0;left:0;right:0}.IRArfW_dropDown{height:25%;bottom:0;left:0;right:0}.IRArfW_dropCenter{outline:2px dashed var(--dsw-alias-interactive-bg-hover-accent);outline-offset:-2px;background:0 0;inset:25%}.IRArfW_paneContent{flex-direction:column;flex:1;min-height:0;display:flex;overflow:hidden}.IRArfW_paneTab{flex-direction:column;flex:1;min-height:0;display:flex}.IRArfW_paneTabHidden{display:none}.IRArfW_paneEmptyCards{flex:1;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));align-content:start;gap:8px;min-height:0;padding:12px;display:grid;overflow:hidden}.IRArfW_paneCard{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:0;color:var(--dsw-alias-label-secondary);font:var(--dsw-font-xxs-strong-12);cursor:pointer;text-align:center;border-radius:8px;flex-direction:column;justify-content:center;align-items:center;gap:6px;padding:12px 8px;display:flex}.IRArfW_paneCard:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-border-l2)}.IRArfW_paneCard:disabled{opacity:.45;cursor:default}.IRArfW_tabBar{border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);flex:none;align-items:stretch;height:34px;display:flex}.IRArfW_tabBarDrop{outline:1px dashed var(--dsw-alias-interactive-bg-hover-accent);outline-offset:-1px}.IRArfW_tabList{scrollbar-width:none;flex:1;min-width:0;display:flex;overflow-x:auto}.IRArfW_tabList::-webkit-scrollbar{display:none}.IRArfW_tab{min-width:64px;max-width:160px;font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-secondary);border-right:1px solid var(--dsw-alias-border-l1);cursor:pointer;user-select:none;background:0 0;flex:none;align-items:center;gap:4px;padding:0 4px 0 10px;display:flex}.IRArfW_tab:hover{background:var(--dsw-alias-interactive-bg-hover)}.IRArfW_tabActive{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-active)}.IRArfW_tabTitle{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}.IRArfW_tabBadge{min-width:16px;height:15px;font:var(--dsw-font-xxxs-strong-11);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-brand-primary);border-radius:8px;flex:none;justify-content:center;align-items:center;padding:0 4px;display:inline-flex}.IRArfW_tabClose{width:18px;height:18px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:none;border-radius:4px;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex}.IRArfW_tabClose:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.IRArfW_tabBarPlus{background:var(--dsw-alias-bg-layer-1);width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;border:none;border-radius:5px;flex:none;justify-content:center;align-self:center;align-items:center;margin:0 6px;padding:0;display:inline-flex;position:sticky;right:0}.IRArfW_tabBarPlus:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.IRArfW_explorer{flex-direction:column;flex:1;min-height:0;display:flex}.IRArfW_explorerHeader{flex:none;justify-content:space-between;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;display:flex}.IRArfW_explorerRoot{font:var(--dsw-font-s-14);color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.IRArfW_explorerBody{flex:1;min-height:0;padding:2px 6px 8px;overflow-y:auto}.IRArfW_explorerRow{width:100%;height:34px;font:var(--dsw-font-s-14);color:var(--dsw-alias-label-primary);text-align:left;cursor:pointer;white-space:nowrap;animation:IRArfW_dsh-row-in .15s var(--ds-ease-in-out);background:0 0;border:none;border-radius:8px;align-items:center;gap:6px;padding:0 8px;display:flex}.IRArfW_explorerRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.IRArfW_explorerDir{font:var(--dsw-font-s-strong-14)}.IRArfW_explorerHidden{opacity:.45}.IRArfW_explorerName{text-overflow:ellipsis;overflow:hidden}.IRArfW_explorerRef{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);height:20px;color:var(--dsw-alias-label-tertiary);font:var(--dsw-font-xxxs-strong-11);cursor:pointer;border-radius:999px;flex:none;align-items:center;padding:0 8px;display:none}.IRArfW_explorerRef:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.IRArfW_explorerRow:hover .IRArfW_explorerRef,.IRArfW_explorerRow:focus-within .IRArfW_explorerRef{display:inline-flex}.IRArfW_explorerCopied{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary);flex:none}.IRArfW_explorerError{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);cursor:default}@keyframes IRArfW_dsh-row-in{0%{opacity:0}}.IRArfW_explorerEmpty{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary);text-align:center;padding:16px}.IRArfW_editor{flex-direction:column;flex:1;min-height:0;display:flex}.IRArfW_editorHeader{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;align-items:center;gap:6px;padding:4px 8px;display:flex}.IRArfW_editorTitle{min-width:0;font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;flex:1;overflow:hidden}.IRArfW_editorStatus{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary)}.IRArfW_editorStatusError{color:var(--dsw-alias-state-error-primary)}.IRArfW_dirtyDot{background:var(--dsw-alias-state-warn-primary);border-radius:50%;flex:none;width:7px;height:7px}.IRArfW_editorPlaceholder{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary);text-align:center;flex:1;justify-content:center;align-items:center;padding:16px;display:flex}.IRArfW_orphanedType{opacity:.7;overflow-wrap:anywhere;margin-top:8px;font-size:12px;display:block}.IRArfW_editorBinary{text-align:center;flex-direction:column;flex:1;justify-content:center;align-items:center;gap:12px;padding:24px 16px;display:flex}.IRArfW_editorBinaryNotice{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary)}.IRArfW_editorDownloadLink{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxs-strong-12);cursor:pointer;transition:background var(--ds-transition-duration-slow) var(--ds-ease-in-out), border-color var(--ds-transition-duration-slow) var(--ds-ease-in-out);border-radius:6px;align-items:center;gap:6px;padding:6px 14px;text-decoration:none;display:inline-flex}.IRArfW_editorDownloadLink:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l2)}.IRArfW_editorError{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);padding:12px 16px}.IRArfW_editorBanner{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);flex:none;padding:4px 12px}.IRArfW_sandboxStatus{font:var(--dsw-font-xxxs-11);flex:none;align-items:center;gap:8px;padding:4px 10px;display:flex}.IRArfW_sandboxStatusOn{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border-bottom:1px solid var(--dsw-alias-border-l1)}.IRArfW_sandboxStatusOff{color:var(--dsw-alias-state-error-primary);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);border-bottom:1px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 45%, transparent)}.IRArfW_sandboxDot{background:var(--dsw-alias-state-success-primary);border-radius:50%;flex:none;width:6px;height:6px}.IRArfW_sandboxStatusOff .IRArfW_sandboxDot{background:var(--dsw-alias-state-error-primary)}.IRArfW_sandboxStatusText{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}.IRArfW_sandboxAction{border:1px solid var(--dsw-alias-border-l2);font:inherit;color:inherit;cursor:pointer;background:0 0;border-radius:6px;flex:none;padding:2px 8px}.IRArfW_sandboxAction:hover{background:var(--dsw-alias-interactive-bg-hover)}.IRArfW_editorHtml{background:var(--dsw-alias-bg-base);border:none;flex:1;width:100%;min-height:0}.IRArfW_browser{flex-direction:column;flex:1;min-height:0;display:flex}.IRArfW_browserBar{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;align-items:center;gap:4px;padding:6px 8px;display:flex}.IRArfW_browserInput{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);min-width:0;height:28px;color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxs-12);border-radius:6px;flex:1;padding:0 10px}.IRArfW_browserInput:focus{border-color:var(--dsw-alias-border-l2);outline:none}.IRArfW_browserMessage{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);flex:none;padding:4px 12px}.IRArfW_browserFrame{background:var(--dsw-alias-bg-base);border:none;flex:1;width:100%;min-height:0}.IRArfW_browserStart{text-align:center;min-height:0;font:var(--dsw-font-xs-13);color:var(--dsw-alias-label-tertiary);flex:1;justify-content:center;align-items:center;padding:20px;display:flex}.IRArfW_browserBlocked{text-align:center;min-height:0;color:var(--dsw-alias-state-warn-primary);flex-direction:column;flex:1;justify-content:center;align-items:center;gap:6px;padding:24px;display:flex}.IRArfW_browserBlockedTitle{font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-primary)}.IRArfW_browserBlockedDesc{max-width:280px;font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-secondary)}.IRArfW_browserBlockedActions{gap:8px;margin-top:6px;display:flex}.IRArfW_browserBlockedButton{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxxs-11);cursor:pointer;border-radius:6px;padding:4px 12px}.IRArfW_browserBlockedButton:hover{background:var(--dsw-alias-interactive-bg-hover)}.IRArfW_editorCm{background:0 0;flex:1;min-height:0;overflow:hidden}.IRArfW_editorCmHidden{display:none}.IRArfW_editorCm .cm-editor{height:100%}.IRArfW_editorCm .cm-editor.cm-focused{outline:none}.IRArfW_editorModeToggle{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);border-radius:6px;flex:none;align-items:center;gap:2px;padding:2px;display:inline-flex}.IRArfW_editorModeButton{color:var(--dsw-alias-label-tertiary);font:var(--dsw-font-xxxs-11);cursor:pointer;background:0 0;border:none;border-radius:4px;padding:2px 8px}.IRArfW_editorModeButton:hover{color:var(--dsw-alias-label-primary)}.IRArfW_editorModeActive{background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}.IRArfW_editorImageWrap{flex:1;justify-content:center;align-items:center;min-height:0;padding:12px;display:flex;overflow:auto}.IRArfW_editorImage{object-fit:contain;max-width:100%;max-height:100%}.IRArfW_editorMd{min-height:0;font:var(--dsw-font-xs-13);flex:1;padding:10px 14px;overflow-y:auto}.IRArfW_selectionPopup{z-index:60;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);height:28px;color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxxs-strong-11);white-space:nowrap;cursor:pointer;border-radius:6px;align-items:center;padding:0 10px;display:inline-flex;position:fixed;transform:translate(-50%,calc(-100% - 8px))}.IRArfW_selectionPopup:hover{background:var(--dsw-alias-interactive-bg-hover)}.IRArfW_editorPdf{background:var(--dsw-alias-bg-base);flex-direction:column;flex:1;min-height:0;display:flex}.IRArfW_editorPdfToolbar{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;justify-content:flex-end;padding:6px 8px;display:flex}.IRArfW_editorPdfStage{flex:1;min-height:0;display:flex;position:relative}.IRArfW_editorPdfFrame{background:var(--dsw-alias-bg-base);border:none;flex:1;width:100%;min-height:0}.IRArfW_editorPdfFrameBlocked{pointer-events:none}.IRArfW_editorPdfDragShield{z-index:4;pointer-events:none;background:0 0;position:absolute;inset:0}.IRArfW_editorPdfDragShieldActive{pointer-events:auto}body[data-dsh-tab-dragging] .IRArfW_editorPdfFrame{pointer-events:none!important}body[data-dsh-tab-dragging] .IRArfW_editorPdfDragShield{pointer-events:auto!important}.IRArfW_terminalWrap{background:var(--dsw-alias-bg-base);flex-direction:column;flex:1;min-height:0;display:flex;position:relative}.IRArfW_terminal{flex:1;min-height:0;padding:6px 4px 6px 8px}.IRArfW_terminal .xterm{height:100%}.IRArfW_terminalBanner{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-state-warn-label);background:var(--dsw-alias-state-warn-tertiary);flex-wrap:wrap;flex:none;align-items:center;gap:8px;padding:3px 10px;display:flex}.IRArfW_terminalBannerUrl{word-break:break-all;opacity:.85;flex-basis:100%;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.IRArfW_boundaryError{z-index:50;background:var(--dsw-alias-bg-layer-1);border-left:1px solid var(--dsw-alias-border-l2);font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);flex-direction:column;align-items:flex-start;gap:8px;padding:16px;display:flex;position:fixed;top:0;bottom:0;right:0;overflow:auto}.IRArfW_terminalRetry{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font:var(--dsw-font-xxxs-strong-11);cursor:pointer;border-radius:999px;flex:none;padding:1px 8px}.IRArfW_terminalRetry:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.IRArfW_tabBoundaryError{min-height:0;font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);flex-direction:column;flex:1;align-items:flex-start;gap:8px;padding:12px 16px;display:flex;overflow:auto}.IRArfW_git{flex-direction:column;flex:1;min-width:0;min-height:0;display:flex;overflow:hidden auto}.IRArfW_gitHeader{flex:none;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;display:flex}.IRArfW_gitBranchSelect{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base);min-width:0;height:26px;color:var(--dsw-alias-label-primary);font:var(--dsw-font-xxs-12);border-radius:6px;flex:1;padding:0 6px}.IRArfW_gitSection{border-top:1px solid var(--dsw-alias-border-l1)}.IRArfW_gitSectionHeader{font:var(--dsw-font-xxxs-strong-11);color:var(--dsw-alias-label-tertiary);text-transform:uppercase;justify-content:space-between;align-items:center;padding:6px 12px 4px;display:flex}.IRArfW_gitLink{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-brand-primary);cursor:pointer;background:0 0;border:none;padding:0}.IRArfW_gitLink:hover:not(:disabled){text-decoration:underline}.IRArfW_gitLink:disabled{opacity:.4;cursor:default}.IRArfW_gitRow{min-height:34px;animation:IRArfW_dsh-row-in .15s var(--ds-ease-in-out);border-radius:8px;align-items:center;gap:6px;margin:0 6px;padding:0 8px;display:flex}.IRArfW_gitRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.IRArfW_gitRowSelected{background:var(--dsw-alias-interactive-bg-active)}.IRArfW_gitRowMain{cursor:pointer;text-align:left;background:0 0;border:none;flex:1;align-items:center;gap:8px;min-width:0;padding:3px 0;display:flex}.IRArfW_gitBadge{width:20px;height:16px;font:var(--dsw-font-xxxs-strong-11);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-radius:4px;flex:none;justify-content:center;align-items:center;display:inline-flex}.IRArfW_gitName{text-overflow:ellipsis;white-space:nowrap;min-width:0;font:var(--dsw-font-s-14);color:var(--dsw-alias-label-primary);flex:1;overflow:hidden}.IRArfW_gitEmpty{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary);padding:4px 12px 8px}.IRArfW_gitPlaceholder{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary);text-align:center;padding:16px}.IRArfW_gitError{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;padding:8px 12px}.IRArfW_gitDiff{border-top:1px solid var(--dsw-alias-border-l1);padding:8px}.IRArfW_gitDiffTab{flex-direction:column;flex:1;min-width:0;min-height:0;display:flex;overflow:hidden auto}.IRArfW_gitDiffTabHeader{border-bottom:1px solid var(--dsw-alias-border-l1);flex:none;align-items:center;gap:8px;height:36px;padding:0 8px 0 12px;display:flex}.IRArfW_gitDiffTabTitle{text-overflow:ellipsis;white-space:nowrap;min-width:0;font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-primary);flex:1;overflow:hidden}.IRArfW_gitDiffFile{align-items:baseline;gap:6px;padding:8px 2px 2px;display:flex}.IRArfW_gitDiffFilePath{font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.IRArfW_gitDiffFileOld{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary);text-overflow:ellipsis;white-space:nowrap;flex:none;max-width:40%;overflow:hidden}.IRArfW_gitDiffFileTag{border:1px solid var(--dsw-alias-border-l2);font:var(--dsw-font-xxxs-strong-11);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:0 6px}.IRArfW_gitDiffHunk{font:var(--dsw-font-markdown-code-block-small);color:var(--dsw-alias-label-tertiary);gap:8px;padding:3px 2px;display:flex}.IRArfW_gitDiffHunkHeader{color:var(--dsw-alias-label-secondary);flex:none}.IRArfW_gitDiffHunkSection{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.IRArfW_gitDiffLine{font:var(--dsw-font-markdown-code-block-small);white-space:pre-wrap;overflow-wrap:anywhere;align-items:stretch;min-width:0;line-height:20px;display:flex}.IRArfW_gitDiffNum{text-align:right;width:36px;color:var(--dsw-alias-label-tertiary);user-select:none;flex:none;padding-right:8px}.IRArfW_gitDiffCode{flex:1;min-width:0;overflow:visible}.IRArfW_gitDiffCtx{color:var(--dsw-alias-label-primary)}.IRArfW_gitDiffDel{color:var(--dsw-alias-state-error-primary);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 12%, transparent)}.IRArfW_gitDiffAdd{color:var(--dsw-alias-state-success-primary);background:color-mix(in srgb, var(--dsw-alias-state-success-primary) 12%, transparent)}.IRArfW_gitDiffMeta{padding-left:2px}.IRArfW_gitDiffMetaText{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary);font-style:italic}.IRArfW_gitDiffExpand{width:100%;font:var(--dsw-font-xxs-12);color:var(--dsw-alias-brand-primary);cursor:pointer;text-align:center;background:0 0;border:none;margin:4px 0;display:block}.IRArfW_gitDiffExpand:hover{background:var(--dsw-alias-interactive-bg-hover)}.IRArfW_gitConfirmDesc{font:var(--dsw-font-s-14);color:var(--dsw-alias-label-primary);white-space:pre-wrap;margin:0}.IRArfW_gitCommit{border-top:1px solid var(--dsw-alias-border-l1);align-items:center;gap:6px;padding:8px 12px;display:flex}.IRArfW_gitCommitInput{flex:1;min-width:0}.IRArfW_gitCommitButton{background:var(--dsw-alias-button-primary-fill);height:26px;color:var(--dsw-alias-label-primary-inverted);font:var(--dsw-font-xxs-strong-12);cursor:pointer;border:none;border-radius:6px;flex:none;padding:0 12px}.IRArfW_gitCommitButton:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}.IRArfW_gitCommitButton:disabled{opacity:.45;cursor:default}.IRArfW_gitLogRow{cursor:pointer;border-radius:8px;flex-direction:column;gap:2px;padding:5px 12px;display:flex}.IRArfW_gitLogRow:hover{background:var(--dsw-alias-interactive-bg-hover)}.IRArfW_gitLogLine1{align-items:baseline;gap:8px;min-width:0;display:flex}.IRArfW_gitLogHash{font:var(--dsw-font-markdown-code-block-small);color:var(--dsw-alias-label-tertiary);flex:none}.IRArfW_gitLogLine2{flex-wrap:wrap;align-items:center;gap:6px;min-width:0;display:flex}.IRArfW_gitLogRef{border:1px solid var(--dsw-alias-border-l2);font:var(--dsw-font-xxxs-strong-11);color:var(--dsw-alias-brand-primary);white-space:nowrap;border-radius:999px;flex:none;padding:0 5px}.IRArfW_gitLogSubject{text-overflow:ellipsis;white-space:nowrap;min-width:0;font:var(--dsw-font-s-14);color:var(--dsw-alias-label-primary);flex:1;overflow:hidden}.IRArfW_gitLogMeta{font:var(--dsw-font-xxxs-11);color:var(--dsw-alias-label-tertiary)}.IRArfW_gitLogMore{border:1px solid var(--dsw-alias-border-l2);width:calc(100% - 24px);font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border-radius:6px;margin:4px 12px 8px;padding:6px 0;display:block}.IRArfW_gitLogMore:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.IRArfW_gitLogMore:disabled{opacity:.5;cursor:default}.IRArfW_producedRow{flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0;display:flex}.IRArfW_producedLabel{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary)}.IRArfW_producedChip{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);max-width:200px;color:var(--dsw-alias-label-secondary);font:var(--dsw-font-xxs-12);cursor:pointer;border-radius:999px;align-items:center;gap:4px;padding:2px 8px;display:inline-flex;overflow:hidden}.IRArfW_producedChip:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.IRArfW_producedChip span{text-overflow:ellipsis;white-space:nowrap;overflow:hidden}.IRArfW_producedMore{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary)}.IRArfW_toggleButton:focus-visible,.IRArfW_bottomClose:focus-visible,.IRArfW_iconButton:focus-visible,.IRArfW_tab:focus-visible,.IRArfW_tabClose:focus-visible,.IRArfW_tabBarPlus:focus-visible,.IRArfW_paneCard:focus-visible,.IRArfW_explorerRow:focus-visible,.IRArfW_explorerRef:focus-visible,.IRArfW_gitRowMain:focus-visible,.IRArfW_gitLink:focus-visible,.IRArfW_gitCommitButton:focus-visible,.IRArfW_gitLogRow:focus-visible,.IRArfW_gitLogMore:focus-visible,.IRArfW_gitDiffExpand:focus-visible,.IRArfW_terminalRetry:focus-visible,.IRArfW_editorModeButton:focus-visible,.IRArfW_editorDownloadLink:focus-visible,.IRArfW_editorPptxButton:focus-visible,.IRArfW_editorDocxZoomRange:focus-visible{outline:2px solid var(--dsw-alias-interactive-bg-hover-accent);outline-offset:-1px}@media (prefers-reduced-motion:reduce){.IRArfW_panel,.IRArfW_panelHidden,.IRArfW_bottomPanel,.IRArfW_bottomPanelHidden,.IRArfW_toggleCluster,.IRArfW_toggleButton,.IRArfW_tab,.IRArfW_tabBarPlus,.IRArfW_paneCard,.IRArfW_explorerRow,.IRArfW_gitRow,.IRArfW_divider,.IRArfW_dividerRow:after,.IRArfW_dividerCol:after{transition:none;animation:none}}@media (width<=767px){.IRArfW_panel:not(.IRArfW_panelHidden) .IRArfW_tabBar{padding-right:40px}.IRArfW_tab{min-width:48px;max-width:128px}}";
 	const tagId = "@dsh-selfuse/better-sidebar/sidebar.module.css";
 	if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
 		const tag = document.createElement("style");
@@ -32099,170 +31683,170 @@ globalThis.__dshChunks__["editor"] = (require) => {
 		document.head.appendChild(tag);
 	}
 	var sidebar_module_css_default = {
-		"tabBar": "vtXgCG_tabBar",
-		"panel": "vtXgCG_panel",
-		"gitSection": "vtXgCG_gitSection",
-		"gitDiffExpand": "vtXgCG_gitDiffExpand",
-		"sandboxStatus": "vtXgCG_sandboxStatus",
-		"toggleButton": "vtXgCG_toggleButton",
-		"gitDiffMetaText": "vtXgCG_gitDiffMetaText",
-		"gitBranchSelect": "vtXgCG_gitBranchSelect",
-		"panelResize": "vtXgCG_panelResize",
-		"explorerBody": "vtXgCG_explorerBody",
-		"editorBanner": "vtXgCG_editorBanner",
-		"editorPdfStage": "vtXgCG_editorPdfStage",
-		"editorModeToggle": "vtXgCG_editorModeToggle",
-		"editorPdfDragShieldActive": "vtXgCG_editorPdfDragShieldActive",
-		"selectionPopup": "vtXgCG_selectionPopup",
-		"panelResizeActive": "vtXgCG_panelResizeActive",
-		"explorerDir": "vtXgCG_explorerDir",
-		"editorPdfToolbar": "vtXgCG_editorPdfToolbar",
-		"bottomClose": "vtXgCG_bottomClose",
-		"workbench": "vtXgCG_workbench",
-		"bottomPanelHidden": "vtXgCG_bottomPanelHidden",
-		"gitCommit": "vtXgCG_gitCommit",
-		"dividerActive": "vtXgCG_dividerActive",
-		"sandboxAction": "vtXgCG_sandboxAction",
-		"editorTitle": "vtXgCG_editorTitle",
-		"dividerRow": "vtXgCG_dividerRow",
-		"tabBadge": "vtXgCG_tabBadge",
-		"terminalRetry": "vtXgCG_terminalRetry",
-		"explorerRoot": "vtXgCG_explorerRoot",
-		"paneContent": "vtXgCG_paneContent",
-		"editorStatusError": "vtXgCG_editorStatusError",
-		"browserBlocked": "vtXgCG_browserBlocked",
-		"explorerError": "vtXgCG_explorerError",
-		"browserBlockedButton": "vtXgCG_browserBlockedButton",
-		"sandboxStatusText": "vtXgCG_sandboxStatusText",
-		"editorMd": "vtXgCG_editorMd",
-		"editorImage": "vtXgCG_editorImage",
-		"editorStatus": "vtXgCG_editorStatus",
-		"bottomPanel": "vtXgCG_bottomPanel",
-		"editorHtml": "vtXgCG_editorHtml",
-		"gitError": "vtXgCG_gitError",
-		"gitCommitButton": "vtXgCG_gitCommitButton",
-		"iconButton": "vtXgCG_iconButton",
-		"paneCard": "vtXgCG_paneCard",
-		"tab": "vtXgCG_tab",
-		"browserBlockedTitle": "vtXgCG_browserBlockedTitle",
-		"gitCommitInput": "vtXgCG_gitCommitInput",
-		"dividerCol": "vtXgCG_dividerCol",
-		"git": "vtXgCG_git",
-		"gitDiffFileTag": "vtXgCG_gitDiffFileTag",
-		"editorPptxButton": "vtXgCG_editorPptxButton",
-		"sandboxDot": "vtXgCG_sandboxDot",
-		"gitLogRow": "vtXgCG_gitLogRow",
-		"browserFrame": "vtXgCG_browserFrame",
-		"gitName": "vtXgCG_gitName",
-		"paneEmptyCards": "vtXgCG_paneEmptyCards",
-		"gitDiffMeta": "vtXgCG_gitDiffMeta",
-		"explorerName": "vtXgCG_explorerName",
-		"editorImageWrap": "vtXgCG_editorImageWrap",
-		"editor": "vtXgCG_editor",
-		"browserBar": "vtXgCG_browserBar",
-		"explorer": "vtXgCG_explorer",
-		"dropOverlay": "vtXgCG_dropOverlay",
-		"editorModeActive": "vtXgCG_editorModeActive",
-		"browserStart": "vtXgCG_browserStart",
-		"bottomResize": "vtXgCG_bottomResize",
-		"gitDiffDel": "vtXgCG_gitDiffDel",
-		"panelHidden": "vtXgCG_panelHidden",
-		"dirtyDot": "vtXgCG_dirtyDot",
-		"explorerHeader": "vtXgCG_explorerHeader",
-		"dsh-row-in": "vtXgCG_dsh-row-in",
-		"editorBinary": "vtXgCG_editorBinary",
-		"editorPdfFrameBlocked": "vtXgCG_editorPdfFrameBlocked",
-		"gitHeader": "vtXgCG_gitHeader",
-		"gitEmpty": "vtXgCG_gitEmpty",
-		"gitPlaceholder": "vtXgCG_gitPlaceholder",
-		"gitDiffHunkHeader": "vtXgCG_gitDiffHunkHeader",
-		"editorHeader": "vtXgCG_editorHeader",
-		"editorPdfFrame": "vtXgCG_editorPdfFrame",
-		"gitDiffFilePath": "vtXgCG_gitDiffFilePath",
-		"gitDiffHunk": "vtXgCG_gitDiffHunk",
-		"editorPdfDragShield": "vtXgCG_editorPdfDragShield",
-		"browserInput": "vtXgCG_browserInput",
-		"gitSectionHeader": "vtXgCG_gitSectionHeader",
-		"gitDiffFileOld": "vtXgCG_gitDiffFileOld",
-		"gitDiffTabTitle": "vtXgCG_gitDiffTabTitle",
-		"gitLogLine2": "vtXgCG_gitLogLine2",
-		"producedRow": "vtXgCG_producedRow",
-		"sandboxStatusOff": "vtXgCG_sandboxStatusOff",
-		"boundaryError": "vtXgCG_boundaryError",
-		"editorDocxZoomRange": "vtXgCG_editorDocxZoomRange",
-		"cornerHandle": "vtXgCG_cornerHandle",
-		"dropLeft": "vtXgCG_dropLeft",
-		"explorerHidden": "vtXgCG_explorerHidden",
-		"editorModeButton": "vtXgCG_editorModeButton",
-		"orphanedType": "vtXgCG_orphanedType",
-		"gitDiffNum": "vtXgCG_gitDiffNum",
-		"tabClose": "vtXgCG_tabClose",
-		"gitConfirmDesc": "vtXgCG_gitConfirmDesc",
-		"tabBoundaryError": "vtXgCG_tabBoundaryError",
-		"gitRow": "vtXgCG_gitRow",
-		"gitLogMore": "vtXgCG_gitLogMore",
-		"pane": "vtXgCG_pane",
-		"tabBarDrop": "vtXgCG_tabBarDrop",
-		"paneDrop": "vtXgCG_paneDrop",
-		"editorBinaryNotice": "vtXgCG_editorBinaryNotice",
-		"editorDownloadLink": "vtXgCG_editorDownloadLink",
-		"gitDiffTabHeader": "vtXgCG_gitDiffTabHeader",
-		"tabBarPlus": "vtXgCG_tabBarPlus",
-		"gitDiffHunkSection": "vtXgCG_gitDiffHunkSection",
-		"editorPdf": "vtXgCG_editorPdf",
-		"gitDiff": "vtXgCG_gitDiff",
-		"producedChip": "vtXgCG_producedChip",
-		"split": "vtXgCG_split",
-		"explorerRow": "vtXgCG_explorerRow",
-		"gitLink": "vtXgCG_gitLink",
-		"explorerRef": "vtXgCG_explorerRef",
-		"gitDiffLine": "vtXgCG_gitDiffLine",
-		"producedMore": "vtXgCG_producedMore",
-		"dropUp": "vtXgCG_dropUp",
-		"terminalWrap": "vtXgCG_terminalWrap",
-		"bottomResizeActive": "vtXgCG_bottomResizeActive",
-		"tabActive": "vtXgCG_tabActive",
-		"splitRow": "vtXgCG_splitRow",
-		"tabTitle": "vtXgCG_tabTitle",
-		"sandboxStatusOn": "vtXgCG_sandboxStatusOn",
-		"gitLogHash": "vtXgCG_gitLogHash",
-		"browserBlockedActions": "vtXgCG_browserBlockedActions",
-		"gitDiffAdd": "vtXgCG_gitDiffAdd",
-		"terminalBanner": "vtXgCG_terminalBanner",
-		"paneTabHidden": "vtXgCG_paneTabHidden",
-		"explorerCopied": "vtXgCG_explorerCopied",
-		"panelBody": "vtXgCG_panelBody",
-		"explorerEmpty": "vtXgCG_explorerEmpty",
-		"browser": "vtXgCG_browser",
-		"splitChild": "vtXgCG_splitChild",
-		"gitDiffTab": "vtXgCG_gitDiffTab",
-		"gitBadge": "vtXgCG_gitBadge",
-		"divider": "vtXgCG_divider",
-		"producedLabel": "vtXgCG_producedLabel",
-		"tabList": "vtXgCG_tabList",
-		"gitLogSubject": "vtXgCG_gitLogSubject",
-		"gitLogRef": "vtXgCG_gitLogRef",
-		"terminal": "vtXgCG_terminal",
-		"gitDiffCtx": "vtXgCG_gitDiffCtx",
-		"editorCmHidden": "vtXgCG_editorCmHidden",
-		"gitLogMeta": "vtXgCG_gitLogMeta",
-		"browserBlockedDesc": "vtXgCG_browserBlockedDesc",
-		"paneTab": "vtXgCG_paneTab",
-		"gitRowSelected": "vtXgCG_gitRowSelected",
-		"terminalBannerUrl": "vtXgCG_terminalBannerUrl",
-		"dropCenter": "vtXgCG_dropCenter",
-		"toggleCluster": "vtXgCG_toggleCluster",
-		"gitRowMain": "vtXgCG_gitRowMain",
-		"browserMessage": "vtXgCG_browserMessage",
-		"editorError": "vtXgCG_editorError",
-		"splitCol": "vtXgCG_splitCol",
-		"gitDiffFile": "vtXgCG_gitDiffFile",
-		"gitDiffCode": "vtXgCG_gitDiffCode",
-		"gitLogLine1": "vtXgCG_gitLogLine1",
-		"dropDown": "vtXgCG_dropDown",
-		"dropRight": "vtXgCG_dropRight",
-		"editorPlaceholder": "vtXgCG_editorPlaceholder",
-		"editorCm": "vtXgCG_editorCm"
+		"browserBlockedActions": "IRArfW_browserBlockedActions",
+		"panelBody": "IRArfW_panelBody",
+		"bottomPanelHidden": "IRArfW_bottomPanelHidden",
+		"panel": "IRArfW_panel",
+		"editorDocxZoomRange": "IRArfW_editorDocxZoomRange",
+		"browserBlockedTitle": "IRArfW_browserBlockedTitle",
+		"paneEmptyCards": "IRArfW_paneEmptyCards",
+		"tabClose": "IRArfW_tabClose",
+		"tabBadge": "IRArfW_tabBadge",
+		"explorerEmpty": "IRArfW_explorerEmpty",
+		"dropRight": "IRArfW_dropRight",
+		"explorer": "IRArfW_explorer",
+		"dividerActive": "IRArfW_dividerActive",
+		"editorPdfDragShieldActive": "IRArfW_editorPdfDragShieldActive",
+		"editorCm": "IRArfW_editorCm",
+		"splitRow": "IRArfW_splitRow",
+		"explorerCopied": "IRArfW_explorerCopied",
+		"terminalBannerUrl": "IRArfW_terminalBannerUrl",
+		"editorPdfStage": "IRArfW_editorPdfStage",
+		"gitRowSelected": "IRArfW_gitRowSelected",
+		"gitDiffTabTitle": "IRArfW_gitDiffTabTitle",
+		"gitDiffLine": "IRArfW_gitDiffLine",
+		"explorerName": "IRArfW_explorerName",
+		"editorBinaryNotice": "IRArfW_editorBinaryNotice",
+		"terminal": "IRArfW_terminal",
+		"pane": "IRArfW_pane",
+		"gitLogLine1": "IRArfW_gitLogLine1",
+		"producedChip": "IRArfW_producedChip",
+		"dropCenter": "IRArfW_dropCenter",
+		"dividerCol": "IRArfW_dividerCol",
+		"sandboxStatusText": "IRArfW_sandboxStatusText",
+		"git": "IRArfW_git",
+		"bottomPanel": "IRArfW_bottomPanel",
+		"gitCommitInput": "IRArfW_gitCommitInput",
+		"editorMd": "IRArfW_editorMd",
+		"dropLeft": "IRArfW_dropLeft",
+		"terminalRetry": "IRArfW_terminalRetry",
+		"splitCol": "IRArfW_splitCol",
+		"dropOverlay": "IRArfW_dropOverlay",
+		"editorStatusError": "IRArfW_editorStatusError",
+		"gitBadge": "IRArfW_gitBadge",
+		"gitLogMeta": "IRArfW_gitLogMeta",
+		"explorerRef": "IRArfW_explorerRef",
+		"tabList": "IRArfW_tabList",
+		"editorPdfFrame": "IRArfW_editorPdfFrame",
+		"producedMore": "IRArfW_producedMore",
+		"gitSection": "IRArfW_gitSection",
+		"cornerHandle": "IRArfW_cornerHandle",
+		"editorStatus": "IRArfW_editorStatus",
+		"gitDiffMetaText": "IRArfW_gitDiffMetaText",
+		"gitDiffFile": "IRArfW_gitDiffFile",
+		"editorBinary": "IRArfW_editorBinary",
+		"editorTitle": "IRArfW_editorTitle",
+		"editorModeButton": "IRArfW_editorModeButton",
+		"split": "IRArfW_split",
+		"browserMessage": "IRArfW_browserMessage",
+		"browserBlockedDesc": "IRArfW_browserBlockedDesc",
+		"explorerError": "IRArfW_explorerError",
+		"editor": "IRArfW_editor",
+		"sandboxStatusOn": "IRArfW_sandboxStatusOn",
+		"browserBlockedButton": "IRArfW_browserBlockedButton",
+		"explorerRoot": "IRArfW_explorerRoot",
+		"tabBarDrop": "IRArfW_tabBarDrop",
+		"gitDiffExpand": "IRArfW_gitDiffExpand",
+		"gitLogHash": "IRArfW_gitLogHash",
+		"iconButton": "IRArfW_iconButton",
+		"gitHeader": "IRArfW_gitHeader",
+		"dropDown": "IRArfW_dropDown",
+		"producedLabel": "IRArfW_producedLabel",
+		"tab": "IRArfW_tab",
+		"terminalWrap": "IRArfW_terminalWrap",
+		"gitDiffFilePath": "IRArfW_gitDiffFilePath",
+		"editorImageWrap": "IRArfW_editorImageWrap",
+		"editorPdfFrameBlocked": "IRArfW_editorPdfFrameBlocked",
+		"gitLogRow": "IRArfW_gitLogRow",
+		"boundaryError": "IRArfW_boundaryError",
+		"panelResizeActive": "IRArfW_panelResizeActive",
+		"editorPdfDragShield": "IRArfW_editorPdfDragShield",
+		"gitDiffFileOld": "IRArfW_gitDiffFileOld",
+		"explorerBody": "IRArfW_explorerBody",
+		"bottomClose": "IRArfW_bottomClose",
+		"dsh-row-in": "IRArfW_dsh-row-in",
+		"paneContent": "IRArfW_paneContent",
+		"sandboxAction": "IRArfW_sandboxAction",
+		"gitDiffHunkSection": "IRArfW_gitDiffHunkSection",
+		"tabBar": "IRArfW_tabBar",
+		"dividerRow": "IRArfW_dividerRow",
+		"gitConfirmDesc": "IRArfW_gitConfirmDesc",
+		"gitLogSubject": "IRArfW_gitLogSubject",
+		"explorerHidden": "IRArfW_explorerHidden",
+		"editorPlaceholder": "IRArfW_editorPlaceholder",
+		"gitLogLine2": "IRArfW_gitLogLine2",
+		"sandboxStatusOff": "IRArfW_sandboxStatusOff",
+		"browserBlocked": "IRArfW_browserBlocked",
+		"selectionPopup": "IRArfW_selectionPopup",
+		"gitDiffFileTag": "IRArfW_gitDiffFileTag",
+		"gitCommitButton": "IRArfW_gitCommitButton",
+		"toggleCluster": "IRArfW_toggleCluster",
+		"dirtyDot": "IRArfW_dirtyDot",
+		"gitBranchSelect": "IRArfW_gitBranchSelect",
+		"gitName": "IRArfW_gitName",
+		"editorDownloadLink": "IRArfW_editorDownloadLink",
+		"gitDiff": "IRArfW_gitDiff",
+		"explorerRow": "IRArfW_explorerRow",
+		"splitChild": "IRArfW_splitChild",
+		"divider": "IRArfW_divider",
+		"paneTab": "IRArfW_paneTab",
+		"editorBanner": "IRArfW_editorBanner",
+		"editorHtml": "IRArfW_editorHtml",
+		"editorModeToggle": "IRArfW_editorModeToggle",
+		"gitSectionHeader": "IRArfW_gitSectionHeader",
+		"tabBarPlus": "IRArfW_tabBarPlus",
+		"browserInput": "IRArfW_browserInput",
+		"editorCmHidden": "IRArfW_editorCmHidden",
+		"dropUp": "IRArfW_dropUp",
+		"sandboxStatus": "IRArfW_sandboxStatus",
+		"paneDrop": "IRArfW_paneDrop",
+		"tabTitle": "IRArfW_tabTitle",
+		"editorError": "IRArfW_editorError",
+		"editorImage": "IRArfW_editorImage",
+		"editorPdf": "IRArfW_editorPdf",
+		"browserFrame": "IRArfW_browserFrame",
+		"tabActive": "IRArfW_tabActive",
+		"terminalBanner": "IRArfW_terminalBanner",
+		"gitDiffHunkHeader": "IRArfW_gitDiffHunkHeader",
+		"gitDiffNum": "IRArfW_gitDiffNum",
+		"explorerHeader": "IRArfW_explorerHeader",
+		"editorHeader": "IRArfW_editorHeader",
+		"editorPdfToolbar": "IRArfW_editorPdfToolbar",
+		"gitDiffTab": "IRArfW_gitDiffTab",
+		"panelHidden": "IRArfW_panelHidden",
+		"browser": "IRArfW_browser",
+		"gitLink": "IRArfW_gitLink",
+		"panelResize": "IRArfW_panelResize",
+		"gitEmpty": "IRArfW_gitEmpty",
+		"gitDiffTabHeader": "IRArfW_gitDiffTabHeader",
+		"workbench": "IRArfW_workbench",
+		"gitCommit": "IRArfW_gitCommit",
+		"producedRow": "IRArfW_producedRow",
+		"bottomResizeActive": "IRArfW_bottomResizeActive",
+		"editorPptxButton": "IRArfW_editorPptxButton",
+		"toggleButton": "IRArfW_toggleButton",
+		"tabBoundaryError": "IRArfW_tabBoundaryError",
+		"gitRow": "IRArfW_gitRow",
+		"gitPlaceholder": "IRArfW_gitPlaceholder",
+		"gitDiffCode": "IRArfW_gitDiffCode",
+		"gitDiffAdd": "IRArfW_gitDiffAdd",
+		"editorModeActive": "IRArfW_editorModeActive",
+		"gitDiffMeta": "IRArfW_gitDiffMeta",
+		"bottomResize": "IRArfW_bottomResize",
+		"explorerDir": "IRArfW_explorerDir",
+		"browserBar": "IRArfW_browserBar",
+		"gitDiffCtx": "IRArfW_gitDiffCtx",
+		"gitError": "IRArfW_gitError",
+		"orphanedType": "IRArfW_orphanedType",
+		"paneTabHidden": "IRArfW_paneTabHidden",
+		"gitLogRef": "IRArfW_gitLogRef",
+		"browserStart": "IRArfW_browserStart",
+		"gitDiffDel": "IRArfW_gitDiffDel",
+		"gitLogMore": "IRArfW_gitLogMore",
+		"paneCard": "IRArfW_paneCard",
+		"sandboxDot": "IRArfW_sandboxDot",
+		"gitRowMain": "IRArfW_gitRowMain",
+		"gitDiffHunk": "IRArfW_gitDiffHunk"
 	};
 	//#endregion
 	//#region src/client/SandboxStatusBar.tsx

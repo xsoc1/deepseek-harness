@@ -10,7 +10,7 @@
  *     (the same `workspace.create` / `session.create` calls the UI makes),
  *     so the sidebar has a real session to render;
  *  2. loads the page in headless Chromium and asserts the shell and the
- *     plugin's `[data-@dsh-selfuse/better-sidebar]` host mount;
+ *     plugin's `[data-dsh-better-sidebar]` host mount;
  *  3. asserts the plugin's crash markers never appear (no RenderBoundary /
  *     fail() strips, no `pageerror`, no plugin-prefixed console errors);
  *  4. sweeps every built-in tab (Explorer / Source Control / Tasks /
@@ -90,10 +90,10 @@ test('plugin mounts into the DSH shell and survives a built-in tab sweep', async
   })
 
   // Load the shell. The app renders into #root; the plugin appends its own
-  // [data-@dsh-selfuse/better-sidebar] host once its client half activates.
+  // [data-dsh-better-sidebar] host once its client half activates.
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
   await expect(page.locator('#root > *')).not.toHaveCount(0, { timeout: 90_000 })
-  const sidebar = page.locator('[data-@dsh-selfuse/better-sidebar]')
+  const sidebar = page.locator('[data-dsh-better-sidebar]')
   await expect(sidebar).toBeAttached({ timeout: 90_000 })
 
   // A keyless boot stacks onboarding takeovers that mask the whole shell: a

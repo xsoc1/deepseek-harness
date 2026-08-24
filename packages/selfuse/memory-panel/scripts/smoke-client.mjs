@@ -29,7 +29,7 @@ const fakeReact = {
 await import(new URL('../lib/client.js', import.meta.url).href)
 
 assert.ok(handoff, 'factory 应通过 window.__ModuleLoader__.load 注册')
-assert.equal(handoff.id, 'dsh-memory-panel')
+assert.equal(handoff.id, '@dsh-selfuse/memory-panel')
 
 let requireCalls = []
 const exportsObj = handoff.factory((spec) => {

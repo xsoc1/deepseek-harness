@@ -7,7 +7,7 @@
  * —— 纯本地文件记忆，离线可用，不依赖任何云端服务或 LLM。
  */
 var module = { exports: {} }; var exports = module.exports;
-window.__ModuleLoader__.load({ id: 'dsh-memory-panel', factory: (require) => {
+window.__ModuleLoader__.load({ id: '@dsh-selfuse/memory-panel', factory: (require) => {
 
   var React = require('react');
   var useState = React.useState;

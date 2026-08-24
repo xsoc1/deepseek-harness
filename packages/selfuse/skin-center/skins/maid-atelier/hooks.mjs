@@ -41,7 +41,7 @@ const SETTINGS_MASK_SELECTOR = "[role='presentation'] > [class*='mask']"
 const ACTIVE_CONVERSATION_SELECTOR = "[data-phase='active']"
 const ACTIVE_CHAT_SELECTOR = `${ACTIVE_CONVERSATION_SELECTOR} [data-chat-flow]`
 const WORKSPACE_SELECTOR = "header [role='tablist']"
-const BETTER_SIDEBAR_SELECTOR = '[data-@dsh-selfuse/better-sidebar]'
+const BETTER_SIDEBAR_SELECTOR = '[data-dsh-better-sidebar]'
 const CORDIS_PANEL_SELECTOR = '[data-cordis-panel]'
 const TERMINAL_SELECTOR = `${BETTER_SIDEBAR_SELECTOR} .xterm`
 
@@ -709,7 +709,7 @@ export default function defineSkinHooks() {
             }
             if (record.attributeName === 'data-phase'
               || record.attributeName === 'data-chat-flow'
-              || record.attributeName === 'data-@dsh-selfuse/better-sidebar'
+              || record.attributeName === 'data-dsh-better-sidebar'
               || record.attributeName === 'data-dsh-sidebar-collapsed'
               || record.attributeName === 'data-cordis-panel'
               || record.attributeName === 'data-slot'
@@ -753,7 +753,7 @@ export default function defineSkinHooks() {
           'data-chat-flow',
           'data-cordis-panel',
           'data-ds-dark-theme',
-          'data-@dsh-selfuse/better-sidebar',
+          'data-dsh-better-sidebar',
           'data-dsh-sidebar-collapsed',
           'data-phase',
           'data-slot',
