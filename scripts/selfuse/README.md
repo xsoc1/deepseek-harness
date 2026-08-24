@@ -26,3 +26,20 @@ node scripts/selfuse/install.mjs --dsh-home /home/user/.dsh --dry-run
 ```
 
 Restart dsh after installing to load the new profile.
+
+## `update.mjs`
+
+Selfuse-aware updater. It fetches upstream `deepseek-ai/deepseek-harness`
+master through the IP fallback, merges it into the current `selfuse` branch
+(no history rewrite), reinstalls dependencies, rebuilds absorbed packages,
+and refreshes the profile/settings/skills.
+
+```bash
+node scripts/selfuse/update.mjs --check
+node scripts/selfuse/update.mjs --apply --restart
+```
+
+Safety:
+- refuses to apply when tracked files are dirty;
+- does not restart dsh unless `--restart` is passed;
+- backs up generated profile files before refreshing.
