@@ -40,7 +40,8 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:*",
-    "@deepseek-ai/dsh-settings": "workspace:*"
+    "@deepseek-ai/dsh-settings": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:*"
   },
   "dsh": {
     "bundle": {

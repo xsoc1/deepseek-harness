@@ -1,5 +1,5 @@
 {
-  "name": "@linxin666/dsh-client-ui-skin-matrix",
+  "name": "@dsh-selfuse/dsh-client-ui-skin-matrix",
   "version": "0.2.7",
   "description": "No-op compatibility shim for the retired matrix skin package.",
   "type": "module",

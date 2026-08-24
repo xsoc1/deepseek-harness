@@ -1,5 +1,5 @@
 {
-  "name": "@linxin666/dsh-client-ui-skin-xp",
+  "name": "@dsh-selfuse/dsh-client-ui-skin-xp",
   "version": "0.2.7",
   "description": "No-op compatibility shim for the retired xp skin package.",
   "type": "module",

@@ -1,28 +1,24 @@
-# dsh-selfuse single profile manifest (draft)
-# The generator will turn this into ~/.dsh/profiles/web/package.json,
-# cordis.patch.yml, settings.yaml and agent-presets.
+# dsh-selfuse single profile manifest
+# The generator (scripts/selfuse/generate-profile.mjs) turns this into
+# ~/.dsh/profiles/<name>/package.json, cordis.patch.yml and optionally
+# installs skills / settings overlays.
+# bundles: packages that declare dsh.bundle; resolved from the dsh installation
+# (apps/cli) first, then from the profile directory.
+# patchPlugins: ordinary Cordis plugins mounted through the profile patch layer.
 name: web
 bundles:
   - "@deepseek-ai/dsh-base"
   - "@deepseek-ai/dsh-web-app"
   - "@dsh-selfuse/web-ui-all"
-  - "@dsh-selfuse/web-ui-settings"
-  - "@dsh-selfuse/web-ui-community-plugins"
-  - "@dsh-selfuse/web-ui-task-board"
-  - "@dsh-selfuse/web-ui-git-graph"
-  - "@dsh-selfuse/remote-web-ui"
-  - "@dsh-selfuse/ssh"
-  - "@dsh-selfuse/chat-recovery"
-  - "@dsh-selfuse/skin-center"
-  - "@dsh-selfuse/better-sidebar"
-  - "@dsh-selfuse/file-upload"
   - "@dsh-selfuse/market"
   - "@dsh-selfuse/mineru"
   - "@dsh-selfuse/backup"
   - "@dsh-selfuse/git-workflow"
+  - "@dsh-selfuse/file-upload"
   - "@dsh-selfuse/undo"
   - "@dsh-selfuse/wsl-workspace"
   - "@dsh-selfuse/memory-panel"
+patchPlugins:
   - "@dsh-selfuse/skill-router"
 skills:
   - math-research-dsh

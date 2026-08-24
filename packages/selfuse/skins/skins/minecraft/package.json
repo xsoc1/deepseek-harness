@@ -1,5 +1,5 @@
 {
-  "name": "@linxin666/dsh-client-ui-skin-minecraft",
+  "name": "@dsh-selfuse/dsh-client-ui-skin-minecraft",
   "version": "0.2.7",
   "description": "No-op compatibility shim for the retired minecraft skin package.",
   "type": "module",

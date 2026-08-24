@@ -1,5 +1,5 @@
 {
-  "name": "@linxin666/dsh-client-ui-skin-miku",
+  "name": "@dsh-selfuse/dsh-client-ui-skin-miku",
   "version": "0.2.7",
   "description": "No-op compatibility shim for the retired miku skin package.",
   "type": "module",

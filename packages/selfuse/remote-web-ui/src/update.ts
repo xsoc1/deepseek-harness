@@ -17,7 +17,7 @@ import { spawn } from 'node:child_process'
 export const NPM_REGISTRY = 'https://registry.npmjs.org'
 
 /** The family scope every dsh-web-ui package is published under. */
-export const FAMILY_SCOPE = '@linxin666/'
+export const FAMILY_SCOPE = '@dsh-selfuse/'
 
 /** The aggregate package that is the canonical update entry point. */
 export const AGGREGATE_PACKAGE = '@dsh-selfuse/web-ui-all'
@@ -248,7 +248,7 @@ export function resolveUpdateTarget(
   const spec = (profileManifest?.dependencies as Record<string, DependencySpec> | undefined)?.[anchor]
   if (isLinkedSpec(spec) || hasLinkedFamilyOverride(manifest, profileManifest)) return { error: 'link' }
   // Standalone installs carry no aggregate: the anchor's own dependency
-  // list misses every sibling @linxin666/* plugin installed directly into
+  // list misses every sibling @dsh-selfuse/* plugin installed directly into
   // the profile, so union the profile's direct family deps (#377).
   return {
     profileName: profile.name,
@@ -334,7 +334,7 @@ function readInstalledVersion(
   } catch { /* fall through to the profile's direct dependency path */ }
   // Names originate in the profile dependency map, but still validate the
   // npm package shape before using one as path segments.
-  if (profileDir === undefined || !/^@linxin666\/[a-z0-9][a-z0-9._-]*$/.test(name)) return VERSION_UNKNOWN
+  if (profileDir === undefined || !/^@dsh-selfuse\/[a-z0-9][a-z0-9._-]*$/.test(name)) return VERSION_UNKNOWN
   const version = readManifest(join(profileDir, 'node_modules', ...name.split('/'), 'package.json'))?.version
   return typeof version === 'string' ? version : VERSION_UNKNOWN
 }
@@ -370,7 +370,7 @@ export async function checkUpdates(deps: UpdateCheckDeps): Promise<UpdateStatus>
     return { mode: 'link', packages: [], outdated: false }
   }
   // Union the profile's direct family deps so standalone installs (no
-  // aggregate) still check every installed @linxin666/* plugin (#377);
+  // aggregate) still check every installed @dsh-selfuse/* plugin (#377);
   // familyUpdatePackages skips link:/file: development dependencies.
   const names = familyUpdatePackages(anchor, manifest, profileManifest)
   // The registry probes are independent: run them together instead of

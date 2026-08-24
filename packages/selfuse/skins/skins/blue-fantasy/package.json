@@ -1,5 +1,5 @@
 {
-  "name": "@linxin666/dsh-client-ui-skin-blue-fantasy",
+  "name": "@dsh-selfuse/dsh-client-ui-skin-blue-fantasy",
   "version": "0.2.7",
   "description": "No-op compatibility shim for the retired blue-fantasy skin package.",
   "type": "module",

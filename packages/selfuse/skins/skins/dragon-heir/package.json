@@ -1,5 +1,5 @@
 {
-  "name": "@linxin666/dsh-client-ui-skin-dragon-heir",
+  "name": "@dsh-selfuse/dsh-client-ui-skin-dragon-heir",
   "version": "0.2.7",
   "description": "No-op compatibility shim for the retired dragon-heir skin package.",
   "type": "module",

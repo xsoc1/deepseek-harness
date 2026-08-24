@@ -1,0 +1,28 @@
+{
+  "name": "@dsh-selfuse/skill-router",
+  "version": "0.0.1",
+  "description": "全局技能路由提示段：按任务桶 + 中文触发词路由到 mattpocock 技能与数学技能",
+  "private": true,
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/types/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "license": "BSD-3-Clause",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-llm": "workspace:*",
+    "@deepseek-ai/dsh-tools": "workspace:*",
+    "cordis": "^4.0.0-rc.7",
+    "schemastery": "^3.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^5.9.0",
+    "@deepseek-ai/dsh-system-prompt": "workspace:*"
+  },
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

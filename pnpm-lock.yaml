@@ -303,6 +303,66 @@ importers:
       '@deepseek-ai/dsh-workflow-worker-thread':
         specifier: workspace:^
         version: link:../../packages/workflow/workflow-worker-thread
+      '@dsh-selfuse/backup':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/backup
+      '@dsh-selfuse/better-sidebar':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/better-sidebar
+      '@dsh-selfuse/chat-recovery':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/chat-recovery
+      '@dsh-selfuse/file-upload':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/file-upload
+      '@dsh-selfuse/git-workflow':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/git-workflow
+      '@dsh-selfuse/market':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/market
+      '@dsh-selfuse/memory-panel':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/memory-panel
+      '@dsh-selfuse/mineru':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/mineru
+      '@dsh-selfuse/remote-web-ui':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/remote-web-ui
+      '@dsh-selfuse/skill-router':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/skill-router
+      '@dsh-selfuse/skin-center':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/skin-center
+      '@dsh-selfuse/skins':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/skins
+      '@dsh-selfuse/ssh':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/ssh
+      '@dsh-selfuse/undo':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/undo
+      '@dsh-selfuse/web-ui-all':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/web-ui-all
+      '@dsh-selfuse/web-ui-community-plugins':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/web-ui-community-plugins
+      '@dsh-selfuse/web-ui-git-graph':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/web-ui-git-graph
+      '@dsh-selfuse/web-ui-settings':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/web-ui-settings
+      '@dsh-selfuse/web-ui-task-board':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/web-ui-task-board
+      '@dsh-selfuse/wsl-workspace':
+        specifier: workspace:*
+        version: link:../../packages/selfuse/wsl-workspace
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -6453,6 +6513,9 @@ importers:
 
   packages/selfuse/market:
     dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
       js-yaml:
         specifier: ^4.1.0
         version: 4.2.0
@@ -6520,6 +6583,12 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/coverage-v8@4.1.8(vitest@4.1.8))(jsdom@29.1.1)(vite@8.0.16(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
+
+  packages/selfuse/memory-panel:
+    dependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:*
+        version: link:../../../vendor/cordis
 
   packages/selfuse/mineru:
     dependencies:
@@ -6663,6 +6732,31 @@ importers:
       vitest:
         specifier: ^4.1.8
         version: 4.1.8(@opentelemetry/api@1.9.1)(@types/node@22.20.0)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(vite@8.0.16(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
+
+  packages/selfuse/skill-router:
+    dependencies:
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+      cordis:
+        specifier: ^4.0.0-rc.7
+        version: 4.0.0-rc.8(@cordisjs/plugin-loader@1.0.0-rc.5)
+      schemastery:
+        specifier: ^3.18.0
+        version: 3.18.0
+    devDependencies:
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.13.3
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
 
   packages/selfuse/skin-center:
     dependencies:
@@ -6830,6 +6924,9 @@ importers:
 
   packages/selfuse/undo:
     dependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:*
+        version: link:../../../vendor/cordis
       '@deepseek-ai/dsh-tools':
         specifier: workspace:*
         version: link:../../core/tools
@@ -7154,6 +7251,9 @@ importers:
       '@deepseek-ai/dsh-timeout':
         specifier: workspace:*
         version: link:../../util/timeout
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
 
   packages/session-query/session-log-export:
     devDependencies:
@@ -24730,7 +24830,7 @@ snapshots:
 
   md5.js@1.3.5:
     dependencies:
-      hash-base: 3.0.5
+      hash-base: 3.1.2
       inherits: 2.0.4
       safe-buffer: 5.2.1
 
@@ -25737,7 +25837,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.1
-      '@types/node': 22.20.0
+      '@types/node': 26.2.0
       long: 5.3.2
 
   proxy-addr@2.0.7:
@@ -27116,8 +27216,8 @@ snapshots:
 
   vite@8.0.16(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0):
     dependencies:
-      lightningcss: 1.32.0
-      picomatch: 4.0.4
+      lightningcss: 1.33.0
+      picomatch: 4.0.5
       postcss: 8.5.15
       rolldown: 1.0.3
       tinyglobby: 0.2.17
@@ -27131,8 +27231,8 @@ snapshots:
 
   vite@8.0.16(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0):
     dependencies:
-      lightningcss: 1.32.0
-      picomatch: 4.0.4
+      lightningcss: 1.33.0
+      picomatch: 4.0.5
       postcss: 8.5.15
       rolldown: 1.0.3
       tinyglobby: 0.2.17
@@ -27146,8 +27246,8 @@ snapshots:
 
   vite@8.0.16(@types/node@26.2.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0):
     dependencies:
-      lightningcss: 1.32.0
-      picomatch: 4.0.4
+      lightningcss: 1.33.0
+      picomatch: 4.0.5
       postcss: 8.5.15
       rolldown: 1.0.3
       tinyglobby: 0.2.17
