@@ -65,15 +65,15 @@
     "read-excel-file": "^5.8.7"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "*",
-    "@deepseek-ai/dsh-credentials": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-fs": "^0.1.0-rc.6",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
-    "@deepseek-ai/schemastery": "^3.18.1",
+    "@deepseek-ai/cordis": "workspace:*",
+    "@deepseek-ai/dsh-credentials": "workspace:*",
+    "@deepseek-ai/dsh-fs": "workspace:*",
+    "@deepseek-ai/dsh-tools": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:*",
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh-credentials": "0.1.0-rc.6",
+    "@deepseek-ai/dsh-credentials": "workspace:*",
     "@types/node": "^26.2.0",
     "@types/react": "~18.3.1",
     "esbuild": "^0.24.2",

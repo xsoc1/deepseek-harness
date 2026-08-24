@@ -20,7 +20,7 @@
     "directory": "packages/dsh-skins"
   },
   "dependencies": {
-    "@dsh-selfuse/skin-center": "0.2.7"
+    "@dsh-selfuse/skin-center": "workspace:*"
   },
   "scripts": {
     "build": "node build.mjs",

@@ -28,16 +28,16 @@
     "url": "https://github.com/zhu1090093659/dsh-web-ui.git"
   },
   "dependencies": {
-    "@dsh-selfuse/better-sidebar": "0.14.0",
-    "@dsh-selfuse/web-ui-community-plugins": "0.2.7",
-    "@dsh-selfuse/web-ui-task-board": "0.2.7",
-    "@dsh-selfuse/web-ui-git-graph": "0.2.7",
-    "@dsh-selfuse/remote-web-ui": "0.2.7",
-    "@dsh-selfuse/ssh": "0.2.7",
-    "@dsh-selfuse/chat-recovery": "0.2.7",
-    "@dsh-selfuse/web-ui-settings": "0.2.7",
-    "@dsh-selfuse/skins": "0.2.7",
-    "@dsh-selfuse/skin-center": "0.2.7"
+    "@dsh-selfuse/better-sidebar": "workspace:*",
+    "@dsh-selfuse/web-ui-community-plugins": "workspace:*",
+    "@dsh-selfuse/web-ui-task-board": "workspace:*",
+    "@dsh-selfuse/web-ui-git-graph": "workspace:*",
+    "@dsh-selfuse/remote-web-ui": "workspace:*",
+    "@dsh-selfuse/ssh": "workspace:*",
+    "@dsh-selfuse/chat-recovery": "workspace:*",
+    "@dsh-selfuse/web-ui-settings": "workspace:*",
+    "@dsh-selfuse/skins": "workspace:*",
+    "@dsh-selfuse/skin-center": "workspace:*"
   },
   "scripts": {
     "build": "tsdown",
