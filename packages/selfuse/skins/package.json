@@ -1,0 +1,29 @@
+{
+  "name": "@dsh-selfuse/skins",
+  "description": "已退役的兼容载具（保留一个发布周期）：皮肤已全部内置进 @dsh-selfuse/skin-center，本包不再携带皮肤资产，仅通过依赖把皮肤中心带给升级用户。",
+  "version": "0.2.7",
+  "type": "module",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "skins",
+    "cordis.patch.yml",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zhu1090093659/dsh-web-ui.git",
+    "directory": "packages/dsh-skins"
+  },
+  "dependencies": {
+    "@dsh-selfuse/skin-center": "0.2.7"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test build.test.mjs"
+  }
+}
