@@ -43,3 +43,11 @@ Safety:
 - refuses to apply when tracked files are dirty;
 - does not restart dsh unless `--restart` is passed;
 - backs up generated profile files before refreshing.
+
+## 远程桌面版
+
+详细方案与排障见：
+
+```text
+config/selfuse/remote-desktop.md
+```
