@@ -271,7 +271,19 @@ async function dispatch(apiProxy: ApiProxy, method: string, payload: unknown, rp
     // success path builds, or the phone's callUnary throws a transport error
     // and masks the real business error.
     if (!full.result.ok) return { type: 'server-response' as const, rpcId, result: full.result }
-    const items = full.result.value.items as Array<{ updatedAt: number; sessionId: string }>
+    let items = full.result.value.items as Array<{ updatedAt: number; sessionId: string; cwd?: string }>
+    const targetWsId = (payload as { workspaceId?: string; workspace?: string } | undefined)?.workspaceId
+      ?? (payload as { workspaceId?: string; workspace?: string } | undefined)?.workspace
+    if (targetWsId !== undefined && targetWsId !== '') {
+      const wsRes = await apiProxy.workspace.list(request as never)
+      if (wsRes.result.ok) {
+        const ws = (wsRes.result.value.items as Array<{ workspaceId: string; path: string; sessionIds: string[] }>).find(w => w.workspaceId === targetWsId)
+        if (ws !== undefined) {
+          const owned = new Set(ws.sessionIds || [])
+          items = items.filter(row => owned.has(row.sessionId as never) || (row.cwd !== undefined && row.cwd === ws.path))
+        }
+      }
+    }
     const cursor = (payload as { cursor?: string } | undefined)?.cursor
     // Every call pages (the first call with no cursor IS the first page):
     // the phone must never transfer the whole session list at once.

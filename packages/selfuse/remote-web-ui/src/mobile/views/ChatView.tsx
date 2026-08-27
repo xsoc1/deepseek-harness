@@ -186,7 +186,7 @@ export function ChatView({ session, mux, onBack }: ChatViewProps) {
     // growing) forever: abort it and surface the transport error.
     const timeout = setTimeout(() => {
       controller.abort(new DOMException('history load timed out', 'TimeoutError'))
-    }, 15_000)
+    }, 45_000)
     tailLoadingRef.current = true
     liveBufferRef.current = []
     liveBufferOverflowRef.current = false
@@ -245,7 +245,7 @@ export function ChatView({ session, mux, onBack }: ChatViewProps) {
         setError(errorText(reason))
         setLoading(false)
       },
-    )
+    ).finally(() => { clearTimeout(timeout) })
     // Best-effort current-model label for the toolbar chip; the sheet
     // always re-reads a fresh directory on open.
     void models(session.sessionId).then(

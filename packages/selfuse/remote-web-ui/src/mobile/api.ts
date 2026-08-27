@@ -61,8 +61,9 @@ export async function fetchMobilePreferences(): Promise<MobilePreferences> {
 }
 
 /** One session.list page; omit the cursor for the first page. */
-export async function listSessions(cursor?: string): Promise<SessionPage> {
-  return await callUnary<SessionPage>('session.list', cursor === undefined ? {} : { cursor })
+export async function listSessions(options?: { workspaceId?: string; cursor?: string } | string): Promise<SessionPage> {
+  const payload = typeof options === 'string' ? { cursor: options } : options ?? {}
+  return await callUnary<SessionPage>('session.list', payload)
 }
 
 /** Read the available agent compositions for a new session. */

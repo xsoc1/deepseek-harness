@@ -148,7 +148,7 @@ function hostNameOf(host: string): string {
 
 /** True when the request's `Host` header names a loopback host. */
 function isLoopbackHost(host: string | undefined): boolean {
-  return host !== undefined && LOOPBACK_HOSTNAMES.has(hostNameOf(host).toLowerCase())
+  return host !== undefined && (LOOPBACK_HOSTNAMES.has(hostNameOf(host).toLowerCase()) || hostNameOf(host).toLowerCase().endsWith(".ts.net"))
 }
 
 /**

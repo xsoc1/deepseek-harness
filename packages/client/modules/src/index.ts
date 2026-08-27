@@ -552,10 +552,18 @@ export class ClientModuleRegistry extends Service {
     }
     try {
       const body = await readFile(path)
-      res.writeHead(200, {
+      const etag = `"${shortHash(body)}"`
+      const headers = {
         'content-type': isSourceMap ? 'application/json; charset=utf-8' : 'text/javascript; charset=utf-8',
-        'cache-control': 'no-cache',
-      })
+        'cache-control': isSourceMap ? 'no-cache' : 'public, max-age=31536000, immutable',
+        etag,
+      }
+      if (req.headers['if-none-match'] === etag) {
+        res.writeHead(304, headers)
+        res.end()
+        return
+      }
+      res.writeHead(200, headers)
       res.end(body)
     } catch {
       // Registered but unreadable (bundle not built yet): loud 404 beats a silent SPA-fallback HTML page.

@@ -7575,8 +7575,9 @@ async function fetchMobilePreferences() {
 	return await callUnary("mobile.preferences", {});
 }
 /** One session.list page; omit the cursor for the first page. */
-async function listSessions(cursor) {
-	return await callUnary("session.list", cursor === void 0 ? {} : { cursor });
+async function listSessions(options) {
+	const payload = typeof options === "string" ? { cursor: options } : options ?? {};
+	return await callUnary("session.list", payload);
 }
 /** Read the available agent compositions for a new session. */
 async function listAgentPresets() {
@@ -13990,7 +13991,7 @@ function ChatView({ session, mux, onBack }) {
 		const controller = new AbortController();
 		const timeout = setTimeout(() => {
 			controller.abort(new DOMException("history load timed out", "TimeoutError"));
-		}, 15e3);
+		}, 45e3);
 		tailLoadingRef.current = true;
 		liveBufferRef.current = [];
 		liveBufferOverflowRef.current = false;
@@ -14902,7 +14903,7 @@ function DisplaySheet({ showToolCalls, showSystemMessages, onToolCalls, onSystem
 /** Rows that belong to the opened workspace (its owned session id set). */
 function ownedItems(page, workspace) {
 	const owned = new Set(workspace.sessionIds);
-	return page.filter((item) => owned.has(item.sessionId)).map((item) => toSessionView(item));
+	return page.filter((item) => owned.has(item.sessionId) || (item.cwd !== void 0 && item.cwd === workspace.path)).map((item) => toSessionView(item));
 }
 /**
 * Render one workspace's paged session list.
@@ -14926,7 +14927,7 @@ function SessionListView({ workspace, onBack, onPick }) {
 		let cancelled = false;
 		setLoading(true);
 		setError(void 0);
-		Promise.all([listSessions(), listWorkspaces()]).then(([page, workspaces]) => {
+		Promise.all([listSessions({ workspaceId: workspace.workspaceId }), listWorkspaces()]).then(([page, workspaces]) => {
 			if (cancelled) return;
 			const current = workspaces.find((candidate) => candidate.workspaceId === workspace.workspaceId) ?? workspace;
 			workspaceRef.current = current;
@@ -14969,7 +14970,7 @@ function SessionListView({ workspace, onBack, onPick }) {
 		if (cursor === void 0) return;
 		busyRef.current = true;
 		setLoading(true);
-		listSessions(cursor).then((page) => {
+		listSessions({ workspaceId: workspaceRef.current.workspaceId, cursor }).then((page) => {
 			busyRef.current = false;
 			setLoading(false);
 			cursorRef.current = page.nextCursor;

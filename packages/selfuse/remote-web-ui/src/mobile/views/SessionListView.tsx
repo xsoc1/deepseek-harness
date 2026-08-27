@@ -30,7 +30,7 @@ export interface SessionListViewProps {
 function ownedItems(page: SessionSummary[], workspace: WorkspaceRow): SessionView[] {
   const owned = new Set(workspace.sessionIds)
   return page
-    .filter(item => owned.has(item.sessionId as never))
+    .filter(item => owned.has(item.sessionId as never) || (item.cwd !== undefined && item.cwd === workspace.path))
     .map(item => toSessionView(item))
 }
 
@@ -63,7 +63,7 @@ export function SessionListView({ workspace, onBack, onPick }: SessionListViewPr
     let cancelled = false
     setLoading(true)
     setError(undefined)
-    void Promise.all([listSessions(), listWorkspaces()]).then(
+    void Promise.all([listSessions({ workspaceId: workspace.workspaceId }), listWorkspaces()]).then(
       ([page, workspaces]) => {
         if (cancelled) return
         const fresh = workspaces.find(candidate => candidate.workspaceId === workspace.workspaceId)
@@ -111,7 +111,7 @@ export function SessionListView({ workspace, onBack, onPick }: SessionListViewPr
     if (cursor === undefined) return
     busyRef.current = true
     setLoading(true)
-    void listSessions(cursor).then(
+    void listSessions({ workspaceId: workspaceRef.current.workspaceId, cursor }).then(
       (page) => {
         busyRef.current = false
         setLoading(false)

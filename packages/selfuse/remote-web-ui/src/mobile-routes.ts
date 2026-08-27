@@ -46,7 +46,7 @@ function pageHtml(bundleUrl: string): string {
     '</head>',
     '<body>',
     '<div id="root"></div>',
-    '<script type="module" src="' + bundleUrl + '"></script>',
+    '<script type="module" src="' + bundleUrl + '?v=' + Date.now().toString(36) + '"></script>',
     '</body>',
     '</html>',
   ].join('')

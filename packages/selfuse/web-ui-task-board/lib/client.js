@@ -7,7 +7,7 @@ window.__ModuleLoader__.load({
 		let react_dom_client = require("react-dom/client");
 		let react = require("react");
 		let react_jsx_runtime = require("react/jsx-runtime");
-		let _deepseek_ai_dsh_client_runtime_client = require("@deepseek-ai/dsh-client-runtime/client");
+		let _deepseek_ai_dsh_client_runtime_client = require("@deepseek-ai/dsh-client-runtime");
 		//#region src/core/tasks.ts
 		/** Statuses a settled task may be archived from. */
 		const ARCHIVABLE_STATUSES = ["done", "failed"];

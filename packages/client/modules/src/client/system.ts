@@ -12,18 +12,28 @@ import type {
 
 /** Default bundle-load hook: same-origin external classic script. */
 const defaultLoadBundle = (url: string): Promise<void> => new Promise((resolve, reject) => {
-  const el = document.createElement('script')
-  el.async = true
-  el.src = url
-  el.addEventListener('load', () => {
-    el.remove()
-    resolve()
-  }, { once: true })
-  el.addEventListener('error', () => {
-    el.remove()
-    reject(new Error(`client-modules: bundle script ${url} failed to load`))
-  }, { once: true })
-  document.head.append(el)
+  const load = (attempt: number): void => {
+    const el = document.createElement('script')
+    el.async = true
+    el.src = url
+    const cleanup = (): void => { el.remove() }
+    el.addEventListener('load', () => {
+      cleanup()
+      resolve()
+    }, { once: true })
+    el.addEventListener('error', () => {
+      cleanup()
+      // Transient remote/LAN failures are common on tablets; retry before
+      // surfacing a plugin-load error to the user.
+      if (attempt < 2) {
+        setTimeout(() => load(attempt + 1), 300 * (attempt + 1))
+        return
+      }
+      reject(new Error(`client-modules: bundle script ${url} failed to load`))
+    }, { once: true })
+    document.head.append(el)
+  }
+  load(0)
 })
 
 /**

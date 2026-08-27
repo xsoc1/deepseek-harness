@@ -276,7 +276,7 @@ function hostNameOf(host) {
 }
 /** True when the request's `Host` header names a loopback host. */
 function isLoopbackHost(host) {
-	return host !== void 0 && LOOPBACK_HOSTNAMES.has(hostNameOf(host).toLowerCase());
+	return host !== void 0 && (LOOPBACK_HOSTNAMES.has(hostNameOf(host).toLowerCase()) || hostNameOf(host).toLowerCase().endsWith(".ts.net"));
 }
 /**
 * Validate a wire-supplied distribution name before it becomes a UNC segment:

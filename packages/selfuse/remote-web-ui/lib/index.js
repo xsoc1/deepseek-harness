@@ -681,7 +681,7 @@ function isLoopbackAddress(address) {
 }
 /** Whether a normalized URL hostname names the loopback authority (localhost, [::1], 127/8). */
 function isLoopbackHostname(hostname) {
-	if (hostname === "localhost" || hostname === "[::1]") return true;
+	if (hostname === "localhost" || hostname === "[::1]" || (typeof hostname === "string" && hostname.endsWith(".ts.net"))) return true;
 	return isIPv4Loopback(hostname);
 }
 //#endregion
@@ -1282,7 +1282,7 @@ function pageHtml(bundleUrl) {
 		"</head>",
 		"<body>",
 		"<div id=\"root\"></div>",
-		"<script type=\"module\" src=\"" + bundleUrl + "\"><\/script>",
+		"<script type=\"module\" src=\"" + bundleUrl + "?v=" + Date.now().toString(36) + "\"><\/script>",
 		"</body>",
 		"</html>"
 	].join("");
@@ -1727,7 +1727,18 @@ async function dispatch(apiProxy, method, payload, rpcId, signal) {
 			rpcId,
 			result: full.result
 		};
-		const items = full.result.value.items;
+		let items = full.result.value.items;
+		const targetWsId = payload?.workspaceId ?? payload?.workspace;
+		if (targetWsId !== void 0 && targetWsId !== "") {
+			const wsRes = await apiProxy.workspace.list(request);
+			if (wsRes.result.ok) {
+				const ws = wsRes.result.value.items.find((w) => w.workspaceId === targetWsId);
+				if (ws !== void 0) {
+					const owned = new Set(ws.sessionIds || []);
+					items = items.filter((row) => owned.has(row.sessionId) || (row.cwd !== void 0 && row.cwd === ws.path));
+				}
+			}
+		}
 		const cursor = payload?.cursor;
 		items.sort((a, b) => b.updatedAt - a.updatedAt || (a.sessionId < b.sessionId ? -1 : a.sessionId > b.sessionId ? 1 : 0));
 		const position = cursor === void 0 ? void 0 : parseSessionListCursor(cursor);

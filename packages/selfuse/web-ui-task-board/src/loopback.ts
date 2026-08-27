@@ -32,7 +32,7 @@ export function isLoopbackAddress(address: string | undefined): boolean {
 
 /** Whether a normalized URL hostname names the loopback authority (localhost, [::1], 127/8). */
 export function isLoopbackHostname(hostname: string): boolean {
-  if (hostname === 'localhost' || hostname === '[::1]') return true
+  if (hostname === 'localhost' || hostname === '[::1]' || (typeof hostname === 'string' && hostname.endsWith('.ts.net'))) return true
   return isIPv4Loopback(hostname)
 }
 

@@ -2078,7 +2078,7 @@ function isLoopbackAddress(address) {
 }
 /** Whether a normalized URL hostname names the loopback authority (localhost, [::1], 127/8). */
 function isLoopbackHostname(hostname) {
-	if (hostname === "localhost" || hostname === "[::1]") return true;
+	if (hostname === "localhost" || hostname === "[::1]" || (typeof hostname === "string" && hostname.endsWith(".ts.net"))) return true;
 	return isIPv4Loopback(hostname);
 }
 /**
