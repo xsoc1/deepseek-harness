@@ -51,3 +51,23 @@ Safety:
 ```text
 config/selfuse/remote-desktop.md
 ```
+
+## Windows 控制台 / 管理脚本（已收录于仓库根）
+
+本地运行的 Windows 侧管理脚本已随 selfuse 分支收录：
+
+- `dsh-control.ps1`：start/restart/stop/status/ui/logs/check-update/update
+- `dsh-control-gui.ps1`：WinForms 图形控制台
+- `dsh-watchdog.ps1` / `dsh-watchdog.vbs`：看门狗
+- `ensure-dsh-watchdog.ps1` / `ensure-dsh-watchdog.vbs`：兜底任务
+- `run-dsh-web.ps1`：在 WSL 内启动 dsh web
+- `scripts/update-dsh.ps1`：检查/更新上游 dsh
+- `dsh.ico` / `dsh-icon.png` / `dsh-icon.svg`：控制台/图标资源
+
+用法：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control.ps1 status
+powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control.ps1 restart
+powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control-gui.ps1
+```
