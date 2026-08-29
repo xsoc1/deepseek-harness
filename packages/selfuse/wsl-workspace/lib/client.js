@@ -930,7 +930,35 @@ window.__ModuleLoader__.load({
 		* @param ctx - the browser plugin context.
 		*/
 		function apply(ctx) {
-			const { api } = ctx.get("connection");
+			const connection = ctx.get("connection") || {};
+			const remote = ctx.get("remote") || ctx.remote || {};
+			const rawPresets = ctx.get("remote.agentPresets") || remote.agentPresets || connection.api?.agentPresets;
+			const api = {
+				agentPresets: {
+					list: async (opts) => {
+						if (typeof rawPresets?.list === "function") {
+							try {
+								const res = await rawPresets.list(opts);
+								return { result: { ok: true, value: res?.presets ? res : { presets: res || [] } } };
+							} catch (e) {
+								return { result: { ok: false, error: e } };
+							}
+						}
+						return { result: { ok: true, value: { presets: [] } } };
+					},
+					select: async (opts) => {
+						if (typeof rawPresets?.select === "function") {
+							try {
+								const res = await rawPresets.select(opts?.sessionId, opts?.agentPreset);
+								return { result: { ok: true, value: res } };
+							} catch (e) {
+								return { result: { ok: false, error: e } };
+							}
+						}
+						return { result: { ok: true } };
+					}
+				}
+			};
 			const workspaces = ctx.get("workspaces");
 			const sessions = ctx.get("sessions");
 			ensureStyles();

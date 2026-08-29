@@ -52,3 +52,8 @@
 - insert:
     - id: web-ui-better-sidebar
       name: '@dsh-selfuse/better-sidebar'
+
+# host apiproxy SDK compatibility
+- insert:
+    - id: web-ui-host-apiproxy
+      name: '@deepseek-ai/dsh-host-apiproxy'
