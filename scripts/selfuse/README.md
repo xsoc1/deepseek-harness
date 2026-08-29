@@ -71,3 +71,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\ds
 powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control.ps1 restart
 powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control-gui.ps1
 ```
+
+完整管理脚本副本（含 repair/patch/sync/prune 等）收录于：
+
+```text
+scripts/selfuse/management/
+```
