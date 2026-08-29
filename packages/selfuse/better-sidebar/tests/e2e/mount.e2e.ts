@@ -44,7 +44,7 @@ const SEEDED_FILE = 'hello.txt'
  * renders a strip whose text starts with these prefixes instead of crashing
  * (see src/client/index.tsx `fail()` and src/client/RenderBoundary.tsx).
  */
-const CRASH_STRIP_PATTERNS = [/^@dsh-selfuse/better-sidebar:/, /^\[@dsh-selfuse/better-sidebar\]/]
+const CRASH_STRIP_PATTERNS = [/^@dsh-selfuse\/better-sidebar:/, /^\[@dsh-selfuse\/better-sidebar\]/]
 
 /** Built-in tab titles the sweep drives (en-US copy; follows DSH locale). */
 const BUILTIN_TABS = ['Explorer', 'Source Control', 'Tasks', 'Terminal', 'Browser']
@@ -190,7 +190,7 @@ test('plugin mounts into the DSH shell and survives a built-in tab sweep', async
 
   // The plugin's own console prefix must never appear in errors, and no
   // unhandled rejection may escape the sweep.
-  const pluginErrors = consoleErrors.filter((text) => /@dsh-selfuse/better-sidebar|Unhandled/.test(text))
+  const pluginErrors = consoleErrors.filter((text) => /@dsh-selfuse\/better-sidebar|Unhandled/.test(text))
   expect(pluginErrors, 'plugin-prefixed or unhandled console errors during the sweep').toEqual([])
   expect(pageErrors, 'pageerrors during the sweep').toEqual([])
 

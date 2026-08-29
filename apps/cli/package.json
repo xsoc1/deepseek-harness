@@ -19,7 +19,11 @@
   ],
   "dsh": {
     "configTrees": [
-      { "mount": "config/agent-presets", "path": "../../packages/preset/agent-presets/presets", "scanRoster": true }
+      {
+        "mount": "config/agent-presets",
+        "path": "../../packages/preset/agent-presets/presets",
+        "scanRoster": true
+      }
     ]
   },
   "license": "MIT",
@@ -121,7 +125,9 @@
     "@deepseek-ai/dsh-client-file-changes": "workspace:*",
     "@deepseek-ai/dsh-shell-terminal": "workspace:*",
     "@deepseek-ai/dsh-easy-setup": "workspace:*",
-    "@deepseek-ai/dsh-task-notify": "workspace:*"
+    "@deepseek-ai/dsh-task-notify": "workspace:*",
+    "@deepseek-ai/dsh-client-runtime": "workspace:*",
+    "@deepseek-ai/dsh-host-apiproxy": "workspace:*"
   },
   "devDependencies": {
     "@agentclientprotocol/sdk": "1.4.0",
