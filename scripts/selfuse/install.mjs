@@ -117,8 +117,19 @@ if (dryRun) {
 step('Sync settings.yaml')
 copyIfNew(join(repoRoot, 'config/selfuse/settings.yaml'), join(dshHome, 'settings.yaml'), true)
 
-// --- 3. profile cordis/workspace are already written by generator -------------
-// no extra action in this script beyond the generator.
+// --- 3. agent presets -------------------------------------------------------
+step('Sync agent presets')
+const presetsSrc = join(repoRoot, 'config/selfuse/agent-presets')
+const presetsDst = join(dshHome, '.agent-presets')
+if (existsSync(presetsSrc)) {
+  for (const group of readdirSync(presetsSrc)) {
+    const srcDir = join(presetsSrc, group)
+    if (!statSync(srcDir).isDirectory()) continue
+    copyIfNew(srcDir, join(presetsDst, group), true)
+  }
+} else {
+  console.log('    no vendored agent presets under config/selfuse/agent-presets; skip')
+}
 
 // --- 4. skills --------------------------------------------------------------
 step('Install vendored skills')
