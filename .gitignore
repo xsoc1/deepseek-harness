@@ -39,3 +39,11 @@ apps/web/dist/
 worktrees/
 .agents/worktrees/
 .typert-*/
+
+# local runtime artifacts
+/dsh-web.log
+/dsh-watchdog.log
+/dsh-watchdog.heartbeat
+/dsh-restart-job*.ps1
+/build_log.txt
+/dsh-restart.log
