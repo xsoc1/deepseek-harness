@@ -9,7 +9,8 @@
     "src/index.ts",
     "src/invariant.ts",
     "src/remote-events.ts",
-    "src/types.ts"
+    "src/types.ts",
+    "src/agent-lookup.ts"
   ],
   "references": [
     {
