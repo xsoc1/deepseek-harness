@@ -77,6 +77,30 @@ function requestAuthority(headers: ConnectionTrustRequest['headers']): string | 
   }
 }
 
+/** Host-mode exemption for private/tailnet origins: loopback, RFC1918, CGNAT, and *.ts.net. */
+function requestHostname(headers: ConnectionTrustRequest['headers']): string | undefined {
+  const host = header(headers, 'host')
+  if (host === undefined) return undefined
+  try {
+    return new URL(`http://${host}`).hostname
+  } catch {
+    return undefined
+  }
+}
+
+function isInternalHostname(hostname: string | undefined): boolean {
+  if (hostname === undefined) return false
+  const h = hostname.toLowerCase()
+  if (h === 'localhost' || h === '[::1]' || h === '::1') return true
+  if (h.endsWith('.ts.net')) return true
+  const ip = h.replace(/^\[|\]$/g, '')
+  return /^127\./.test(ip)
+    || /^10\./.test(ip)
+    || /^192\.168\./.test(ip)
+    || /^172\.(1[6-9]|2\d|3[01])\./.test(ip)
+    || /^100\.(6[4-9]|[7-9]\d|1[0-1]\d|12[0-7])\./.test(ip)
+}
+
 function canonicalSecret(value: unknown): Buffer | undefined {
   if (typeof value !== 'string') return undefined
   const decoded = decodeBase64Url(value)
@@ -287,6 +311,7 @@ export class BrowserAuth {
    * @returns true only for an unexpired cookie signed by this activation's loaded secret.
    */
   isAuthenticated(request: ConnectionTrustRequest): boolean {
+    if (isInternalHostname(requestHostname(request.headers))) return true
     const authority = requestAuthority(request.headers)
     const rawCookie = header(request.headers, 'cookie')
     if (authority === undefined || rawCookie === undefined) return false
