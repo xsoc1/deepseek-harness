@@ -94,7 +94,7 @@ if (-not $gateway) {
     Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "wsl auto-start: gateway not found after $wslGatewayTimeoutSec s" -Encoding UTF8
 }
 
-$trustedArgs = @("--host", "127.0.0.1")
+$trustedArgs = @("--host", "0.0.0.0")
 if ($gateway) {
     if (Test-TcpPort $gateway 3080) {
         Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "wsl portproxy already listening on $gateway`:3080; skipping netsh" -Encoding UTF8
@@ -152,8 +152,14 @@ else {
     Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale not found; skipping tailscale serve/trusted-host" -Encoding UTF8
 }
 
+# Start dsh-bridge.mjs so Windows localhost:3080 forwards to WSL eth0:3080
+if (-not (Test-TcpPort "127.0.0.1" 3080)) {
+    Start-Process -FilePath node -ArgumentList "$HarnessRoot\dsh-bridge.mjs" -WindowStyle Hidden
+    Start-Sleep -Milliseconds 500
+}
+
 # Run dsh inside WSL (Linux filesystem) with WSL native Node/pnpm.
-$wslCommand = "cd '/home/huangzy/tools/deepseek-harness' && export PATH=`"/home/huangzy/.local/bin:`$PATH`" && export DSH_HOME='/home/huangzy/.dsh' && unset DSH_SESSION_ID DSH_SESSION_JSONL DSH_WEB_URL DSH_WSL_DISTRO && node --import tsx/esm apps/cli/src/bin.ts web $($trustedArgs -join ' ')"
+$wslCommand = 'cd /home/huangzy/tools/deepseek-harness && export PATH="/home/huangzy/.local/bin:$PATH" && export DSH_HOME=/home/huangzy/.dsh && unset DSH_SESSION_ID DSH_SESSION_JSONL DSH_WEB_URL DSH_WSL_DISTRO && node --import tsx/esm apps/cli/src/bin.ts web ' + ($trustedArgs -join ' ')
 $launchToken = $null
 & wsl.exe -d Ubuntu -- bash -lc $wslCommand 2>&1 | ForEach-Object {
     Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value $_ -Encoding UTF8
