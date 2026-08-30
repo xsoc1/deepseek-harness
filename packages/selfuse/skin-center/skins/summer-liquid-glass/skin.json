@@ -29,12 +29,12 @@
     "backgroundMedia": {
       "light": {
         "type": "image",
-        "src": "assets/summer-liquid-glass-art.jpg",
+        "src": "assets/IMG_1891.jpg",
         "scrim": "linear-gradient(rgba(7, 19, 33, 0.28) 0%, rgba(7, 19, 33, 0.22) 45%, rgba(7, 19, 33, 0.32) 100%)"
       },
       "dark": {
         "type": "image",
-        "src": "assets/summer-liquid-glass-art.jpg",
+        "src": "assets/IMG_1891.jpg",
         "scrim": "linear-gradient(rgba(7, 19, 33, 0.34) 0%, rgba(7, 19, 33, 0.28) 45%, rgba(7, 19, 33, 0.38) 100%)"
       }
     }
