@@ -1,4 +1,4 @@
-﻿# dsh 图形控制台 (dsh-control-gui.ps1)
+# dsh 图形控制台 (dsh-control-gui.ps1)
 # WinForms 简单界面: 实时状态 + 启动/重启/停止 + Web UI/日志/WSL。
 # 非管理员运行时自动提权重启 (会弹 UAC)。附加 -SmokeTest 参数用于自检 (3 秒后自动关闭)。
 
@@ -287,10 +287,10 @@ function Repair-TailscaleAction {
         Write-Activity "Tailscale Serve 已就绪: $url"
         return "Tailscale Serve OK: $url"
     }
-    Write-Activity 'Tailscale Serve 无配置，尝试自动创建 serve --bg 3080 ...'
+    Write-Activity 'Tailscale Serve 无配置，尝试自动创建 serve --bg --https=443 http://127.0.0.1:3080 ...'
     $job = Start-Job -ScriptBlock {
         param($exe)
-        & $exe serve --bg 3080 2>&1 | Out-String
+        & $exe serve --bg --https=443 http://127.0.0.1:3080 2>&1 | Out-String
     } -ArgumentList $ts
     if (Wait-Job $job -Timeout 10) {
         $out = Receive-Job $job

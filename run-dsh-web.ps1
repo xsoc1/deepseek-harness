@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Continue"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 $RepoRoot = Split-Path -Parent $PSScriptRoot
@@ -140,7 +140,7 @@ if (Test-Path $tailscaleExe) {
             Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale serve not enabled; open https://login.tailscale.com/f/serve?node=ny59qLPW6Y11CNTRL to enable" -Encoding UTF8
         }
         else {
-            & $tailscaleExe serve --bg 3080 2>&1 | Out-Null
+            & $tailscaleExe serve --bg --https=443 http://127.0.0.1:3080 2>&1 | Out-Null
             Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale serve ensured: https://$tailscaleHost -> http://127.0.0.1:3080" -Encoding UTF8
         }
     }
