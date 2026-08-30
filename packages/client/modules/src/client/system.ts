@@ -10,31 +10,112 @@ import type {
   ClientModuleSystemOptions,
 } from './manifest.ts'
 
-/** Default bundle-load hook: same-origin external classic script with resilient retries. */
-const defaultLoadBundle = (url: string): Promise<void> => new Promise((resolve, reject) => {
-  const load = (attempt: number): void => {
+const PLUGIN_CACHE_NAME = 'dsh-plugin-cache-v1'
+
+/** Execute a JS bundle source in global context. */
+function executeScriptContent(content: string, url: string): void {
+  if (typeof document !== 'undefined') {
     const el = document.createElement('script')
-    el.async = true
-    el.src = url
-    const cleanup = (): void => { el.remove() }
-    el.addEventListener('load', () => {
-      cleanup()
-      resolve()
-    }, { once: true })
-    el.addEventListener('error', () => {
-      cleanup()
-      // Transient remote/LAN failures are common on tablets/mobile; retry before
-      // surfacing a plugin-load error to the user.
-      if (attempt < 5) {
-        setTimeout(() => load(attempt + 1), 300 * Math.pow(1.8, attempt))
-        return
-      }
-      reject(new Error(`client-modules: bundle script ${url} failed to load`))
-    }, { once: true })
+    el.textContent = `${content}\n//# sourceURL=${url}`
     document.head.append(el)
+    el.remove()
+  } else if (typeof globalThis !== 'undefined') {
+    (0, eval)(content)
   }
-  load(0)
-})
+}
+
+/** Fallback to classic script tag injection with retries. */
+function loadViaScriptTag(url: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const load = (attempt: number): void => {
+      const el = document.createElement('script')
+      el.async = true
+      el.src = url
+      const cleanup = (): void => { el.remove() }
+      el.addEventListener('load', () => {
+        cleanup()
+        resolve()
+      }, { once: true })
+      el.addEventListener('error', () => {
+        cleanup()
+        if (attempt < 4) {
+          setTimeout(() => load(attempt + 1), 300 * Math.pow(1.8, attempt))
+          return
+        }
+        reject(new Error(`client-modules: bundle script ${url} failed to load`))
+      }, { once: true })
+      document.head.append(el)
+    }
+    load(0)
+  })
+}
+
+/**
+ * High-performance bundle loader with local persistent cache and resilient retries.
+ * 1. Checks CacheStorage for instant 0ms offline/remote execution.
+ * 2. On cache miss, fetches with timeout, retries, and stores in CacheStorage for future sessions.
+ * 3. Falls back gracefully to script-tag loading if Fetch/CacheStorage are unavailable.
+ */
+const defaultLoadBundle = async (url: string): Promise<void> => {
+  // 1. Try local CacheStorage if supported in this environment
+  let cache: Cache | undefined
+  if (typeof window !== 'undefined' && 'caches' in window) {
+    try {
+      cache = await caches.open(PLUGIN_CACHE_NAME)
+      const cachedResponse = await cache.match(url)
+      if (cachedResponse && cachedResponse.ok) {
+        const text = await cachedResponse.text()
+        if (text && text.length > 0) {
+          executeScriptContent(text, url)
+          return
+        }
+      }
+    } catch {
+      // Cache storage error / private browsing mode; proceed to network fetch
+    }
+  }
+
+  // 2. Fetch with exponential retry and store in cache
+  let lastError: Error | undefined
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : undefined
+      const timer = controller ? setTimeout(() => controller.abort(), 15000) : undefined
+      const response = await fetch(url, {
+        signal: controller?.signal,
+        credentials: 'same-origin',
+      })
+      if (timer) clearTimeout(timer)
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`)
+      }
+
+      // Clone response to persist in CacheStorage for instant future loads
+      if (cache !== undefined) {
+        try {
+          await cache.put(url, response.clone())
+        } catch {}
+      }
+
+      const text = await response.text()
+      executeScriptContent(text, url)
+      return
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err : new Error(String(err))
+      if (attempt < 4) {
+        await new Promise(r => setTimeout(r, 300 * Math.pow(1.8, attempt)))
+      }
+    }
+  }
+
+  // 3. Fallback to DOM script tag as last resort
+  try {
+    await loadViaScriptTag(url)
+  } catch {
+    throw new Error(`client-modules: bundle script ${url} failed to load (${lastError?.message ?? 'unknown network error'})`)
+  }
+}
 
 /** Replace the rev query while preserving absolute, protocol-relative, or path-relative form. */
 function atRevision(url: string, rev: string): string {
@@ -118,6 +199,30 @@ export class ClientModuleSystem implements ClientModuleLoader {
     target.mode = 'live'
     target.load = (registration) => { this.register(registration) }
     for (const registration of pending) target.load(registration)
+
+    // Proactively pre-warm remaining bundle URLs into persistent CacheStorage in idle time
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      const scheduleIdle = typeof requestIdleCallback === 'function'
+        ? requestIdleCallback
+        : (cb: () => void) => setTimeout(cb, 1000)
+      scheduleIdle(() => {
+        caches.open(PLUGIN_CACHE_NAME).then((cache) => {
+          const uniqueUrls = new Set<string>()
+          for (const row of options.manifest.modules) {
+            uniqueUrls.add(row.initialUrl)
+          }
+          for (const bundleUrl of uniqueUrls) {
+            cache.match(bundleUrl).then((hit) => {
+              if (!hit) {
+                fetch(bundleUrl, { credentials: 'same-origin' }).then((res) => {
+                  if (res.ok) cache.put(bundleUrl, res)
+                }).catch(() => {})
+              }
+            }).catch(() => {})
+          }
+        }).catch(() => {})
+      })
+    }
   }
 
   /** Register one bundle factory, rejecting a script that executes twice without invalidation. */
