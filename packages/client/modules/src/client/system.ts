@@ -25,8 +25,8 @@ const defaultLoadBundle = (url: string): Promise<void> => new Promise((resolve, 
       cleanup()
       // Transient remote/LAN failures are common on tablets; retry before
       // surfacing a plugin-load error to the user.
-      if (attempt < 2) {
-        setTimeout(() => load(attempt + 1), 300 * (attempt + 1))
+      if (attempt < 4) {
+        setTimeout(() => load(attempt + 1), 400 * (attempt + 1))
         return
       }
       reject(new Error(`client-modules: bundle script ${url} failed to load`))
