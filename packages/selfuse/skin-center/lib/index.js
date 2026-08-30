@@ -1302,7 +1302,7 @@ const MIME = {
 function sendCss(res, status, code) {
 	res.writeHead(status, {
 		"content-type": "text/css; charset=utf-8",
-		"cache-control": "no-store"
+		"cache-control": "public, max-age=86400, stale-while-revalidate=3600"
 	});
 	res.end(code);
 }
@@ -1341,7 +1341,13 @@ function serveStylesheet(res, entry, relPath, filename) {
 }
 /** Serve one static file from inside the skin directory (fail-closed). */
 function serveAsset(res, entry, relPath) {
-	const abs = resolveInsideSkin(entry, relPath);
+	let abs = resolveInsideSkin(entry, relPath);
+	if ((!abs || !existsSync(abs) || !statSync(abs).isFile()) && relPath.endsWith(".png")) {
+		const jpgCandidate = resolveInsideSkin(entry, relPath.replace(/\.png$/, ".jpg"));
+		if (jpgCandidate && existsSync(jpgCandidate) && statSync(jpgCandidate).isFile()) {
+			abs = jpgCandidate;
+		}
+	}
 	if (!abs || !existsSync(abs) || !statSync(abs).isFile()) {
 		json(res, 404, {
 			ok: false,
@@ -1352,7 +1358,7 @@ function serveAsset(res, entry, relPath) {
 	const mime = MIME[extname(abs).toLowerCase()] ?? "application/octet-stream";
 	res.writeHead(200, {
 		"content-type": mime,
-		"cache-control": "no-store"
+		"cache-control": "public, max-age=604800, stale-while-revalidate=86400"
 	});
 	res.end(readFileSync(abs));
 }
