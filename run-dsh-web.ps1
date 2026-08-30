@@ -153,8 +153,9 @@ else {
 }
 
 # Start dsh-bridge.mjs so Windows localhost:3080 forwards to WSL eth0:3080
+$bridgeScript = if (Test-Path "F:\tools\deepseek-harness\dsh-bridge.mjs") { "F:\tools\deepseek-harness\dsh-bridge.mjs" } else { "$HarnessRoot\dsh-bridge.mjs" }
 if (-not (Test-TcpPort "127.0.0.1" 3080)) {
-    Start-Process -FilePath node -ArgumentList "$HarnessRoot\dsh-bridge.mjs" -WindowStyle Hidden
+    Start-Process -FilePath "node.exe" -ArgumentList "`"$bridgeScript`"" -WindowStyle Hidden
     Start-Sleep -Milliseconds 500
 }
 
