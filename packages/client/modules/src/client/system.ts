@@ -82,7 +82,7 @@ const defaultLoadBundle = async (url: string): Promise<void> => {
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : undefined
       const timer = controller ? setTimeout(() => controller.abort(), 15000) : undefined
       const response = await fetch(url, {
-        signal: controller?.signal,
+        ...controller ? { signal: controller.signal } : {},
         credentials: 'same-origin',
       })
       if (timer) clearTimeout(timer)
