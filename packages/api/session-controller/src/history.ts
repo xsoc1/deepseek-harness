@@ -21,7 +21,7 @@ import type {
   SessionWireEvent,
 } from './types.ts'
 
-const DEFAULT_MAX_MESSAGES = 50
+const DEFAULT_MAX_MESSAGES = 20
 const MESSAGE_TYPES = new Set(['user/message', 'assistant/message'])
 
 /** Implements cold-safe history operations delegated by the Session Controller. */

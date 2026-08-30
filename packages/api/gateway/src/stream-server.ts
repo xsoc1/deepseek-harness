@@ -21,7 +21,13 @@ export type RemoteStreamFailureMapper = (error: unknown) => RemoteStreamFailure
 
 /** Own the no-server WebSocket acceptor and every active logical stream. */
 export class RemoteStreamMuxServer {
-  private readonly server = new WebSocketServer({ noServer: true })
+  private readonly server = new WebSocketServer({
+    noServer: true,
+    perMessageDeflate: {
+      zlibDeflateOptions: { level: 1 },
+      threshold: 1024,
+    },
+  })
   private readonly connections = new Set<Promise<void>>()
   private heartbeatTimer: NodeJS.Timeout | undefined
 
