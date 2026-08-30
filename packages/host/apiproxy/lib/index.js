@@ -1858,7 +1858,7 @@ function createApiProxy(ctx, defaults) {
 			outcome
 		});
 	}
-	const disposeProvider = ctx.userQuestions.registerProvider({ ask(request) {
+	const provider = { ask(request) {
 		const sessionId = request.agent?.id;
 		if (sessionId === void 0) return Promise.reject(new UserQuestionError("web user interaction requires an agent-owned session", "ASK_MISSING_AGENT"));
 		return new Promise((resolve, reject) => {
@@ -1888,7 +1888,10 @@ function createApiProxy(ctx, defaults) {
 			};
 			for (const queue of muxQueues) queue.push(envelope);
 		});
-	} });
+	} };
+	const disposeProvider = typeof ctx.userQuestions?.registerProvider === "function"
+		? ctx.userQuestions.registerProvider(provider)
+		: (typeof ctx.on === "function" ? ctx.on("user-questions/request", (req) => provider.ask(req)) : () => {});
 	ctx.effect(() => () => {
 		disposeProvider();
 		for (const pending of [...pendingQuestions.values()]) {
