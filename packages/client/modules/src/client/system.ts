@@ -10,7 +10,7 @@ import type {
   ClientModuleSystemOptions,
 } from './manifest.ts'
 
-/** Default bundle-load hook: same-origin external classic script. */
+/** Default bundle-load hook: same-origin external classic script with resilient retries. */
 const defaultLoadBundle = (url: string): Promise<void> => new Promise((resolve, reject) => {
   const load = (attempt: number): void => {
     const el = document.createElement('script')
@@ -23,10 +23,10 @@ const defaultLoadBundle = (url: string): Promise<void> => new Promise((resolve, 
     }, { once: true })
     el.addEventListener('error', () => {
       cleanup()
-      // Transient remote/LAN failures are common on tablets; retry before
+      // Transient remote/LAN failures are common on tablets/mobile; retry before
       // surfacing a plugin-load error to the user.
-      if (attempt < 4) {
-        setTimeout(() => load(attempt + 1), 400 * (attempt + 1))
+      if (attempt < 5) {
+        setTimeout(() => load(attempt + 1), 300 * Math.pow(1.8, attempt))
         return
       }
       reject(new Error(`client-modules: bundle script ${url} failed to load`))
