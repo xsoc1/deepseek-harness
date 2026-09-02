@@ -5,11 +5,64 @@
  */
 import type {
   AssistantMessageNode,
-  ConversationSnapshot,
+  RunningToolCall,
   TurnErrorNode,
   UserMessageNode,
 } from '@deepseek-ai/dsh-client-runtime/client'
 import type { ContentBlock } from '@deepseek-ai/dsh-client-connection/client'
+
+/** Common shape of transcript message and lifecycle nodes. */
+export interface TranscriptNode {
+  readonly kind?: string
+  readonly seq?: number
+  readonly turn?: number
+  readonly content?: readonly ContentBlock[]
+  readonly retryState?: string
+  readonly interrupted?: boolean
+  readonly messageId?: string
+  readonly [key: string]: unknown
+}
+
+/** Safely extract turnEnds map from any snapshot shape (modern, legacy, or empty). */
+export function getTurnEnds(snapshot: unknown): ReadonlyMap<number, number> {
+  if (!snapshot || typeof snapshot !== 'object') return new Map()
+  const s = snapshot as Record<string, unknown>
+  if (s.turnEnds instanceof Map) return s.turnEnds as ReadonlyMap<number, number>
+  const legacy = s.legacy as Record<string, unknown> | undefined
+  if (legacy?.turnEnds instanceof Map) return legacy.turnEnds as ReadonlyMap<number, number>
+  const timeline = s.timeline as { turns?: Map<number, { endSeq?: number }> } | undefined
+  if (timeline?.turns instanceof Map) {
+    const map = new Map<number, number>()
+    for (const [turn, turnData] of timeline.turns.entries()) {
+      if (typeof turnData?.endSeq === 'number') map.set(turn, turnData.endSeq)
+    }
+    return map
+  }
+  return new Map()
+}
+
+/** Safely extract nodes array from any snapshot shape. */
+export function getNodes(snapshot: unknown): readonly TranscriptNode[] {
+  if (!snapshot || typeof snapshot !== 'object') return []
+  const s = snapshot as Record<string, unknown>
+  if (Array.isArray(s.nodes)) return s.nodes as readonly TranscriptNode[]
+  const legacy = s.legacy as Record<string, unknown> | undefined
+  if (Array.isArray(legacy?.nodes)) return legacy.nodes as readonly TranscriptNode[]
+  if (s.nodes && typeof (s.nodes as { values?: unknown }).values === 'function') {
+    return (s.nodes as { values(): readonly TranscriptNode[] }).values()
+  }
+  return []
+}
+
+/** Safely extract runningCalls array from any snapshot shape. */
+export function getRunningCalls(snapshot: unknown): readonly RunningToolCall[] {
+  if (!snapshot || typeof snapshot !== 'object') return []
+  const s = snapshot as Record<string, unknown>
+  if (Array.isArray(s.runningCalls)) return s.runningCalls as readonly RunningToolCall[]
+  const legacy = s.legacy as Record<string, unknown> | undefined
+  if (Array.isArray(legacy?.runningCalls)) return legacy.runningCalls as readonly RunningToolCall[]
+  return []
+}
 
 /**
  * The last completed user message of a session, plus everything the edit
@@ -58,17 +111,23 @@ export function userText(content: readonly ContentBlock[]): string | null {
  * @param snapshot - the live conversation snapshot.
  * @returns the edit target, or null when nothing is editable right now.
  */
-export function lastCompletedUserTarget(snapshot: ConversationSnapshot): EditTarget | null {
-  if (snapshot.running || snapshot.removed) return null
+export function lastCompletedUserTarget(snapshot: unknown): EditTarget | null {
+  if (!snapshot || typeof snapshot !== 'object') return null
+  const s = snapshot as Record<string, unknown>
+  if (s.running || s.removed) return null
+  const nodes = getNodes(snapshot)
+  if (nodes.length === 0) return null
   let last: UserMessageNode | null = null
-  for (const node of snapshot.nodes) if (node.kind === 'user') last = node
+  for (const node of nodes) if (node.kind === 'user') last = node as UserMessageNode
   if (last === null) return null
+  const turnEnds = getTurnEnds(snapshot)
+  if (turnEnds.size === 0) return null
   // The containing turn: the smallest completed turn whose turn/end sits
   // after the message (there is exactly one for a message inside a completed
   // turn; later turns would have their own user messages, so last stays last).
   let turn = -1
   let turnEndSeq = -1
-  for (const [t, end] of snapshot.turnEnds) {
+  for (const [t, end] of turnEnds) {
     if (end > last.seq && (turn === -1 || t < turn)) {
       turn = t
       turnEndSeq = end
@@ -81,7 +140,7 @@ export function lastCompletedUserTarget(snapshot: ConversationSnapshot): EditTar
   if (text === null) return null
   // Fork anchor: the latest completed turn/end strictly before the message.
   let forkAtSeq: number | null = null
-  for (const [, end] of snapshot.turnEnds) {
+  for (const [, end] of turnEnds) {
     if (end < last.seq && (forkAtSeq === null || end > forkAtSeq)) forkAtSeq = end
   }
   return {
@@ -100,9 +159,9 @@ export function lastCompletedUserTarget(snapshot: ConversationSnapshot): EditTar
  * @param turn - the turn number.
  * @returns the boundary seq (exclusive start of the turn).
  */
-export function turnStartSeq(snapshot: ConversationSnapshot, turn: number): number {
+export function turnStartSeq(snapshot: unknown, turn: number): number {
   let start = 0
-  for (const [t, end] of snapshot.turnEnds) if (t < turn && end > start) start = end
+  for (const [t, end] of getTurnEnds(snapshot)) if (t < turn && end > start) start = end
   return start
 }
 
@@ -112,13 +171,14 @@ export function turnStartSeq(snapshot: ConversationSnapshot, turn: number): numb
  * @param turn - the turn number.
  * @returns the message node, or null when the turn has none in-window.
  */
-export function lastUserInTurn(snapshot: ConversationSnapshot, turn: number): UserMessageNode | null {
-  const end = snapshot.turnEnds.get(turn)
+export function lastUserInTurn(snapshot: unknown, turn: number): UserMessageNode | null {
+  const turnEnds = getTurnEnds(snapshot)
+  const end = turnEnds.get(turn)
   if (end === undefined) return null
   const start = turnStartSeq(snapshot, turn)
   let found: UserMessageNode | null = null
-  for (const node of snapshot.nodes) {
-    if (node.kind === 'user' && node.seq > start && node.seq <= end) found = node
+  for (const node of getNodes(snapshot)) {
+    if (node.kind === 'user' && node.seq > start && node.seq <= end) found = node as UserMessageNode
   }
   return found
 }
@@ -130,34 +190,34 @@ export function lastUserInTurn(snapshot: ConversationSnapshot, turn: number): Us
  * @param snapshot - the live conversation snapshot.
  * @param turn - the turn number.
  */
-export function turnHasToolActivity(snapshot: ConversationSnapshot, turn: number): boolean {
-  const end = snapshot.turnEnds.get(turn) ?? Number.POSITIVE_INFINITY
+export function turnHasToolActivity(snapshot: unknown, turn: number): boolean {
+  const end = getTurnEnds(snapshot).get(turn) ?? Number.POSITIVE_INFINITY
   const start = turnStartSeq(snapshot, turn)
-  for (const node of snapshot.nodes) {
+  for (const node of getNodes(snapshot)) {
     if ((node.kind === 'tool-result' || node.kind === 'command') && node.seq > start && node.seq <= end) return true
   }
-  return snapshot.runningCalls.some(call => call.turn === turn)
+  return getRunningCalls(snapshot).some(call => call.turn === turn)
 }
 
 /** The interruption-frozen assistant partial of one turn, when present. */
-export function interruptedAssistantInTurn(snapshot: ConversationSnapshot, turn: number): AssistantMessageNode | null {
-  for (const node of snapshot.nodes) {
-    if (node.kind === 'assistant' && node.turn === turn && node.interrupted === true) return node
+export function interruptedAssistantInTurn(snapshot: unknown, turn: number): AssistantMessageNode | null {
+  for (const node of getNodes(snapshot)) {
+    if (node.kind === 'assistant' && node.turn === turn && (node as AssistantMessageNode).interrupted === true) return node as AssistantMessageNode
   }
   return null
 }
 
 /** The durable terminal error node of one turn, when present. */
-export function turnErrorInTurn(snapshot: ConversationSnapshot, turn: number): TurnErrorNode | null {
-  for (const node of snapshot.nodes) {
-    if (node.kind === 'turn-error' && node.turn === turn) return node
+export function turnErrorInTurn(snapshot: unknown, turn: number): TurnErrorNode | null {
+  for (const node of getNodes(snapshot)) {
+    if (node.kind === 'turn-error' && node.turn === turn) return node as TurnErrorNode
   }
   return null
 }
 
 /** Whether the turn hit the per-request output-token cap. */
-export function maxTokensInTurn(snapshot: ConversationSnapshot, turn: number): boolean {
-  return snapshot.nodes.some(node => node.kind === 'turn-max-tokens' && node.turn === turn)
+export function maxTokensInTurn(snapshot: unknown, turn: number): boolean {
+  return getNodes(snapshot).some(node => node.kind === 'turn-max-tokens' && node.turn === turn)
 }
 
 /**
@@ -165,23 +225,23 @@ export function maxTokensInTurn(snapshot: ConversationSnapshot, turn: number): b
  * chain scheduled or started). While the host is retrying, the client
  * supervisor must stand down: acting would double the retry traffic.
  */
-export function hostRetryPending(snapshot: ConversationSnapshot, turn: number): boolean {
-  return snapshot.nodes.some(
+export function hostRetryPending(snapshot: unknown, turn: number): boolean {
+  return getNodes(snapshot).some(
     node => node.kind === 'model-retry' && node.turn === turn && (node.retryState === 'scheduled' || node.retryState === 'started'),
   )
 }
 
 /** Whether the turn settled with a finalized (messageId-bearing) assistant message. */
-export function assistantFinalizedInTurn(snapshot: ConversationSnapshot, turn: number): boolean {
-  return snapshot.nodes.some(
+export function assistantFinalizedInTurn(snapshot: unknown, turn: number): boolean {
+  return getNodes(snapshot).some(
     node => node.kind === 'assistant' && node.turn === turn && node.interrupted !== true && node.messageId !== undefined,
   )
 }
 
 /** Count of durable user messages in the window (duplicate-message guard). */
-export function userNodeCount(snapshot: ConversationSnapshot): number {
+export function userNodeCount(snapshot: unknown): number {
   let count = 0
-  for (const node of snapshot.nodes) if (node.kind === 'user') count += 1
+  for (const node of getNodes(snapshot)) if (node.kind === 'user') count += 1
   return count
 }
 
@@ -190,15 +250,15 @@ export function userNodeCount(snapshot: ConversationSnapshot): number {
  * fork keeps). Used to compute how many user messages a retry child is
  * EXPECTED to carry: prefix count plus the one replayed message.
  */
-export function userNodeCountBefore(snapshot: ConversationSnapshot, boundarySeq: number): number {
+export function userNodeCountBefore(snapshot: unknown, boundarySeq: number): number {
   let count = 0
-  for (const node of snapshot.nodes) if (node.kind === 'user' && node.seq <= boundarySeq) count += 1
+  for (const node of getNodes(snapshot)) if (node.kind === 'user' && node.seq <= boundarySeq) count += 1
   return count
 }
 
 /** The latest completed turn number, or null when none exists in-window. */
-export function lastTurnOf(snapshot: ConversationSnapshot): number | null {
+export function lastTurnOf(snapshot: unknown): number | null {
   let max = -1
-  for (const turn of snapshot.turnEnds.keys()) if (turn > max) max = turn
+  for (const turn of getTurnEnds(snapshot).keys()) if (turn > max) max = turn
   return max === -1 ? null : max
 }

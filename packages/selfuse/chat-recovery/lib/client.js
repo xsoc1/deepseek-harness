@@ -117,6 +117,32 @@ window.__ModuleLoader__.load({
 			}
 			return text;
 		}
+		function getTurnEnds(snapshot) {
+			if (!snapshot || typeof snapshot !== "object") return new Map();
+			if (snapshot.turnEnds instanceof Map) return snapshot.turnEnds;
+			if (snapshot.legacy?.turnEnds instanceof Map) return snapshot.legacy.turnEnds;
+			if (snapshot.timeline?.turns instanceof Map) {
+				const map = new Map();
+				for (const [turn, turnData] of snapshot.timeline.turns.entries()) {
+					if (typeof turnData?.endSeq === "number") map.set(turn, turnData.endSeq);
+				}
+				return map;
+			}
+			return new Map();
+		}
+		function getNodes(snapshot) {
+			if (!snapshot || typeof snapshot !== "object") return [];
+			if (Array.isArray(snapshot.nodes)) return snapshot.nodes;
+			if (Array.isArray(snapshot.legacy?.nodes)) return snapshot.legacy.nodes;
+			if (snapshot.nodes && typeof snapshot.nodes.values === "function") return snapshot.nodes.values();
+			return [];
+		}
+		function getRunningCalls(snapshot) {
+			if (!snapshot || typeof snapshot !== "object") return [];
+			if (Array.isArray(snapshot.runningCalls)) return snapshot.runningCalls;
+			if (Array.isArray(snapshot.legacy?.runningCalls)) return snapshot.legacy.runningCalls;
+			return [];
+		}
 		/**
 		* Resolve the edit target: the LAST user message, provided the session is not
 		* running/removed and the message's turn has ended. Steering, context and
@@ -125,13 +151,17 @@ window.__ModuleLoader__.load({
 		* @returns the edit target, or null when nothing is editable right now.
 		*/
 		function lastCompletedUserTarget(snapshot) {
-			if (snapshot.running || snapshot.removed) return null;
+			if (!snapshot || typeof snapshot !== "object" || snapshot.running || snapshot.removed) return null;
+			const nodes = getNodes(snapshot);
+			if (nodes.length === 0) return null;
 			let last = null;
-			for (const node of snapshot.nodes) if (node.kind === "user") last = node;
+			for (const node of nodes) if (node.kind === "user") last = node;
 			if (last === null) return null;
+			const turnEnds = getTurnEnds(snapshot);
+			if (turnEnds.size === 0) return null;
 			let turn = -1;
 			let turnEndSeq = -1;
-			for (const [t, end] of snapshot.turnEnds) if (end > last.seq && (turn === -1 || t < turn)) {
+			for (const [t, end] of turnEnds) if (end > last.seq && (turn === -1 || t < turn)) {
 				turn = t;
 				turnEndSeq = end;
 			}
@@ -139,7 +169,7 @@ window.__ModuleLoader__.load({
 			const text = userText(last.content);
 			if (text === null) return null;
 			let forkAtSeq = null;
-			for (const [, end] of snapshot.turnEnds) if (end < last.seq && (forkAtSeq === null || end > forkAtSeq)) forkAtSeq = end;
+			for (const [, end] of turnEnds) if (end < last.seq && (forkAtSeq === null || end > forkAtSeq)) forkAtSeq = end;
 			return {
 				text,
 				seq: last.seq,
@@ -157,7 +187,7 @@ window.__ModuleLoader__.load({
 		*/
 		function turnStartSeq(snapshot, turn) {
 			let start = 0;
-			for (const [t, end] of snapshot.turnEnds) if (t < turn && end > start) start = end;
+			for (const [t, end] of getTurnEnds(snapshot)) if (t < turn && end > start) start = end;
 			return start;
 		}
 		/**
@@ -167,11 +197,11 @@ window.__ModuleLoader__.load({
 		* @returns the message node, or null when the turn has none in-window.
 		*/
 		function lastUserInTurn(snapshot, turn) {
-			const end = snapshot.turnEnds.get(turn);
+			const end = getTurnEnds(snapshot).get(turn);
 			if (end === void 0) return null;
 			const start = turnStartSeq(snapshot, turn);
 			let found = null;
-			for (const node of snapshot.nodes) if (node.kind === "user" && node.seq > start && node.seq <= end) found = node;
+			for (const node of getNodes(snapshot)) if (node.kind === "user" && node.seq > start && node.seq <= end) found = node;
 			return found;
 		}
 		/**
@@ -182,24 +212,24 @@ window.__ModuleLoader__.load({
 		* @param turn - the turn number.
 		*/
 		function turnHasToolActivity(snapshot, turn) {
-			const end = snapshot.turnEnds.get(turn) ?? Number.POSITIVE_INFINITY;
+			const end = getTurnEnds(snapshot).get(turn) ?? Number.POSITIVE_INFINITY;
 			const start = turnStartSeq(snapshot, turn);
-			for (const node of snapshot.nodes) if ((node.kind === "tool-result" || node.kind === "command") && node.seq > start && node.seq <= end) return true;
-			return snapshot.runningCalls.some((call) => call.turn === turn);
+			for (const node of getNodes(snapshot)) if ((node.kind === "tool-result" || node.kind === "command") && node.seq > start && node.seq <= end) return true;
+			return getRunningCalls(snapshot).some((call) => call.turn === turn);
 		}
 		/** The interruption-frozen assistant partial of one turn, when present. */
 		function interruptedAssistantInTurn(snapshot, turn) {
-			for (const node of snapshot.nodes) if (node.kind === "assistant" && node.turn === turn && node.interrupted === true) return node;
+			for (const node of getNodes(snapshot)) if (node.kind === "assistant" && node.turn === turn && node.interrupted === true) return node;
 			return null;
 		}
 		/** The durable terminal error node of one turn, when present. */
 		function turnErrorInTurn(snapshot, turn) {
-			for (const node of snapshot.nodes) if (node.kind === "turn-error" && node.turn === turn) return node;
+			for (const node of getNodes(snapshot)) if (node.kind === "turn-error" && node.turn === turn) return node;
 			return null;
 		}
 		/** Whether the turn hit the per-request output-token cap. */
 		function maxTokensInTurn(snapshot, turn) {
-			return snapshot.nodes.some((node) => node.kind === "turn-max-tokens" && node.turn === turn);
+			return getNodes(snapshot).some((node) => node.kind === "turn-max-tokens" && node.turn === turn);
 		}
 		/**
 		* Whether the HOST already owns a pending retry for this turn (llm/retry
@@ -207,16 +237,16 @@ window.__ModuleLoader__.load({
 		* supervisor must stand down: acting would double the retry traffic.
 		*/
 		function hostRetryPending(snapshot, turn) {
-			return snapshot.nodes.some((node) => node.kind === "model-retry" && node.turn === turn && (node.retryState === "scheduled" || node.retryState === "started"));
+			return getNodes(snapshot).some((node) => node.kind === "model-retry" && node.turn === turn && (node.retryState === "scheduled" || node.retryState === "started"));
 		}
 		/** Whether the turn settled with a finalized (messageId-bearing) assistant message. */
 		function assistantFinalizedInTurn(snapshot, turn) {
-			return snapshot.nodes.some((node) => node.kind === "assistant" && node.turn === turn && node.interrupted !== true && node.messageId !== void 0);
+			return getNodes(snapshot).some((node) => node.kind === "assistant" && node.turn === turn && node.interrupted !== true && node.messageId !== void 0);
 		}
 		/** Count of durable user messages in the window (duplicate-message guard). */
 		function userNodeCount(snapshot) {
 			let count = 0;
-			for (const node of snapshot.nodes) if (node.kind === "user") count += 1;
+			for (const node of getNodes(snapshot)) if (node.kind === "user") count += 1;
 			return count;
 		}
 		/**
@@ -226,13 +256,13 @@ window.__ModuleLoader__.load({
 		*/
 		function userNodeCountBefore(snapshot, boundarySeq) {
 			let count = 0;
-			for (const node of snapshot.nodes) if (node.kind === "user" && node.seq <= boundarySeq) count += 1;
+			for (const node of getNodes(snapshot)) if (node.kind === "user" && node.seq <= boundarySeq) count += 1;
 			return count;
 		}
 		/** The latest completed turn number, or null when none exists in-window. */
 		function lastTurnOf(snapshot) {
 			let max = -1;
-			for (const turn of snapshot.turnEnds.keys()) if (turn > max) max = turn;
+			for (const turn of getTurnEnds(snapshot).keys()) if (turn > max) max = turn;
 			return max === -1 ? null : max;
 		}
 		//#endregion
@@ -252,10 +282,12 @@ window.__ModuleLoader__.load({
 		* @returns the failure descriptor, or null when the last turn did not fail.
 		*/
 		function failureOfLastTurn(snapshot) {
-			if (snapshot.running) return null;
+			if (!snapshot || typeof snapshot !== "object" || snapshot.running) return null;
+			const turnEnds = getTurnEnds(snapshot);
+			if (turnEnds.size === 0) return null;
 			let turn = -1;
 			let end = 0;
-			for (const [t, e] of snapshot.turnEnds) if (t > turn) {
+			for (const [t, e] of turnEnds) if (t > turn) {
 				turn = t;
 				end = e;
 			}
@@ -281,7 +313,7 @@ window.__ModuleLoader__.load({
 				kind: "interrupted",
 				turn,
 				turnEndSeq: end,
-				message: snapshot.lastAgentError,
+				message: snapshot.lastAgentError ?? null,
 				code: null,
 				hasTools: turnHasToolActivity(snapshot, turn)
 			};
@@ -318,7 +350,7 @@ window.__ModuleLoader__.load({
 			const text = userText(message.content);
 			if (text === null || text.trim() === "") return null;
 			let start = 0;
-			for (const [t, end] of snapshot.turnEnds) if (t < turn && end > start) start = end;
+			for (const [t, end] of getTurnEnds(snapshot)) if (t < turn && end > start) start = end;
 			return {
 				text,
 				forkAtSeq: start === 0 ? null : start,
@@ -334,9 +366,10 @@ window.__ModuleLoader__.load({
 		*/
 		function isAutoRetryable(snapshot, failure) {
 			if (failure.hasTools) return false;
+			const s = snapshot && typeof snapshot === "object" ? snapshot : {};
 			switch (failure.kind) {
 				case "turn-error": return isRetryableError(failure.code, failure.message);
-				case "interrupted": return snapshot.lastAgentError !== null;
+				case "interrupted": return (s.lastAgentError ?? null) !== null;
 				case "max-tokens": return false;
 			}
 		}
@@ -347,7 +380,7 @@ window.__ModuleLoader__.load({
 		* @param snapshot - the live conversation snapshot.
 		*/
 		function verdictFor(snapshot) {
-			if (snapshot.running || snapshot.removed) return { action: "none" };
+			if (!snapshot || typeof snapshot !== "object" || snapshot.running || snapshot.removed) return { action: "none" };
 			const failure = failureOfLastTurn(snapshot);
 			if (failure === null) return { action: "none" };
 			if (hostRetryPending(snapshot, failure.turn)) return { action: "none" };
@@ -414,6 +447,13 @@ window.__ModuleLoader__.load({
 			*/
 			review() {
 				if (this.disposed) return;
+				try {
+					this.doReview();
+				} catch (err) {
+					console.warn("[chat-recovery] review error suppressed:", err);
+				}
+			}
+			doReview() {
 				const current = this.ports.currentId();
 				switch (this.state.phase) {
 					case "idle": {
@@ -455,7 +495,7 @@ window.__ModuleLoader__.load({
 						if (verdict.action === "none") {
 							const turn = lastTurnOf(snapshot);
 							if (turn !== null && assistantFinalizedInTurn(snapshot, turn)) {
-								this.settledEndSeq = snapshot.turnEnds.get(turn) ?? this.settledEndSeq;
+								this.settledEndSeq = getTurnEnds(snapshot).get(turn) ?? this.settledEndSeq;
 								this.finish("done");
 							}
 							return;
@@ -498,7 +538,7 @@ window.__ModuleLoader__.load({
 							return;
 						}
 						let latestEnd = 0;
-						for (const end of snapshot.turnEnds.values()) if (end > latestEnd) latestEnd = end;
+						for (const end of getTurnEnds(snapshot).values()) if (end > latestEnd) latestEnd = end;
 						if (latestEnd > this.settledEndSeq) this.reset();
 						return;
 					}
@@ -713,9 +753,9 @@ window.__ModuleLoader__.load({
 		}
 		/** Highest completed turn/end seq in one snapshot (0 for blank/unavailable). */
 		function latestTurnEnd(snapshot) {
-			if (snapshot === void 0) return 0;
+			if (snapshot === void 0 || snapshot === null) return 0;
 			let latest = 0;
-			for (const end of snapshot.turnEnds.values()) if (end > latest) latest = end;
+			for (const end of getTurnEnds(snapshot).values()) if (end > latest) latest = end;
 			return latest;
 		}
 		//#endregion

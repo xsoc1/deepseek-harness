@@ -3,8 +3,8 @@
  * planning over a ConversationSnapshot. Pure and framework-free so both the
  * transcript UI and the supervisor share one decision source.
  */
-import type { ConversationSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
 import {
+  getTurnEnds,
   hostRetryPending,
   interruptedAssistantInTurn,
   lastUserInTurn,
@@ -55,11 +55,15 @@ export type RetryVerdict =
  * @param snapshot - the live conversation snapshot.
  * @returns the failure descriptor, or null when the last turn did not fail.
  */
-export function failureOfLastTurn(snapshot: ConversationSnapshot): TurnFailure | null {
-  if (snapshot.running) return null
+export function failureOfLastTurn(snapshot: unknown): TurnFailure | null {
+  if (!snapshot || typeof snapshot !== 'object') return null
+  const s = snapshot as Record<string, unknown>
+  if (s.running) return null
+  const turnEnds = getTurnEnds(snapshot)
+  if (turnEnds.size === 0) return null
   let turn = -1
   let end = 0
-  for (const [t, e] of snapshot.turnEnds) {
+  for (const [t, e] of turnEnds) {
     if (t > turn) {
       turn = t
       end = e
@@ -95,7 +99,7 @@ export function failureOfLastTurn(snapshot: ConversationSnapshot): TurnFailure |
       // host/agent-error is the durable outlet for live failures without a
       // turn position: non-null means the turn crashed, null means the user
       // stopped it on purpose.
-      message: snapshot.lastAgentError,
+      message: (s.lastAgentError as string | undefined) ?? null,
       code: null,
       hasTools: turnHasToolActivity(snapshot, turn),
     }
@@ -118,8 +122,16 @@ export function isRetryableError(code: string | null | undefined, message: strin
   return true
 }
 
-const RETRYABLE_PATTERN = /(timeout|timed[\s_-]?out|network|econn|eof|socket|fetch|connection|dns|enotfound|transport|rate[\s_-]?limit|429|5\d{2}|server|overloaded|unavailable|capacity|empty|no[\s_-]?response)/i
-const NON_RETRYABLE_PATTERN = /(400|401|402|403|404|405|422|quota|auth|credential|api[\s_-]?key|permission|denied|forbidden|invalid|unsupported|not[\s_-]?found|cancel)/i
+const RETRYABLE_PATTERN = new RegExp(
+  '(timeout|timed[\\s_-]?out|network|econn|eof|socket|fetch|connection|dns|enotfound|transport|rate[\\s_-]?limit'
+  + '|429|5\\d{2}|server|overloaded|unavailable|capacity|empty|no[\\s_-]?response)',
+  'i',
+)
+const NON_RETRYABLE_PATTERN = new RegExp(
+  '(400|401|402|403|404|405|422|quota|auth|credential|api[\\s_-]?key|permission|denied|forbidden|invalid'
+  + '|unsupported|not[\\s_-]?found|cancel)',
+  'i',
+)
 
 /**
  * Build the re-run plan for one failed turn: its original user text plus the
@@ -130,13 +142,13 @@ const NON_RETRYABLE_PATTERN = /(400|401|402|403|404|405|422|quota|auth|credentia
  * @param turn - the failed turn number.
  * @returns the plan, or null when the turn has no safely-replayable user message.
  */
-export function planForTurn(snapshot: ConversationSnapshot, turn: number): RetryPlan | null {
+export function planForTurn(snapshot: unknown, turn: number): RetryPlan | null {
   const message = lastUserInTurn(snapshot, turn)
   if (message === null) return null
   const text = userText(message.content)
   if (text === null || text.trim() === '') return null
   let start = 0
-  for (const [t, end] of snapshot.turnEnds) if (t < turn && end > start) start = end
+  for (const [t, end] of getTurnEnds(snapshot)) if (t < turn && end > start) start = end
   return {
     text,
     forkAtSeq: start === 0 ? null : start,
@@ -151,13 +163,14 @@ export function planForTurn(snapshot: ConversationSnapshot, turn: number): Retry
  * crash (lastAgentError), never when the user stopped the turn on purpose;
  * output-token caps are never auto-retried.
  */
-function isAutoRetryable(snapshot: ConversationSnapshot, failure: TurnFailure): boolean {
+function isAutoRetryable(snapshot: unknown, failure: TurnFailure): boolean {
   if (failure.hasTools) return false
+  const s = (snapshot && typeof snapshot === 'object' ? snapshot : {}) as Record<string, unknown>
   switch (failure.kind) {
     case 'turn-error':
       return isRetryableError(failure.code, failure.message)
     case 'interrupted':
-      return snapshot.lastAgentError !== null
+      return (s.lastAgentError ?? null) !== null
     case 'max-tokens':
       return false
   }
@@ -169,8 +182,10 @@ function isAutoRetryable(snapshot: ConversationSnapshot, failure: TurnFailure): 
  * failed but not auto-retryable lands on the manual path (transcript button).
  * @param snapshot - the live conversation snapshot.
  */
-export function verdictFor(snapshot: ConversationSnapshot): RetryVerdict {
-  if (snapshot.running || snapshot.removed) return { action: 'none' }
+export function verdictFor(snapshot: unknown): RetryVerdict {
+  if (!snapshot || typeof snapshot !== 'object') return { action: 'none' }
+  const s = snapshot as Record<string, unknown>
+  if (s.running || s.removed) return { action: 'none' }
   const failure = failureOfLastTurn(snapshot)
   if (failure === null) return { action: 'none' }
   if (hostRetryPending(snapshot, failure.turn)) return { action: 'none' }

@@ -15,7 +15,7 @@
  * user input, or the UI cancel button.
  */
 import type { ConversationSnapshot, SessionId } from '@deepseek-ai/dsh-client-runtime/client'
-import { assistantFinalizedInTurn, lastTurnOf, userNodeCount, userNodeCountBefore } from './transcript.ts'
+import { assistantFinalizedInTurn, getTurnEnds, lastTurnOf, userNodeCount, userNodeCountBefore } from './transcript.ts'
 import {
   BACKOFF_DELAYS_MS,
   failureOfLastTurn,
@@ -56,6 +56,11 @@ export interface PromptOutcome {
   ok: boolean
   code?: string
   message?: string
+}
+
+function isRunning(snapshot: unknown): boolean {
+  if (!snapshot || typeof snapshot !== 'object') return false
+  return Boolean((snapshot as { running?: boolean }).running)
 }
 
 /** Everything the supervisor needs from the runtime; the client wiring fills it. */
@@ -121,6 +126,14 @@ export class RetrySupervisor {
    */
   review(): void {
     if (this.disposed) return
+    try {
+      this.doReview()
+    } catch (err) {
+      console.warn('[chat-recovery] review error suppressed:', err)
+    }
+  }
+
+  private doReview(): void {
     const current = this.ports.currentId()
     switch (this.state.phase) {
       case 'idle': {
@@ -143,7 +156,7 @@ export class RetrySupervisor {
           return
         }
         const snapshot = this.ports.snapshot(source)
-        if (snapshot !== undefined && (snapshot.running || userNodeCount(snapshot) > this.userBaseline)) {
+        if (snapshot !== undefined && (isRunning(snapshot) || userNodeCount(snapshot) > this.userBaseline)) {
           this.cancel()
         }
         return
@@ -155,7 +168,7 @@ export class RetrySupervisor {
           return
         }
         const snapshot = this.ports.snapshot(target)
-        if (snapshot === undefined || snapshot.running) return
+        if (snapshot === undefined || isRunning(snapshot)) return
         // The user sent their own message into the retry child (beyond the
         // history prefix plus the replayed message): stand down.
         if (userNodeCount(snapshot) > this.expectedUserCount) {
@@ -166,7 +179,7 @@ export class RetrySupervisor {
         if (verdict.action === 'none') {
           const turn = lastTurnOf(snapshot)
           if (turn !== null && assistantFinalizedInTurn(snapshot, turn)) {
-            this.settledEndSeq = snapshot.turnEnds.get(turn) ?? this.settledEndSeq
+            this.settledEndSeq = getTurnEnds(snapshot).get(turn) ?? this.settledEndSeq
             this.finish('done')
           }
           return
@@ -199,7 +212,7 @@ export class RetrySupervisor {
           // Cancelling the supervisor cannot abort a prompt already accepted by
           // the host. Keep this target quarantined until that replayed turn has
           // settled, then suppress its failure before returning to idle.
-          if (snapshot.running || latestTurnEnd(snapshot) <= this.attemptStartEndSeq) return
+          if (isRunning(snapshot) || latestTurnEnd(snapshot) <= this.attemptStartEndSeq) return
           this.suppressFailure(snapshot)
         }
         this.reset()
@@ -213,12 +226,12 @@ export class RetrySupervisor {
         if (current === undefined) return
         const snapshot = this.ports.snapshot(current)
         if (snapshot === undefined) return
-        if (snapshot.running) {
+        if (isRunning(snapshot)) {
           this.reset()
           return
         }
         let latestEnd = 0
-        for (const end of snapshot.turnEnds.values()) if (end > latestEnd) latestEnd = end
+        for (const end of getTurnEnds(snapshot).values()) if (end > latestEnd) latestEnd = end
         if (latestEnd > this.settledEndSeq) this.reset()
         return
       }
@@ -439,9 +452,9 @@ function messageOf(error: unknown): string {
 }
 
 /** Highest completed turn/end seq in one snapshot (0 for blank/unavailable). */
-function latestTurnEnd(snapshot: ConversationSnapshot | undefined): number {
-  if (snapshot === undefined) return 0
+function latestTurnEnd(snapshot: unknown): number {
+  if (snapshot === undefined || snapshot === null) return 0
   let latest = 0
-  for (const end of snapshot.turnEnds.values()) if (end > latest) latest = end
+  for (const end of getTurnEnds(snapshot).values()) if (end > latest) latest = end
   return latest
 }
