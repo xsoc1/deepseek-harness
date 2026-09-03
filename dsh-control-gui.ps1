@@ -5,16 +5,14 @@
 $ErrorActionPreference = 'Stop'
 
 # ============ 配置区 ============
-$RepoRoot = Split-Path -Parent $PSScriptRoot
-$HarnessRoot = Join-Path $RepoRoot 'vendor\deepseek-harness'
+$HarnessRoot = $PSScriptRoot
 if (-not (Test-Path (Join-Path $HarnessRoot 'package.json'))) {
-    $wslHarness = '\\wsl.localhost\Ubuntu\home\huangzy\tools\deepseek-harness'
-    if (Test-Path (Join-Path $wslHarness 'package.json')) {
-        $HarnessRoot = $wslHarness
+    if (Test-Path 'F:\tools\deepseek-harness\package.json') {
+        $HarnessRoot = 'F:\tools\deepseek-harness'
     } elseif ($env:DSH_ROOT -and (Test-Path (Join-Path $env:DSH_ROOT 'package.json'))) {
         $HarnessRoot = $env:DSH_ROOT
     } else {
-        $HarnessRoot = 'F:\tools\deepseek-harness'
+        $HarnessRoot = '\\wsl.localhost\Ubuntu\home\huangzy\tools\deepseek-harness'
     }
 }
 $WatchdogFile = Join-Path $HarnessRoot 'dsh-watchdog.ps1'
@@ -467,8 +465,8 @@ function Test-Admin {
 
 
 # ---- 自提权 ----
-if (-not (Test-Admin)) {
-    $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$PSCommandPath`"")
+if ($args -notcontains '-SmokeTest' -and -not (Test-Admin)) {
+    $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$PSCommandPath`"") + @($args)
     Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -Verb RunAs -WorkingDirectory (Split-Path $PSCommandPath)
     exit
 }
@@ -761,11 +759,11 @@ New-ActionButton '检查更新' 80 {
 } '只读检查本地与上游 DSH 版本是否一致' | Out-Null
 
 New-ActionButton '更新 DSH' 80 {
-    $ans = [System.Windows.Forms.MessageBox]::Show('确认更新 DeepSeek Harness? 会拉取上游、rebase 本地分支并重新构建。', '更新 DSH', 'YesNo', 'Warning')
+    $ans = [System.Windows.Forms.MessageBox]::Show('确认更新 DeepSeek Harness 到最新版本? 将拉取上游、合并分支并在 WSL 中重新构建。', '更新 DSH', 'YesNo', 'Warning')
     if ($ans -eq 'Yes') {
         Send-Action 'update-dsh' '更新 DSH'
     }
-} '拉取上游最新版本、rebase 本地维护分支并重新构建' | Out-Null
+} '拉取上游最新版本、合并分支并在 WSL 中重新构建' | Out-Null
 
 
 New-ActionButton '打开 Web UI' 104 {

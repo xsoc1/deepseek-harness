@@ -14,16 +14,14 @@
 $ErrorActionPreference = 'Continue'
 
 # ============ 配置区 ============
-$RepoRoot = Split-Path -Parent $PSScriptRoot
-$HarnessRoot = Join-Path $RepoRoot 'vendor\deepseek-harness'
+$HarnessRoot = $PSScriptRoot
 if (-not (Test-Path (Join-Path $HarnessRoot 'package.json'))) {
-    $wslHarness = '\\wsl.localhost\Ubuntu\home\huangzy\tools\deepseek-harness'
-    if (Test-Path (Join-Path $wslHarness 'package.json')) {
-        $HarnessRoot = $wslHarness
+    if (Test-Path 'F:\tools\deepseek-harness\package.json') {
+        $HarnessRoot = 'F:\tools\deepseek-harness'
     } elseif ($env:DSH_ROOT -and (Test-Path (Join-Path $env:DSH_ROOT 'package.json'))) {
         $HarnessRoot = $env:DSH_ROOT
     } else {
-        $HarnessRoot = 'F:\tools\deepseek-harness'
+        $HarnessRoot = '\\wsl.localhost\Ubuntu\home\huangzy\tools\deepseek-harness'
     }
 }
 $WatchdogFile = Join-Path $HarnessRoot 'dsh-watchdog.ps1'
@@ -249,13 +247,20 @@ function Show-Menu {
     Write-Host '--------------------------------------------------' -ForegroundColor DarkGray
 }
 
-# ---- 自提权: 非管理员时用 RunAs 重新启动自己 ----
-if (-not (Test-Admin)) {
-    Write-Host '需要管理员权限，正在以管理员身份重新启动...' -ForegroundColor Yellow
-    Start-Sleep -Seconds 1
-    $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"") + @($args)
-    Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -Verb RunAs -WorkingDirectory (Split-Path $PSCommandPath)
-    exit
+# ---- 自提权: 非管理员时对需要权限的操作用 RunAs 重新启动自己 ----
+$mode = $args[0]
+if (-not (Test-Admin) -and ($args -notcontains '-NoElevate')) {
+    if ($mode -notin @('status', 'check-update', 'logs', 'ui')) {
+        try {
+            Write-Host '需要管理员权限，正在尝试以管理员身份启动...' -ForegroundColor Yellow
+            Start-Sleep -Seconds 1
+            $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"") + @($args)
+            Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -Verb RunAs -WorkingDirectory (Split-Path $PSCommandPath)
+            exit
+        } catch {
+            Write-Warn "无法提升管理员权限，在当前权限继续执行: $($_.Exception.Message)"
+        }
+    }
 }
 
 # ---- 入口 ----
@@ -290,8 +295,6 @@ switch ($mode) {
     }
     'check-update' {
         Action-CheckUpdate
-        Write-Host ''
-        Read-Host '按回车退出'
     }
     'update' {
         Action-Update
