@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Continue"
 $HarnessRoot = $PSScriptRoot
 if (-not (Test-Path (Join-Path $HarnessRoot "package.json"))) {
     if (Test-Path 'F:\tools\deepseek-harness\package.json') {
@@ -28,9 +28,12 @@ function Write-Log([string]$msg) {
     Add-Content -LiteralPath $log -Value $line -Encoding UTF8
 }
 
+$PidFile = "$HarnessRoot\dsh-watchdog.pid"
+
 function Write-Heartbeat {
     try {
-        [System.IO.File]::WriteAllText($heartbeat, "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
+        [System.IO.File]::WriteAllText($heartbeat, "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $PID")
+        [System.IO.File]::WriteAllText($PidFile, "$PID")
     } catch {}
 }
 

@@ -33,15 +33,17 @@ $WebUrl       = 'http://127.0.0.1:3080'
 $WebPort      = 3080
 # ============ 配置区结束 ============
 
+$script:CachedWebUrl = $null
 function Get-DshWebUrl {
-    $candidates = @($WebLog, 'F:\tools\deepseek-harness\dsh-web.log', '\\wsl.localhost\Ubuntu\home\huangzy\tools\deepseek-harness\dsh-web.log')
-    foreach ($candidate in $candidates) {
+    if ($script:CachedWebUrl) { return $script:CachedWebUrl }
+    if (Test-Path $WebLog) {
         try {
-            if (Test-Path $candidate) {
-                $line = Get-Content -LiteralPath $candidate -Tail 300 -Encoding UTF8 -ErrorAction SilentlyContinue |
-                    Select-String -Pattern 'http://127\.0\.0\.1:3080/\?token=[A-Za-z0-9_-]+' |
-                    Select-Object -Last 1
-                if ($line -and $line.Matches.Count -gt 0) { return $line.Matches[0].Value }
+            $line = Get-Content -LiteralPath $WebLog -Tail 80 -Encoding UTF8 -ErrorAction SilentlyContinue |
+                Select-String -Pattern 'http://127\.0\.0\.1:3080/\?token=[A-Za-z0-9_-]+' |
+                Select-Object -Last 1
+            if ($line -and $line.Matches.Count -gt 0) {
+                $script:CachedWebUrl = $line.Matches[0].Value
+                return $script:CachedWebUrl
             }
         } catch {}
     }
@@ -62,7 +64,7 @@ function Test-PortOpen([int]$Port) {
     try {
         $client = New-Object System.Net.Sockets.TcpClient
         $iar = $client.BeginConnect('127.0.0.1', $Port, $null, $null)
-        $ok = $iar.AsyncWaitHandle.WaitOne(500)
+        $ok = $iar.AsyncWaitHandle.WaitOne(300)
         if ($ok) {
             $client.EndConnect($iar)
             $client.Close()
@@ -76,6 +78,18 @@ function Test-PortOpen([int]$Port) {
 }
 
 function Get-WatchdogProcess {
+    $pidFile = Join-Path $HarnessRoot 'dsh-watchdog.pid'
+    if (Test-Path $pidFile) {
+        $rawPid = (Get-Content -LiteralPath $pidFile -Raw -ErrorAction SilentlyContinue).Trim()
+        if ($rawPid -match '^\d+$') {
+            try {
+                $proc = [System.Diagnostics.Process]::GetProcessById([int]$rawPid)
+                if ($proc -and -not $proc.HasExited -and ($proc.ProcessName -like '*powershell*' -or $proc.ProcessName -like '*pwsh*')) {
+                    return @([PSCustomObject]@{ ProcessId = [int]$rawPid })
+                }
+            } catch {}
+        }
+    }
     Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
         Where-Object {
             ($_.Name -eq 'powershell.exe' -or $_.Name -eq 'pwsh.exe') -and
@@ -147,7 +161,7 @@ function Show-Status {
     $http = ''
     if ($webUp) {
         try {
-            $r = Invoke-WebRequest -Uri (Get-DshWebUrl) -UseBasicParsing -TimeoutSec 5
+            $r = Invoke-WebRequest -Uri (Get-DshWebUrl) -UseBasicParsing -TimeoutSec 2
             $http = "HTTP $($r.StatusCode)"
         } catch {
             $http = '端口开但 HTTP 无响应'
@@ -161,10 +175,16 @@ function Show-Status {
     } else {
         Write-Host '  watchdog: 未运行'
     }
-    $wslText = (wsl -l -v 2>&1 | Out-String) -replace "`0", ''
-    if ($wslText -match 'Running') { $wslState = 'Running' }
-    elseif ($wslText -match 'Stopped') { $wslState = 'Stopped' }
-    else { $wslState = '未知' }
+    $wslState = '未知'
+    if ($webUp) {
+        $wslState = 'Running'
+    } else {
+        try {
+            $wslText = (wsl -l -v 2>&1 | Out-String) -replace "`0", ''
+            if ($wslText -match 'Running') { $wslState = 'Running' }
+            elseif ($wslText -match 'Stopped') { $wslState = 'Stopped' }
+        } catch {}
+    }
     Write-Host ("  WSL     : $wslState (虚拟 linux)")
     Write-Host ''
 }

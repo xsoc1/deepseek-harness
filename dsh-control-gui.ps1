@@ -39,11 +39,13 @@ function Get-DshWebUrl {
 }
 
 $ImageFile    = 'C:\Users\HuangZY\Pictures\IMG_1891.PNG'
+$BannerCache  = Join-Path $env:TEMP 'dsh-gui-banner-cache.png'
 $DshHome      = Join-Path $env:USERPROFILE '.dsh'
 $DshProfile   = Join-Path $DshHome 'profiles\web'
 $StatusFile   = Join-Path $env:TEMP 'dsh-gui-status.json'
 $TriggerFile  = Join-Path $env:TEMP 'dsh-gui-refresh.trigger'
 $PollerFile   = Join-Path $env:TEMP 'dsh-gui-poller.ps1'
+$PollerPidFile= Join-Path $env:TEMP 'dsh-gui-poller.pid'
 $CmdFile      = Join-Path $env:TEMP 'dsh-gui-cmd.json'
 $ResultPrefix = Join-Path $env:TEMP 'dsh-gui-result-'
 $ActivityFile = Join-Path $env:TEMP 'dsh-gui-activity.log'
@@ -68,21 +70,29 @@ param(
     [string]$WatchdogLog,
     [string]$UpdateScript,
     [string]$HarnessRoot,
+    [string]$PollerPidFile,
     [int]$Interval = 3
 )
 $ErrorActionPreference = 'SilentlyContinue'
+try { [System.IO.File]::WriteAllText($PollerPidFile, "$PID") } catch {}
+
 $lastWebTail = @()
 $lastWatchdogTail = @()
 $lastActivityTail = @()
 $script:activeAction = $null
 $script:activeStartedAt = $null
 $script:lastProgressAt = $null
+$script:cachedWebUrl = $null
+$script:cachedWsl = 'Unknown'
+$script:lastWslCheckAt = [datetime]::MinValue
+$script:cachedTsInfo = $null
+$script:lastTsCheckAt = [datetime]::MinValue
 
 function Get-PortOpen([int]$Port) {
     try {
         $client = New-Object System.Net.Sockets.TcpClient
         $iar = $client.BeginConnect('127.0.0.1', $Port, $null, $null)
-        $ok = $iar.AsyncWaitHandle.WaitOne(300)
+        $ok = $iar.AsyncWaitHandle.WaitOne(150)
         if ($ok) {
             $client.EndConnect($iar)
             $client.Close()
@@ -97,7 +107,7 @@ function Get-PortOpen([int]$Port) {
 
 function Get-PortPid([int]$Port) {
     try {
-        $lines = @(netstat -ano | Where-Object { $_ -match "TCP\s+.*:$Port\s+.*LISTENING" })
+        $lines = @(netstat -ano -p tcp | Where-Object { $_ -match "TCP\s+.*:$Port\s+.*LISTENING" })
         foreach ($line in $lines) {
             $parts = ($line.Trim() -split '\s+')
             if ($parts.Count -lt 5) { continue }
@@ -115,6 +125,18 @@ function Get-PortPid([int]$Port) {
 }
 
 function Get-WatchdogPids {
+    $pidFile = Join-Path $HarnessRoot 'dsh-watchdog.pid'
+    if (Test-Path $pidFile) {
+        $rawPid = (Get-Content -LiteralPath $pidFile -Raw -ErrorAction SilentlyContinue).Trim()
+        if ($rawPid -match '^\d+$') {
+            try {
+                $wp = [System.Diagnostics.Process]::GetProcessById([int]$rawPid)
+                if ($wp -and -not $wp.HasExited -and ($wp.ProcessName -like '*powershell*' -or $wp.ProcessName -like '*pwsh*')) {
+                    return @([int]$rawPid)
+                }
+            } catch {}
+        }
+    }
     $pids = @()
     $procs = Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" -ErrorAction SilentlyContinue
     foreach ($p in $procs) {
@@ -129,7 +151,15 @@ function Get-WatchdogPids {
     return $pids
 }
 
-function Get-WslState {
+function Get-WslState([bool]$WebIsUp, [switch]$Force) {
+    if ($WebIsUp) {
+        $script:cachedWsl = 'Running'
+        return 'Running'
+    }
+    if (-not $Force -and ((Get-Date) - $script:lastWslCheckAt).TotalSeconds -lt 25 -and $script:cachedWsl -ne 'Unknown') {
+        return $script:cachedWsl
+    }
+    $script:lastWslCheckAt = Get-Date
     try {
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName = 'wsl.exe'
@@ -141,13 +171,13 @@ function Get-WslState {
         $psi.StandardOutputEncoding = [System.Text.Encoding]::Unicode
         $psi.StandardErrorEncoding = [System.Text.Encoding]::Unicode
         $p = [System.Diagnostics.Process]::Start($psi)
-        if (-not $p.WaitForExit(2000)) {
+        if (-not $p.WaitForExit(1500)) {
             try { $p.Kill() } catch {}
             return 'Timeout'
         }
         $out = $p.StandardOutput.ReadToEnd()
-        if ($out -match 'Running') { return 'Running' }
-        if ($out -match 'Stopped') { return 'Stopped' }
+        if ($out -match 'Running') { $script:cachedWsl = 'Running'; return 'Running' }
+        if ($out -match 'Stopped') { $script:cachedWsl = 'Stopped'; return 'Stopped' }
         return 'Unknown'
     } catch {
         return 'Unknown'
@@ -164,15 +194,16 @@ function Get-DshVersion {
     return 'unknown'
 }
 
-function Get-DshWebUrl {
-    $candidates = @($WebLog, 'F:\tools\deepseek-harness\dsh-web.log', '\\wsl.localhost\Ubuntu\home\huangzy\tools\deepseek-harness\dsh-web.log')
-    foreach ($candidate in $candidates) {
+function Get-DshWebUrl([switch]$Force) {
+    if (-not $Force -and $script:cachedWebUrl) { return $script:cachedWebUrl }
+    if (Test-Path $WebLog) {
         try {
-            if (Test-Path $candidate) {
-                $line = Get-Content -LiteralPath $candidate -Tail 300 -Encoding UTF8 -ErrorAction SilentlyContinue |
-                    Select-String -Pattern 'http://127\.0\.0\.1:3080/\?token=[A-Za-z0-9_-]+' |
-                    Select-Object -Last 1
-                if ($line -and $line.Matches.Count -gt 0) { return $line.Matches[0].Value }
+            $line = Get-Content -LiteralPath $WebLog -Tail 80 -Encoding UTF8 -ErrorAction SilentlyContinue |
+                Select-String -Pattern 'http://127\.0\.0\.1:3080/\?token=[A-Za-z0-9_-]+' |
+                Select-Object -Last 1
+            if ($line -and $line.Matches.Count -gt 0) {
+                $script:cachedWebUrl = $line.Matches[0].Value
+                return $script:cachedWebUrl
             }
         } catch {}
     }
@@ -184,13 +215,19 @@ function Get-HttpStatus {
         $r = Invoke-WebRequest -Uri (Get-DshWebUrl) -UseBasicParsing -TimeoutSec 1
         return "HTTP $($r.StatusCode)"
     } catch {
-        return 'HTTP no response'
+        $script:cachedWebUrl = $null
+        try {
+            $r = Invoke-WebRequest -Uri $WebUrl -UseBasicParsing -TimeoutSec 1
+            return "HTTP $($r.StatusCode)"
+        } catch {
+            return 'HTTP no response'
+        }
     }
 }
 
 function Get-ListenPid([int]$Port) {
     try {
-        $lines = @(netstat -ano | Where-Object { $_ -match "TCP\s+.*:$Port\s+.*LISTENING" })
+        $lines = @(netstat -ano -p tcp | Where-Object { $_ -match "TCP\s+.*:$Port\s+.*LISTENING" })
         foreach ($line in $lines) {
             $parts = ($line.Trim() -split '\s+')
             if ($parts.Count -lt 5) { continue }
@@ -255,21 +292,29 @@ function Stop-DshAllAction {
     return 'dsh stopped'
 }
 
-function Get-TailscaleInfo {
+function Get-TailscaleInfo([switch]$Force) {
+    if (-not $Force -and $script:cachedTsInfo -and ((Get-Date) - $script:lastTsCheckAt).TotalSeconds -lt 25) {
+        return $script:cachedTsInfo
+    }
+    $script:lastTsCheckAt = Get-Date
     $ts = 'F:\Tailscale\tailscale.exe'
     if (-not (Test-Path $ts)) {
-        return @{ status = '未安装'; ip = ''; serve = '未安装' }
+        $script:cachedTsInfo = @{ status = '未安装'; ip = ''; serve = '未安装' }
+        return $script:cachedTsInfo
     }
     $statusText = & $ts status 2>&1 | Out-String
     if ($statusText -match 'Logged out|Log in at') {
-        return @{ status = '未登录'; ip = ''; serve = '未启用' }
+        $script:cachedTsInfo = @{ status = '未登录'; ip = ''; serve = '未启用' }
+        return $script:cachedTsInfo
     }
-    $ip = (& $ts ip -4 2>$null | Select-Object -First 1).Trim()
+    $ip = (& $ts ip -4 2>$null | Select-Object -First 1)
+    if ($ip) { $ip = $ip.Trim() } else { $ip = '' }
     $serveText = & $ts serve status 2>&1 | Out-String
     $serveUrl = ''
     if ($serveText -match 'https://([^\s]+)') { $serveUrl = $matches[1] }
     if (-not $serveUrl) { $serveUrl = '未启用' }
-    return @{ status = "已连接 $ip"; ip = $ip; serve = $serveUrl }
+    $script:cachedTsInfo = @{ status = "已连接 $ip"; ip = $ip; serve = $serveUrl }
+    return $script:cachedTsInfo
 }
 
 function Repair-TailscaleAction {
@@ -311,8 +356,10 @@ function Repair-TailscaleAction {
 }
 
 while ($true) {
+    $isForced = $false
     if (Test-Path $TriggerFile) {
         Remove-Item $TriggerFile -Force -ErrorAction SilentlyContinue
+        $isForced = $true
     }
     if (Test-Path $CmdFile) {
         $raw = Get-Content -LiteralPath $CmdFile -Raw -Encoding UTF8
@@ -344,7 +391,7 @@ while ($true) {
                         if ($out.Trim()) { $lines += $out.Trim() }
                         $lines += 'WSL shut down; it will restart on next wsl_bash call'
                     }
-                    'tailscale' { $lines += Repair-TailscaleAction }
+                    'tailscale' { $lines += Repair-TailscaleAction; $script:cachedTsInfo = $null }
                     'check-update' {
                         if (Test-Path $UpdateScript) {
                             $lines += '==== 检查 DSH 版本 ===='
@@ -382,7 +429,7 @@ while ($true) {
         $http = Get-HttpStatus
     }
     $watchdogPids = Get-WatchdogPids
-    $wsl = Get-WslState
+    $wsl = Get-WslState $webUp -Force:$isForced
     $webTail = @(Get-Content -LiteralPath $WebLog -Tail 12 -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { [string]$_ })
     $webNew = @()
     foreach ($ln in $webTail) {
@@ -428,7 +475,7 @@ while ($true) {
             }
         }
     }
-    $tsInfo = Get-TailscaleInfo
+    $tsInfo = Get-TailscaleInfo -Force:$isForced
     $snap = [ordered]@{
         time = Get-Date -Format 'HH:mm:ss'
         webUp = $webUp
@@ -491,10 +538,44 @@ $Banner.Dock = 'Top'
 $Banner.Height = 280
 $Banner.SizeMode = 'Zoom'
 $Banner.BackColor = [System.Drawing.Color]::FromArgb(20, 24, 36)
-try {
-    if (Test-Path $ImageFile) { $Banner.Image = [System.Drawing.Image]::FromFile($ImageFile) }
-} catch {
-    $Banner.Image = $null
+
+function Load-BannerAsync {
+    if (Test-Path $BannerCache) {
+        try {
+            $bytes = [System.IO.File]::ReadAllBytes($BannerCache)
+            $ms = New-Object System.IO.MemoryStream(,$bytes)
+            $Banner.Image = [System.Drawing.Image]::FromStream($ms)
+            return
+        } catch {}
+    }
+    [System.Threading.ThreadPool]::QueueUserWorkItem({
+        try {
+            if (-not (Test-Path $ImageFile)) { return }
+            $orig = [System.Drawing.Image]::FromFile($ImageFile)
+            $targetW = 900
+            $targetH = 280
+            $bmp = New-Object System.Drawing.Bitmap($targetW, $targetH)
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+            $g.Clear([System.Drawing.Color]::FromArgb(20, 24, 36))
+            $scale = [Math]::Min($targetW / $orig.Width, $targetH / $orig.Height)
+            $drawW = [int]($orig.Width * $scale)
+            $drawH = [int]($orig.Height * $scale)
+            $drawX = [int](($targetW - $drawW) / 2)
+            $drawY = [int](($targetH - $drawH) / 2)
+            $g.DrawImage($orig, $drawX, $drawY, $drawW, $drawH)
+            $g.Dispose()
+            $orig.Dispose()
+            try { $bmp.Save($BannerCache, [System.Drawing.Imaging.ImageFormat]::Png) } catch {}
+            if ($form -and -not $form.IsDisposed) {
+                $form.BeginInvoke([Action]{
+                    if ($form -and -not $form.IsDisposed) {
+                        $Banner.Image = $bmp
+                    }
+                }) | Out-Null
+            }
+        } catch {}
+    }) | Out-Null
 }
 
 # 状态面板
@@ -551,7 +632,27 @@ function Update-Status {
     }
     try {
         if (-not (Test-Path $StatusFile)) {
-            $refreshLabel.Text = '状态后台线程启动中...'
+            $fastWeb = (New-Object System.Net.Sockets.TcpClient).BeginConnect('127.0.0.1', $WebPort, $null, $null).AsyncWaitHandle.WaitOne(150)
+            if ($fastWeb) {
+                Set-StatusText 'web' '运行中 (HTTP 200)' ([System.Drawing.Color]::ForestGreen)
+                Set-StatusText 'WSL' 'Running (虚拟 linux)' ([System.Drawing.Color]::ForestGreen)
+            } else {
+                Set-StatusText 'web' '未运行' ([System.Drawing.Color]::Firebrick)
+            }
+            $wdPidFile = Join-Path $HarnessRoot 'dsh-watchdog.pid'
+            if (Test-Path $wdPidFile) {
+                $rawWd = (Get-Content $wdPidFile -Raw -ErrorAction SilentlyContinue).Trim()
+                if ($rawWd) { Set-StatusText 'watchdog' "运行中 (PID $rawWd)" ([System.Drawing.Color]::ForestGreen) }
+            }
+            Set-StatusText 'dsh home' "$DshHome (web profile 已配置)" ([System.Drawing.Color]::ForestGreen)
+            $pkg = Join-Path $HarnessRoot 'package.json'
+            if (Test-Path $pkg) {
+                try {
+                    $v = ((Get-Content -LiteralPath $pkg -Raw -Encoding UTF8) | ConvertFrom-Json).version
+                    if ($v) { Set-StatusText 'DSH版本' $v ([System.Drawing.Color]::ForestGreen) }
+                } catch {}
+            }
+            $refreshLabel.Text = '快速初始化完成，后台就绪中...'
             return
         }
         $raw = Get-Content -LiteralPath $StatusFile -Raw -Encoding UTF8
@@ -625,12 +726,21 @@ function Update-Status {
 
 function Start-StatusPoller {
     try {
-        if ($pollerProcess -and -not $pollerProcess.HasExited) { return }
+        if ($script:pollerProcess -and -not $script:pollerProcess.HasExited) { return }
     } catch {}
-    Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -like '*dsh-gui-poller.ps1*' } |
-        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
-    Remove-Item $StatusFile, $TriggerFile, $ActivityFile -Force -ErrorAction SilentlyContinue
+    if (Test-Path $PollerPidFile) {
+        $raw = (Get-Content -LiteralPath $PollerPidFile -Raw -ErrorAction SilentlyContinue)
+        if ($raw -and $raw.Trim() -match '^\d+$') {
+            try {
+                $proc = [System.Diagnostics.Process]::GetProcessById([int]$raw.Trim())
+                if ($proc -and -not $proc.HasExited) {
+                    $script:pollerProcess = $proc
+                    New-Item -ItemType File -Path $TriggerFile -Force | Out-Null
+                    return
+                }
+            } catch {}
+        }
+    }
     Set-Content -LiteralPath $PollerFile -Value $PollerScript -Encoding UTF8
     $argList = @(
         '-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$PollerFile`"",
@@ -648,6 +758,7 @@ function Start-StatusPoller {
         '-WatchdogLog', "`"$WatchdogLog`"",
         '-UpdateScript', "`"$UpdateScript`"",
         '-HarnessRoot', "`"$HarnessRoot`"",
+        '-PollerPidFile', "`"$PollerPidFile`"",
         '-Interval', '3'
     )
     $script:pollerProcess = Start-Process -FilePath 'powershell.exe' -ArgumentList $argList -WindowStyle Hidden -PassThru
@@ -917,7 +1028,12 @@ if ($args -contains '-SmokeTest') {
     $smoke.Start()
 }
 
-$form.Add_Shown({ Start-StatusPoller; Update-Status -Force; Add-Log 'dsh 控制台已就绪' })
+$form.Add_Shown({
+    Update-Status
+    Load-BannerAsync
+    Start-StatusPoller
+    Add-Log 'dsh 控制台已就绪'
+})
 $form.Add_FormClosed({
     try {
         if ($script:pollerProcess -and -not $script:pollerProcess.HasExited) {
@@ -925,10 +1041,11 @@ $form.Add_FormClosed({
         }
     } catch {}
     Get-ChildItem -LiteralPath $env:TEMP -Filter 'dsh-gui-result-*.json' -ErrorAction SilentlyContinue | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue }
-    Remove-Item $StatusFile, $TriggerFile, $PollerFile, $CmdFile, $ActivityFile -Force -ErrorAction SilentlyContinue
+    Remove-Item $TriggerFile, $CmdFile, $ActivityFile, $PollerPidFile -Force -ErrorAction SilentlyContinue
 })
 
 try {
+    Update-Status
     [System.Windows.Forms.Application]::Run($form)
 } catch {
     [System.Windows.Forms.MessageBox]::Show($_.Exception.ToString(), 'dsh 控制台错误') | Out-Null
