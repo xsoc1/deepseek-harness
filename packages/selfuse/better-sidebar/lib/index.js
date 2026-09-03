@@ -20,7 +20,7 @@ import { defineTool } from "@deepseek-ai/dsh-tools";
 * the browser bundle never pulls the schema runtime in.
 */
 /** The user-settings namespace holding the side card preferences. */
-const SIDEBAR_PREFS_NS = "@dsh-selfuse/better-sidebar";
+const SIDEBAR_PREFS_NS = "dsh-better-sidebar";
 //#endregion
 //#region src/config.ts
 /**
