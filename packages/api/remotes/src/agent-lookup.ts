@@ -1,5 +1,5 @@
 /** Host BFF policy for resolving Remote Agent and Session identities. */
-import { TypertLookupFailure } from '@deepseek-ai/dsh-typert-protocol'
+import { RemoteError } from '@deepseek-ai/dsh-typert-protocol'
 /** Cold identity absent from the durable session store. */
 export class ApiRemoteSessionNotFound extends Error {
 }
@@ -154,7 +154,7 @@ export function createApiRemoteAgentResolver(ctx: any, options: any) {
     const resolveAgent = async (sessionId: string) => {
       const found = await agentFor(sessionId)
       if ('error' in found)
-        throw new TypertLookupFailure(found.error)
+        throw found.error instanceof Error ? found.error : new RemoteError(found.error.code as any, found.error.message, (found.error as any).details)
       return found.agent
     };
     typeCtx.typert.lookups.configure('agent', resolveAgent)

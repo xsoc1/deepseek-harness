@@ -833,16 +833,16 @@ interface StandingMount {
 export default AgentPresets
 
 export function resolveSessionPreset(session: any): string | undefined {
-	if (!session) return undefined;
-	if (session.header?.agentPreset) return session.header.agentPreset;
-	if (session.meta?.agentPreset) return session.meta.agentPreset;
-	if (Array.isArray(session.events)) {
-		for (let i = session.events.length - 1; i >= 0; i--) {
-			const e = session.events[i];
-			if (e?.type === 'agent-preset/selected' && e.data?.agentPreset) {
-				return e.data.agentPreset;
-			}
-		}
-	}
-	return undefined;
+  if (!session) return undefined
+  if (session.header?.agentPreset) return session.header.agentPreset
+  if (session.meta?.agentPreset) return session.meta.agentPreset
+  if (Array.isArray(session.events)) {
+    for (let i = session.events.length - 1; i >= 0; i--) {
+      const e = session.events[i]
+      if (e?.type === 'agent-preset/selected' && e.data?.agentPreset) {
+        return e.data.agentPreset
+      }
+    }
+  }
+  return undefined
 }
