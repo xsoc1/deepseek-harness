@@ -101,6 +101,8 @@ function Get-WatchdogProcess {
 }
 
 function Start-Watchdog {
+    $stopFlag = Join-Path $HarnessRoot 'dsh-manual-stop.flag'
+    Remove-Item $stopFlag -Force -ErrorAction SilentlyContinue
     if (Get-WatchdogProcess) {
         Write-Info 'watchdog 已在运行'
         return
@@ -128,6 +130,8 @@ function Wait-WebReady([int]$TimeoutSec = 180) {
 }
 
 function Stop-DshAll {
+    $stopFlag = Join-Path $HarnessRoot 'dsh-manual-stop.flag'
+    try { [System.IO.File]::WriteAllText($stopFlag, "stopped at $(Get-Date)") } catch {}
     $ids = New-Object System.Collections.Generic.HashSet[int]
     $lines = @(netstat -ano | Where-Object { $_ -match "TCP\s" -and $_ -match ":${WebPort}\s" -and $_ -match "LISTENING" })
     foreach ($line in $lines) {
@@ -146,6 +150,9 @@ function Stop-DshAll {
     foreach ($id in $ids) { taskkill /PID $id /T /F 2>&1 | Out-Null }
     & wsl.exe -d Ubuntu -- bash -lc "pkill -f 'apps/cli/src/bin.ts' || true" 2>&1 | Out-Null
     & wsl.exe -d Ubuntu -- bash -lc "pkill -f 'dsh-watchdog.ps1' || true" 2>&1 | Out-Null
+    & wsl.exe -d Ubuntu -- bash -lc "pkill -f 'run-dsh-web.ps1' || true" 2>&1 | Out-Null
+    Remove-Item (Join-Path $HarnessRoot 'dsh-watchdog.pid') -Force -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $HarnessRoot 'dsh-watchdog.heartbeat') -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
     if (Test-PortOpen $WebPort) {
         Write-Warn '端口 3080 仍被占用'

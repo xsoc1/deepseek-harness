@@ -248,6 +248,8 @@ function Write-Activity([string]$msg) {
 }
 
 function Start-WatchdogAction {
+    $stopFlag = Join-Path $HarnessRoot 'dsh-manual-stop.flag'
+    Remove-Item $stopFlag -Force -ErrorAction SilentlyContinue
     $existing = @(Get-WatchdogPids)
     if ($existing.Count -gt 0) {
         Write-Activity "watchdog 已在运行 (PID $($existing -join ','))"
@@ -266,6 +268,9 @@ function Start-WatchdogAction {
 }
 
 function Stop-DshAllAction {
+    $stopFlag = Join-Path $HarnessRoot 'dsh-manual-stop.flag'
+    try { [System.IO.File]::WriteAllText($stopFlag, "stopped at $(Get-Date)") } catch {}
+
     $ids = New-Object System.Collections.Generic.List[int]
     $cur = Get-ListenPid $WebPort
     for ($i = 0; $i -lt 6; $i++) {
@@ -283,6 +288,9 @@ function Stop-DshAllAction {
     foreach ($id in $ids) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
     & wsl.exe -d Ubuntu -e bash -lc "pkill -f 'apps/cli/src/bin.ts' || true" 2>&1 | Out-Null
     & wsl.exe -d Ubuntu -e bash -lc "pkill -f 'dsh-watchdog.ps1' || true" 2>&1 | Out-Null
+    & wsl.exe -d Ubuntu -e bash -lc "pkill -f 'run-dsh-web.ps1' || true" 2>&1 | Out-Null
+    Remove-Item (Join-Path $HarnessRoot 'dsh-watchdog.pid') -Force -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $HarnessRoot 'dsh-watchdog.heartbeat') -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
     if (Get-ListenPid $WebPort) {
         Write-Activity "停止完成，但端口 $WebPort 仍被占用"
@@ -815,6 +823,14 @@ function New-ActionButton($text, $width, $script, $tipText = '') {
 New-ActionButton '启动' 76 {
     Send-Action 'start' '启动 dsh'
 } '启动 watchdog，快速探测 180 秒' | Out-Null
+
+$btnStop = New-ActionButton '停止' 76 {
+    $ans = [System.Windows.Forms.MessageBox]::Show('确认停止 DeepSeek Harness 与 watchdog 服务?', '停止 dsh', 'YesNo', 'Question')
+    if ($ans -eq 'Yes') {
+        Send-Action 'stop' '停止 dsh'
+    }
+} '停止端口 3080 进程链与 watchdog 服务'
+$btnStop.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(180, 70, 70)
 
 New-ActionButton '重启' 76 {
     Send-Action 'restart' '重启 dsh'

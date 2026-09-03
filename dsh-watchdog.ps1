@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Continue"
+﻿$ErrorActionPreference = "Continue"
 $HarnessRoot = $PSScriptRoot
 if (-not (Test-Path (Join-Path $HarnessRoot "package.json"))) {
     if (Test-Path 'F:\tools\deepseek-harness\package.json') {
@@ -29,6 +29,8 @@ function Write-Log([string]$msg) {
 }
 
 $PidFile = "$HarnessRoot\dsh-watchdog.pid"
+$StopFlag = "$HarnessRoot\dsh-manual-stop.flag"
+Remove-Item $StopFlag -Force -ErrorAction SilentlyContinue
 
 function Write-Heartbeat {
     try {
@@ -201,6 +203,11 @@ else {
 $fails = 0
 $lastWslEnsure = Get-Date
 while ($true) {
+    if (Test-Path $StopFlag) {
+        Write-Log "manual stop flag detected; watchdog exiting"
+        Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
+        exit 0
+    }
     Write-Heartbeat
     if (((Get-Date) - $lastWslEnsure).TotalSeconds -ge $wslEnsureIntervalSec) {
         if (-not (Test-WslGateway)) {
