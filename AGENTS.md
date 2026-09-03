@@ -198,6 +198,25 @@
 - **注意：生图服务（17821）是后台 job 运行，dsh 重启后需手动 `start-image-gen.ps1` 或注册自启；generate_image 依赖该服务在线。**
 - 未实施：img2img（图生图）、ComfyUI；后续可扩展 `generate_image` 支持输入图片做图生图。
 
+### 2026-09-03 修复侧边卡片设置无法调整与保存失败问题
+
+- **现象**：Web UI「设置」→「侧边卡片」（Side Card）中的各项偏好配置（如“新会话默认打开”、“默认宽度占比”、各 Tab/预览器开关等）无法调整，修改后立即回滚并提示保存失败。
+- **根因分析**：
+  1. **SettingsNamespace 命名非法**：在 `packages/selfuse/better-sidebar/src/prefs-shared.ts` 中，`SIDEBAR_PREFS_NS` 被错误定义为了 npm 包名 `'@dsh-selfuse/better-sidebar'`；
+  2. **DSH 核心强校验**：`@deepseek-ai/dsh-settings` 的 `parseSettingsNamespace` 严格校验 `^[a-z][a-z0-9-]*$`（不允许包含 `@` 和 `/`），导致 `sctx.settings.register(ns, PrefsSchema)` 抛出 `TypeError: settings namespace "@dsh-selfuse/better-sidebar" must match /^[a-z][a-z0-9-]*$/`；
+  3. **RPC Seam 挂载中断**：注册失败导致 `settingsFace` 未被赋值（保持 `undefined`）。前端调用 `/sidebar/api/settings.update` 时，后端抛出 `503: the settings service is not mounted in this deployment`，触发前端乐观更新自动回退。
+- **修复方案与改动**：
+  1. **修正命名空间规范**：
+     - 修改 `packages/selfuse/better-sidebar/src/prefs-shared.ts`，将 `SIDEBAR_PREFS_NS` 改回规范合法的 `'dsh-better-sidebar'`，与 `~/.dsh/settings.yaml` 中的既有配置节完全对应；
+     - 同步更新 `packages/selfuse/better-sidebar/tests/plugin-shape.spec.ts` 中的断言校验；
+  2. **重新编译打包**：
+     - 在 WSL monorepo 中通过 `pnpm --filter @dsh-selfuse/better-sidebar exec tsdown` 重新构建 `lib/index.js`、`lib/client.js`、`lib/client-registry.js` 等产物；
+     - 运行 vitest 单测（`side-card-section.spec.tsx`、`side-card-section-rows.spec.tsx`、`plugin-shape.spec.ts` 全部 19+3 项测试 100% 通过）；
+  3. **热重载与端到端验证**：
+     - 重启 DSH 后验证：`POST /sidebar/api/settings.get` 返回完整配置对象与当前版本号（`revision: 1`）；
+     - `POST /sidebar/api/settings.update` 成功返回 HTTP 200，递增版本号并实时原子写入 `~/.dsh/settings.yaml`；
+     - 代码已推送到 GitHub `xsoc/selfuse`（commit `5e221870ba`）。
+
 ### 2026-09-03 控制台新增一键停止功能与防自启联动机制
 
 - **功能需求**：用户要求在控制台增加停止运行的功能。
