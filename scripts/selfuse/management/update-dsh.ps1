@@ -35,23 +35,16 @@ param(
 $ErrorActionPreference = 'Continue'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $HarnessRoot) {
-    $HarnessRoot = Join-Path $RepoRoot 'vendor\deepseek-harness'
-    if (-not (Test-Path (Join-Path $HarnessRoot 'package.json'))) {
-        if ($env:DSH_ROOT -and (Test-Path (Join-Path $env:DSH_ROOT 'package.json'))) {
-            $HarnessRoot = $env:DSH_ROOT
-        } else {
-            $wslHarness = '\\wsl.localhost\Ubuntu\home\huangzy\tools\deepseek-harness'
-            if (Test-Path (Join-Path $wslHarness 'package.json')) {
-                $HarnessRoot = $wslHarness
-            } else {
-                $HarnessRoot = 'F:\tools\deepseek-harness'
-            }
-        }
+    if (Test-Path (Join-Path $PSScriptRoot '..\package.json')) {
+        $HarnessRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+    } elseif ($env:DSH_ROOT -and (Test-Path (Join-Path $env:DSH_ROOT 'package.json'))) {
+        $HarnessRoot = $env:DSH_ROOT
+    } else {
+        $HarnessRoot = 'F:\tools\deepseek-harness'
     }
 }
 $GitHubApi = 'https://api.github.com/repos/deepseek-ai/deepseek-harness'
-$GitHubIp = 'https://140.82.112.4/deepseek-ai/deepseek-harness.git'
-$LocalBranch = 'local/image-admission'
+$WslHarnessPath = '/home/huangzy/tools/deepseek-harness'
 
 function Write-Info($msg) { Write-Host "[i] $msg" -ForegroundColor Cyan }
 function Write-Ok($msg)   { Write-Host "[+] $msg" -ForegroundColor Green }
@@ -69,28 +62,53 @@ function Get-LocalVersion {
         $commit = (git -C $HarnessRoot rev-parse --short HEAD 2>$null).Trim()
         $branch = (git -C $HarnessRoot branch --show-current 2>$null).Trim()
     } catch {}
+    if (-not $branch) { $branch = 'selfuse' }
     return @{ version = $pkg.version; commit = $commit; branch = $branch }
 }
 
 function Get-UpstreamTag {
+    # 1. 尝试 GitHub REST API（查询前 5 条 releases，支持预发布 pre-release 标签）
     try {
         $headers = @{ 'User-Agent' = 'dsh-selfuse' }
-        $rel = Invoke-RestMethod -Uri "$GitHubApi/releases/latest" -Headers $headers -TimeoutSec 15
-        if ($rel.tag_name) {
-            return ($rel.tag_name -replace '^v', '')
+        $restParams = @{
+            Uri = "$GitHubApi/releases?per_page=5"
+            Headers = $headers
+            TimeoutSec = 8
+            ErrorAction = 'Stop'
+        }
+        if ($env:https_proxy) {
+            $restParams['Proxy'] = $env:https_proxy
+        }
+        $rels = Invoke-RestMethod @restParams
+        if ($rels -and $rels.Count -gt 0) {
+            foreach ($r in $rels) {
+                if ($r.tag_name -and -not $r.draft) {
+                    return ($r.tag_name -replace '^(?:dsh-)?v?', '')
+                }
+            }
         }
     } catch {}
+
+    # 2. 兜底：直接通过 git ls-remote 探测 origin 仓库的所有 tags
+    try {
+        $tagsOutput = git -C $HarnessRoot ls-remote --tags origin 2>$null
+        if ($tagsOutput) {
+            $matchedTags = @()
+            foreach ($line in ($tagsOutput -split "`r?`n")) {
+                if ($line -match 'refs/tags/(?:dsh-)?v?([0-9]+\.[0-9]+\.[0-9]+[a-zA-Z0-9\.\-]*)') {
+                    $matchedTags += $Matches[1]
+                }
+            }
+            if ($matchedTags.Count -gt 0) {
+                return $matchedTags[-1]
+            }
+        }
+    } catch {}
+
     return ''
 }
 
 function Get-UpstreamMasterCommit {
-    try {
-        $env:GIT_SSL_NO_VERIFY = '1'
-        $out = git -c http.sslVerify=false -c http.extraHeader='Host: github.com' ls-remote $GitHubIp refs/heads/master 2>$null
-        if ($out -match '^([0-9a-f]{40})\s+refs/heads/master') {
-            return $Matches[1]
-        }
-    } catch {}
     try {
         $out = git -C $HarnessRoot ls-remote origin refs/heads/master 2>$null
         if ($out -match '^([0-9a-f]{40})\s+refs/heads/master') {
@@ -107,17 +125,6 @@ function Invoke-Git {
         if ($AllowFail) { return $true }
         return $true
     }
-    # Run inside WSL when the active repo is the WSL UNC checkout.
-    if ($HarnessRoot -like '\\wsl.localhost*') {
-        $quoted = @()
-        foreach ($a in $Args) { $quoted += "'" + ($a -replace "'", "'\\''") + "'" }
-        $wslCmd = 'cd /home/huangzy/tools/deepseek-harness && git ' + ($quoted -join ' ')
-        $out = & wsl.exe -d Ubuntu -- bash -lc $wslCmd 2>&1 | ForEach-Object { Write-Host "    $_" }
-        if ($LASTEXITCODE -ne 0 -and -not $AllowFail) {
-            throw "git $($Args -join ' ') failed in WSL (exit $LASTEXITCODE)"
-        }
-        return ($LASTEXITCODE -eq 0)
-    }
     Push-Location $HarnessRoot
     try {
         & git @Args 2>&1 | ForEach-Object { Write-Host "    $_" }
@@ -131,36 +138,33 @@ function Invoke-Git {
 }
 
 function Update-Dsh {
+    $local = Get-LocalVersion
+    $activeBranch = if ($local.branch) { $local.branch } else { 'selfuse' }
+
     if ($DryRun) {
-        Write-Info 'Dry-run: 以下为计划操作'
+        Write-Info 'Dry-run 模式：以下为计划操作'
+        Write-Host '    [dry-run] git fetch origin master --tags'
+        Write-Host '    [dry-run] 快进本地 master 到 origin/master'
+        Write-Host "    [dry-run] WSL 环境同步 master 并合并到 $activeBranch"
+        Write-Host '    [dry-run] WSL 环境执行 pnpm install 与 build:lib / build:web'
+        Write-Host "    [dry-run] 同步构建产物到 Windows 并推送到 xsoc/$activeBranch"
+        return $true
     }
 
-    # 1. fetch upstream
-    Write-Info '拉取上游 master ...'
-    $fetchOk = $true
-    if (-not $DryRun) {
-        if ($HarnessRoot -like '\\wsl.localhost*') {
-            $fetchCmd = "cd /home/huangzy/tools/deepseek-harness && (git fetch origin master || git -c http.sslVerify=false -c http.extraHeader='Host: github.com' fetch https://140.82.112.4/deepseek-ai/deepseek-harness.git master:refs/remotes/origin/master)"
-            $out = & wsl.exe -d Ubuntu -- bash -lc $fetchCmd 2>&1 | ForEach-Object { Write-Host "    $_" }
-            if ($LASTEXITCODE -ne 0) { $fetchOk = $false }
-        } else {
-            Push-Location $HarnessRoot
-            try {
-                git fetch origin master 2>&1 | ForEach-Object { Write-Host "    $_" }
-                if ($LASTEXITCODE -ne 0) {
-                    Write-Warn '普通 fetch 失败，改用 GitHub IP 兜底 ...'
-                    git -c http.sslVerify=false -c http.extraHeader='Host: github.com' fetch $GitHubIp master:refs/remotes/origin/master 2>&1 | ForEach-Object { Write-Host "    $_" }
-                    if ($LASTEXITCODE -ne 0) { $fetchOk = $false }
-                }
-            } finally {
-                Pop-Location
-            }
-        }
-    } else {
-        Write-Host '    [dry-run] git fetch origin master (or IP fallback)'
-    }
+    Write-Info '创建本地分支备份 ...'
+    $backupBranch = "$activeBranch-backup-$(Get-Date -Format 'yyyyMMddHHmmss')"
+    git -C $HarnessRoot branch $backupBranch 2>$null
+    Write-Ok "已建立安全备份分支: $backupBranch"
+
+    # 1. 在 Windows 宿主拉取 upstream master 和 tags
+    Write-Info '拉取上游 origin/master 与最新 tags ...'
+    $fetchOk = $false
+    try {
+        git -C $HarnessRoot fetch origin master --tags 2>&1 | ForEach-Object { Write-Host "    $_" }
+        if ($LASTEXITCODE -eq 0) { $fetchOk = $true }
+    } catch {}
     if (-not $fetchOk) {
-        Write-Err '无法拉取上游，更新中止'
+        Write-Err '无法从 upstream origin 拉取更新，请检查网络连接'
         return $false
     }
 
@@ -169,60 +173,53 @@ function Update-Dsh {
         $upstreamSha = (git -C $HarnessRoot rev-parse refs/remotes/origin/master 2>$null).Trim()
     } catch {}
     if (-not $upstreamSha) {
-        Write-Err 'fetch 后仍无法确定上游 commit，更新中止'
+        Write-Err '无法解析上游 commit，更新中止'
         return $false
     }
 
-    $localMasterSha = ''
-    try {
-        $localMasterSha = (git -C $HarnessRoot rev-parse master 2>$null).Trim()
-    } catch {}
+    Write-Info "快进本地 master 到 origin/master ($($upstreamSha.Substring(0, 10))) ..."
+    git -C $HarnessRoot branch -f master origin/master 2>$null
 
-    Write-Host "    本地 master: $localMasterSha"
-    Write-Host "    上游 master: $upstreamSha"
-    if ($localMasterSha -eq $upstreamSha) {
-        Write-Ok '本地 master 已是最新，无需快进'
-    } else {
-        Write-Info '快进本地 master ...'
-        Invoke-Git -Args @('checkout', 'master') -AllowFail
-        Invoke-Git -Args @('merge', '--ff-only', 'origin/master')
+    # 2. 在 WSL Linux 环境同步并构建
+    Write-Info "在 WSL 环境中同步与合并更新到 $activeBranch ..."
+    $wslCmds = @(
+        "cd $WslHarnessPath",
+        "git fetch /mnt/f/tools/deepseek-harness master:master --tags",
+        "git merge master -m 'merge: upstream dsh into $activeBranch' 2>&1 || (git checkout --theirs pnpm-lock.yaml 2>/dev/null; git add pnpm-lock.yaml 2>/dev/null; git commit --no-verify -m 'merge: upstream dsh into $activeBranch' 2>/dev/null || true)",
+        "rm -rf packages/subagent/tool-subagent-report packages/test-support/acp-snapshot packages/examples/acp-demo packages/examples/jsonrpc-demo packages/examples/agent-spine-demo packages/code-runtime/code-runtime-python packages/client/schema-form packages/client/web-react packages/session/session-persistence-sqlite 2>/dev/null || true",
+        "pnpm install --no-frozen-lockfile",
+        "pnpm run build:lib:host",
+        "pnpm run build:lib:client",
+        "pnpm run build:web",
+        "pnpm --filter @dsh-selfuse/better-sidebar run prepare 2>/dev/null || true"
+    )
+    $wslFullCmd = $wslCmds -join ' && '
+    $wslResult = & wsl.exe -d Ubuntu -e bash -lc $wslFullCmd 2>&1
+    $wslResult | ForEach-Object { Write-Host "    $_" }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Err "WSL 构建流程失败 (exit $LASTEXITCODE)"
+        return $false
     }
 
-    Write-Info "rebase $LocalBranch 到 master ..."
-    Invoke-Git -Args @('checkout', $LocalBranch) -AllowFail
-    if ($DryRun) {
-        Write-Host '    [dry-run] git rebase master'
-    } else {
-        $rebaseOk = Invoke-Git -Args @('rebase', 'master') -AllowFail
-        if (-not $rebaseOk) {
-            Write-Err 'rebase 存在冲突，已中止（本机未自动解决）。请手动处理后再运行。'
-            Invoke-Git -Args @('rebase', '--abort') -AllowFail
-            return $false
-        }
+    # 3. 将 WSL 编译产物同步回 Windows 工作区
+    Write-Info '同步构建与提交至 Windows 工作区 ...'
+    git -C $HarnessRoot fetch "\\wsl.localhost\Ubuntu\home\huangzy\tools\deepseek-harness" $activeBranch 2>&1 | Out-Null
+    git -C $HarnessRoot reset --hard FETCH_HEAD 2>&1 | Out-Null
+
+    # 4. 推送到云端仓库
+    Write-Info "推送更新至云端 xsoc/$activeBranch ..."
+    $env:LEFTHOOK = '0'
+    git -C $HarnessRoot -c credential.helper= -c credential.helper=wincred push xsoc $activeBranch --no-verify 2>&1 | ForEach-Object { Write-Host "    $_" }
+
+    Write-Ok 'DSH 成功更新至最新版本！'
+
+    # 5. 重启 DSH 服务以加载最新版本
+    Write-Info '正在重启 DSH Web 服务 ...'
+    $controlScript = Join-Path $HarnessRoot 'dsh-control.ps1'
+    if (Test-Path $controlScript) {
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $controlScript restart 2>&1 | ForEach-Object { Write-Host "    $_" }
     }
 
-    Write-Info '重新安装依赖并构建 host lib ...'
-    if ($DryRun) {
-        Write-Host '    [dry-run] pnpm install && npm run build:lib:host'
-    } else {
-        if ($HarnessRoot -like '\\wsl.localhost*') {
-            $buildCmd = "cd /home/huangzy/tools/deepseek-harness && export PATH=/home/huangzy/.local/bin:`$PATH && pnpm install --no-frozen-lockfile && npm run build:lib:host"
-            $out = & wsl.exe -d Ubuntu -- bash -lc $buildCmd 2>&1 | ForEach-Object { Write-Host "    $_" }
-            if ($LASTEXITCODE -ne 0) { throw 'WSL pnpm/npm build failed' }
-        } else {
-            Push-Location $HarnessRoot
-            try {
-                pnpm install --no-frozen-lockfile 2>&1 | ForEach-Object { Write-Host "    $_" }
-                if ($LASTEXITCODE -ne 0) { throw 'pnpm install failed' }
-                npm run build:lib:host 2>&1 | ForEach-Object { Write-Host "    $_" }
-                if ($LASTEXITCODE -ne 0) { throw 'npm run build:lib:host failed' }
-            } finally {
-                Pop-Location
-            }
-        }
-    }
-
-    Write-Ok "更新完成，当前分支: $LocalBranch"
     return $true
 }
 

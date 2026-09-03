@@ -846,3 +846,38 @@ export function resolveSessionPreset(session: any): string | undefined {
   }
   return undefined
 }
+
+export class InvalidPresetIdError extends Error {
+  constructor(public id: string, message?: string) {
+    super(message ?? `Invalid preset id: ${id}`)
+    this.name = 'InvalidPresetIdError'
+  }
+}
+
+export class PresetExistsError extends Error {
+  constructor(public id: string, message?: string) {
+    super(message ?? `Preset already exists: ${id}`)
+    this.name = 'PresetExistsError'
+  }
+}
+
+export class PresetMountError extends Error {
+  constructor(public id: string, message?: string) {
+    super(message ?? `Failed to mount preset: ${id}`)
+    this.name = 'PresetMountError'
+  }
+}
+
+export class PresetNotWritableError extends Error {
+  constructor(public id: string, message?: string) {
+    super(message ?? `Preset not writable: ${id}`)
+    this.name = 'PresetNotWritableError'
+  }
+}
+
+export class UnknownPresetError extends Error {
+  constructor(public id: string, message?: string) {
+    super(message ?? `Unknown preset: ${id}`)
+    this.name = 'UnknownPresetError'
+  }
+}

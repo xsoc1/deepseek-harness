@@ -890,4 +890,28 @@ export interface SettingsSectionHooks<T> {
   validate?: (value: T) => void
 }
 
+/**
+ * Backwards compatibility helper for plugins targeting earlier DSH releases.
+ * Resolves the given namespace as a valid SettingsNamespace.
+ */
+export function settingsNamespace<const Namespace extends string>(ns: Namespace): Namespace {
+  return ns
+}
+
+/**
+ * Backwards compatibility helper for plugins calling `installSettingsSection(ctx, ...)`.
+ * Injects the `settings` service and delegates to `settingsCtx.settings.installSection(...)`.
+ */
+export function installSettingsSection<const Namespace extends string, T>(
+  owner: Context,
+  ns: Namespace & SettingsNamespaceInput<Namespace>,
+  schema: z<T>,
+  entry: T,
+  hooks: SettingsSectionHooks<T>,
+): void {
+  owner.inject(['settings'], (settingsCtx: any) => {
+    settingsCtx.settings.installSection(owner, ns, schema, entry, hooks)
+  })
+}
+
 export default SettingsProvider

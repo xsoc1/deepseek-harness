@@ -149,6 +149,23 @@ export class UserQuestionService extends Service {
       throw restored
     }
   }
+
+  /**
+   * Backwards compatibility helper for UI answerer providers calling `registerProvider`.
+   * Wires the provider into the `user-questions/request` waterfall.
+   */
+  registerProvider(provider: { ask(request: AskUserQuestionRequest): Promise<AskUserQuestionAnswer> }): () => void {
+    return this.ctx.on('user-questions/request', async (request: any, next: () => Promise<AskUserQuestionAnswer>) => {
+      try {
+        return await provider.ask(request)
+      } catch (err: any) {
+        if (err?.code === 'NO_PROVIDER' || err?.code === 'UNHANDLED' || err?.message?.includes('no user-questions answerer')) {
+          return next()
+        }
+        throw err
+      }
+    })
+  }
 }
 
 export default UserQuestionService

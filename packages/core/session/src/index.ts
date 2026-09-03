@@ -1221,4 +1221,5 @@ export class SessionStore extends Service {
 }
 
 export { decodeSeqRanges, encodeSeqRanges } from './seq-ranges.ts'
+export { isJsonValue, type JsonValue } from '@deepseek-ai/dsh-util-values'
 export default SessionStore
