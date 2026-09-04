@@ -198,6 +198,27 @@
 - **注意：生图服务（17821）是后台 job 运行，dsh 重启后需手动 `start-image-gen.ps1` 或注册自启；generate_image 依赖该服务在线。**
 - 未实施：img2img（图生图）、ComfyUI；后续可扩展 `generate_image` 支持输入图片做图生图。
 
+### 2026-09-04 修复对话运行报错 Cannot read properties of undefined (reading 'find')
+
+- **现象**：在历史或已存在的长会话中向 Agent 发送新消息时，界面直接红字报错「本轮运行失败Cannot read properties of undefined (reading 'find')」，模型无法开始思考或生成。
+- **根因分析**：
+  1. **DSH 0.1.2 会话事件接口演进**：在新版 `@deepseek-ai/dsh-session` 中，`Session` 类对事件流访问进行了快照化重构（改为 `snapshotEvents()` 与 `ownEvents()`），移除了原有的 `session.events` 属性；
+  2. **预设路由逻辑强依赖旧属性**：`router-standard`、`wsl-router-standard`、`router-spec` 等预设的 `router-core.mjs` 在计算会话初始任务模式时，通过 `sessionMode(session)` 执行了 `const events = session.events; events.find(e => e.type === 'user/message')`；
+  3. **服务重启后内存缓存失效触发回退**：在日常首轮对话中，内存 Map `firstUserText` 会暂存文本绕过 `sessionMode`；但当 DSH 服务重启后，内存缓存清空，老会话继续对话时必定回退触发 `sessionMode(session)`；
+  4. **未捕获 TypeError 终止轮次**：`session.events` 为 `undefined` 导致 `undefined.find()` 抛出 `TypeError`，在 `agent.ts` 的 `preStep()`（`systemPrompt.assemble()` 阶段）中断，导致轮次尚未进入 `step/start` 即以 `UNKNOWN` 错误异常终止。
+- **修复方案与改动**：
+  1. **Session 核心增加向前兼容属性 (`@deepseek-ai/dsh-session`)**：
+     - 在 `packages/core/session/src/index.ts` 的 `Session` 类中增加 `get events(): readonly SessionEvent[] { return this.snapshotEvents() }` 访问器；
+     - 采用 O(1) 缓存复用底层 `snapshotEvents()` 快照，从引擎层面彻底恢复对所有插件、预设及外部检查工具的向前兼容性；
+     - 重建 `@deepseek-ai/dsh-session`（`tsc -b` + `tsdown`），并新增单元测试（308/308 项单测全部通过）；
+  2. **预设与工具引导脚本全面接入防御性安全链**：
+     - 在 `~/.dsh/.agent-presets/`（包括 `wsl-router-standard`、`wsl-router-spec`、`router-standard`、`router-spec`、`wsl-liangshen`、`liangshen`）及 `F:\tools\dsh-routing-suite\` 中所有涉及 `session.events` 的 18 处脚本，全面重构为防御性链式调用：
+       `const events = session?.events ?? session?.snapshotEvents?.() ?? []`
+     - 彻底避免任何上下文或对象缺失时抛出 `reading 'find'` / `reading 'some'` / `reading 'length'`；
+  3. **端到端复测与验证**：
+     - 编写独立测试脚本验证对历史真实故障会话数据（含 18166 个事件）的 `sessionMode` 解析，全部用例 100% 成功返回模式判定，无任何异常；
+     - 重启 DSH 后验证 Web 服务 HTTP 200，状态全项正常。
+
 ### 2026-09-03 修复侧边卡片设置无法调整与保存失败问题
 
 - **现象**：Web UI「设置」→「侧边卡片」（Side Card）中的各项偏好配置（如“新会话默认打开”、“默认宽度占比”、各 Tab/预览器开关等）无法调整，修改后立即回滚并提示保存失败。

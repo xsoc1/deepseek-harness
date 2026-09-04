@@ -22,6 +22,15 @@ describe('Session', () => {
     expect(surface).toBe(session.surface)
   })
 
+  it('exposes events getter returning a snapshot of all events for backward compatibility', () => {
+    const session = Session.create(SessionId('events-getter'))
+    expect(session.events).toEqual([])
+    session.append('turn/start', { turn: 1 })
+    expect(session.events).toHaveLength(1)
+    expect(session.events[0]?.type).toBe('turn/start')
+    expect(session.events).toEqual(session.snapshotEvents())
+  })
+
   it('derives message history from the event log', () => {
     const session = Session.create(SessionId('s1'))
     session.append('turn/start', { turn: 1 })

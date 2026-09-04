@@ -609,6 +609,14 @@ export class Session {
   }
 
   /**
+   * Materialize an immutable snapshot of all events currently in this session.
+   * Preserved for compatibility with presets, plugins, and inspection tools.
+   */
+  get events(): readonly SessionEvent[] {
+    return this.snapshotEvents()
+  }
+
+  /**
    * Return this Session's events after its fork-inherited prefix.
    * @returns a fresh array containing child-owned events in log order.
    */
