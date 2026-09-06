@@ -157,6 +157,8 @@ class JsonlSessionPersistence extends SessionPersistence {
    * revision guard.
    */
   private readonly coldLogMemo = new Map<SessionId, StoredLog>()
+  /** Session ID to absolute log path cache to avoid multi-directory scanning on repeat lookups. */
+  private readonly logPathCache = new Map<SessionId, string>()
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
@@ -677,6 +679,7 @@ class JsonlSessionPersistence extends SessionPersistence {
           throw new Error(`duplicate JSONL session id "${meta.id}" appears in multiple project directories`)
         }
         ids.add(meta.id)
+        this.logPathCache.set(meta.id, path)
         artifacts.push({ header: meta, path })
       }
     }
@@ -703,6 +706,7 @@ class JsonlSessionPersistence extends SessionPersistence {
     } else {
       await this.materializePosix(project, dir, finalPath, meta.id, content)
     }
+    this.logPathCache.set(meta.id, finalPath)
   }
 
   /* v8 ignore start -- Windows uses the Win32 durable-publish path; POSIX coverage exercises this peer. */
@@ -959,6 +963,14 @@ class JsonlSessionPersistence extends SessionPersistence {
 
   /** Find the unique physical log for an id across every project directory. */
   private async findLog(id: SessionId, signal?: AbortSignal): Promise<string | undefined> {
+    const cached = this.logPathCache.get(id)
+    if (cached !== undefined) {
+      signal?.throwIfAborted()
+      if (await this.exists(cached)) {
+        return cached
+      }
+      this.logPathCache.delete(id)
+    }
     const matches: string[] = []
     for (const project of await this.listProjectDirs(signal)) {
       signal?.throwIfAborted()
@@ -978,7 +990,11 @@ class JsonlSessionPersistence extends SessionPersistence {
       throw new Error(`duplicate JSONL session id "${id}" appears in multiple project directories`)
     }
     signal?.throwIfAborted()
-    return matches[0]
+    const resolved = matches[0]
+    if (resolved !== undefined) {
+      this.logPathCache.set(id, resolved)
+    }
+    return resolved
   }
 
   /** Require an existing configured root to be a readable directory. */

@@ -627,6 +627,15 @@ export class ClientSessions implements ISessions {
         address = this.manager.navigationAddress(address.parentSessionId)
       }
     }
+    if (current !== undefined && byId[current] === undefined) {
+      byId[current] = {
+        id: current,
+        displayTitle: current,
+        running: false,
+        blank: false,
+        updatedAt: 0,
+      }
+    }
     const persisted = this.selection.getSnapshot().sessionId
     // No current (cleared, or masked gap) wipes the persisted cell — a reload
     // stays on empty; the in-memory selection still resurfaces a masked id.

@@ -167,6 +167,19 @@ export class SessionController extends TypertRemoteService {
       if (event.type !== 'user/message' || event.data.source.kind !== 'user') return
       ctx.emit('api-session/activity', session.id, event.time)
     })
+
+    setImmediate(async () => {
+      try {
+        const records = await this.ctx.sessionQuery.listSessions()
+        if (records.length > 0 && records[0]?.header?.id) {
+          using _observation = await this.ctx.sessionQuery.observeSession(records[0].header.id, {
+            projectionMode: 'all',
+          })
+        }
+      } catch {
+        // Background pre-warm is best-effort
+      }
+    })
   }
 
   private promote(observation: SessionObservation): void {

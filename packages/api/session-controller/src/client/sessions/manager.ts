@@ -941,7 +941,8 @@ export class SessionManager {
     if (!sameOrder) this.itemsCache = items
     const selected = this.selected
     const current = selected !== undefined
-      && (items.some(item => item.sessionId === selected) || this.addresses.has(selected))
+      && (items.some(item => item.sessionId === selected) || this.addresses.has(selected)
+          || (this.listPhase === 'pending' && selected !== undefined))
       ? selected
       : undefined
     return {

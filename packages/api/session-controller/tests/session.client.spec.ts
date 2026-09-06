@@ -433,7 +433,7 @@ describe('prompt and cancel errors', () => {
         address: {
           kind: 'subagent', parentSessionId: PARENT, childSessionId: SID, mode: 'continuable',
         },
-        maxMessages: 50,
+        maxMessages: 20,
       },
     ])
     expect(api.callsOf('subagent.history')).toEqual([])
@@ -527,7 +527,7 @@ describe('prompt and cancel errors', () => {
         address: {
           kind: 'subagent', parentSessionId: PARENT, childSessionId: SID, mode: 'one-shot',
         },
-        maxMessages: 50,
+        maxMessages: 20,
       },
     ])
     expect(api.callsOf('subagent.history')).toEqual([])

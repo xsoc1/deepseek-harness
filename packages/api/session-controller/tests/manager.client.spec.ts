@@ -310,7 +310,7 @@ describe('subagent catalogs', () => {
         address: {
           kind: 'subagent', parentSessionId: S1, childSessionId: S2, mode: 'continuable',
         },
-        maxMessages: 50,
+        maxMessages: 20,
       },
     ])
     expect(api.callsOf('subagent.history')).toEqual([])
