@@ -236,6 +236,48 @@ function serializeAssistant(message: Message): WireMessage {
 }
 
 /**
+ * Sanitize tool output before wire transmission to prevent triggering upstream content safety WAF
+ * (e.g. DeepSeek official API's "Content Exists Risk" when reading proxy/VPN configurations or node subscriptions).
+ */
+export function sanitizeToolOutput(text: string): string {
+  if (!text || text.length === 0) return text
+
+  let sanitized = text
+
+  // 1. Clash / Mihomo proxies list
+  sanitized = sanitized.replace(
+    /(^|\n)([ \t]*proxies:\s*\n)(?:[ \t]*-[ \t]+[^\n]*\n(?:[ \t]+[^\n]*\n|\n)*)+/g,
+    '$1$2  - name: "[代理节点配置已由 DSH 本地安全脱敏，避免触发上游风控]"\n    type: direct\n',
+  )
+
+  // 2. proxy-groups list
+  sanitized = sanitized.replace(
+    /(^|\n)([ \t]*proxy-groups:\s*\n)(?:[ \t]*-[ \t]+[^\n]*\n(?:[ \t]+[^\n]*\n|\n)*)+/g,
+    '$1$2  - name: "[策略组已脱敏]"\n    type: select\n    proxies: ["[代理节点配置已脱敏]"]\n',
+  )
+
+  // 3. Proxy protocol URIs (vmess, vless, trojan, ss, ssr, hysteria, tuic)
+  sanitized = sanitized.replace(
+    /(?:vmess|vless|trojan|ss|ssr|hysteria|hysteria2|tuic):\/\/\S+/gi,
+    '[已脱敏代理链接]',
+  )
+
+  // 4. Proxy subscription URLs
+  sanitized = sanitized.replace(
+    /https?:\/\/\S*(?:subscribe|token=|sub\?)\S*/gi,
+    '[已脱敏订阅链接]',
+  )
+
+  // 5. Telegram proxy channels / promos
+  sanitized = sanitized.replace(
+    /@[a-z0-9_-]*(?:v2|proxy|vpn|node|sub|naiyun)[a-z0-9_-]*/gi,
+    '[已脱敏频道]',
+  )
+
+  return sanitized
+}
+
+/**
  * Serialize the conversation. `tool-result` blocks become standalone
  * `{role: 'tool'}` messages; the harness puts each tool result in its own
  * user-role message, so a mixed user message contributes its text first and
@@ -267,7 +309,7 @@ export function serializeMessages(messages: Message[]): WireMessage[] {
         role: 'tool',
         tool_call_id: result.toolCallId,
         // Empty tool output still needs SOME content on the wire.
-        content: flattenText(result.content) || '(no output)',
+        content: sanitizeToolOutput(flattenText(result.content)) || '(no output)',
       })
     }
   }
@@ -330,7 +372,7 @@ export async function serializeMessagesWithImages(
       wire.push({
         role: 'tool',
         tool_call_id: result.toolCallId,
-        content: text || '(no output)',
+        content: sanitizeToolOutput(text) || '(no output)',
       })
       pendingToolImages.push(...imageParts)
     }

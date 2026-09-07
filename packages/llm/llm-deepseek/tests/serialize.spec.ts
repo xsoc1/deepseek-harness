@@ -739,4 +739,41 @@ describe('review fixes: assistant content shapes', () => {
     })])
     expect(wire[0]).toMatchObject({ content: '' })
   })
+
+  it('sanitizes tool output containing proxy/VPN configs to avoid Content Exists Risk', () => {
+    const sensitive = `=== current yaml ===
+dns:
+  enable: true
+proxies:
+- name: JP 01
+  type: anytls
+  server: hk-01.grandmacdn.cc
+  password: secret-password
+- name: HK 02
+  type: vmess
+  server: hk-02.example.com
+proxy-groups:
+- name: PROXY
+  type: select
+  proxies:
+  - JP 01
+vmess://base64token
+https://airport.com/api/v1/client/subscribe?token=123456
+@v2naiyun`
+    const wire = serializeMessages([createUserMessage({
+      content: [{
+        type: 'tool-result',
+        toolCallId: ToolCallId('call_123'),
+        content: [{ type: 'text', text: sensitive }],
+      }],
+      source: { kind: 'plugin', plugin: 'test' },
+    })])
+    expect(wire[0].content).not.toContain('grandmacdn.cc')
+    expect(wire[0].content).not.toContain('secret-password')
+    expect(wire[0].content).not.toContain('vmess://')
+    expect(wire[0].content).not.toContain('token=123456')
+    expect(wire[0].content).not.toContain('@v2naiyun')
+    expect(wire[0].content).toContain('dns:')
+    expect(wire[0].content).toContain('[代理节点配置已由 DSH 本地安全脱敏，避免触发上游风控]')
+  })
 })

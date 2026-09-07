@@ -13,6 +13,7 @@ import type {
   ContentBlock,
   GenerateOptions,
   ImageAttachmentAccess,
+  Message,
   LlmModelInfo,
   LlmProviderInfo,
   PreparedAdapterCall,
@@ -324,6 +325,34 @@ function requestId(headers: Headers): ReturnType<typeof ProviderRequestId> | und
 }
 
 /**
+ * Redact tool results in request messages when upstream API returns "Content Exists Risk".
+ * This allows the session to recover and continue without being permanently deadlocked.
+ */
+function redactMessagesForContentRisk(messages: readonly Message[]): Message[] {
+  return messages.map((msg) => {
+    if (msg.role !== 'user') return msg
+    const newContent = msg.content.map((block) => {
+      if (block.type !== 'tool-result') return block
+      const sanitizedBlocks = block.content.map((sub) => {
+        if (sub.type !== 'text') return sub
+        return {
+          ...sub,
+          text: '[该工具输出因触发上游内容审查 (Content Exists Risk) 已由 DSH 安全自愈机制自动脱敏截断]',
+        }
+      })
+      return {
+        ...block,
+        content: sanitizedBlocks,
+      }
+    })
+    return {
+      ...msg,
+      content: newContent,
+    }
+  })
+}
+
+/**
  * Map an HTTP status to a stable LlmError code.
  * @param status - status of a non-2xx provider response.
  * @param error - parsed provider error body, when available.
@@ -558,12 +587,15 @@ export class DeepSeekAdapter extends LlmAdapter {
       byteLength: ref => Math.min(ref.bytes, policy.maxBytes),
       placeholder: ref => offloadedImageText(ref, resolveImageAccess?.(ref)),
     })
-    const requestOptions = requestMessages === options.messages ? options : { ...options, messages: [...requestMessages] }
+    let requestOptions = requestMessages === options.messages
+      ? { ...options, messages: [...options.messages] }
+      : { ...options, messages: [...requestMessages] }
     const requestImages = attachments === undefined || model === undefined
       ? new Map<AttachmentId, RequestImageAttachment>()
       : await prepareRequestImages(requestOptions, attachments, model, signal)
     let representation: 'file' | 'base64' = 'file'
     let fileAttempt = 0
+    let riskAttempt = 0
     while (true) {
       const usedFiles: UsedRequestFile[] = []
       let body: WireRequest
@@ -676,6 +708,16 @@ export class DeepSeekAdapter extends LlmAdapter {
           )))
           if (fileAttempt === 0) {
             fileAttempt += 1
+            continue
+          }
+        }
+        if (response.status === 400 && (detail.includes('Content Exists Risk') || rawResponse.includes('Content Exists Risk') || message.includes('Content Exists Risk'))) {
+          if (riskAttempt === 0) {
+            riskAttempt += 1
+            requestOptions = {
+              ...requestOptions,
+              messages: redactMessagesForContentRisk(requestOptions.messages),
+            }
             continue
           }
         }
