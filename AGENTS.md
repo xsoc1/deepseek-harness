@@ -1427,3 +1427,24 @@
   - `packages/selfuse/control-gui/build-gui-exe.ps1` 编译 EXIT=0；
   - `dsh-control-gui.exe -SmokeTest` 自检 EXIT=0，守护进程自动拉起并于退出时彻底释放，无残留进程；
   - 桌面所有快捷方式指向新包并验证正常。
+
+### 2026-09-07 控制台打包为完整安装包（DshControl-Setup.exe）并输出至 Downloads
+
+- **需求**：把控制台打包成一个完整的安装包，放在 download 里。
+- **独立原生 GUI 安装向导 (`DshControl-Setup.exe`)**：
+  - 基于 C# (.NET Framework 4.8) WinForms 原生实现独立安装程序 `installer-src/InstallerApp.cs`；
+  - 采用深色现代 UI，内嵌高清 `dsh.ico` 图标及完整的预压缩核心数据包（`package.zip`）；
+  - 具备安装路径智能检测能力（优先定位当前工作区 `deepseek-harness\packages\selfuse\control-gui`，支持手动浏览及自动探测）、运行中控制台冲突进程优雅停止；
+  - 支持快捷方式自定义创建（桌面、开始菜单程序组）与安装后一键启动控制台；
+  - 支持 `-SmokeTest` 自动化自检。
+- **全套便携安装包 (`dsh-control-gui-v0.1.0-windows-x64.zip`)**：
+  - 打包全部核心组件（`dsh-control-gui.exe`、`dsh-gui-poller.ps1`、`dsh.ico`、`gui-src/`、`package.json`、`README.md`）；
+  - 内置 `install.bat` 与 `install.ps1`，支持解压后一键快捷方式配置与启动。
+- **交付输出**：
+  - 已自动输出至 `C:\Users\HuangZY\Downloads\`：
+    1. `DshControl-Setup.exe` (144.5 KB)
+    2. `dsh-control-gui-v0.1.0-windows-x64.zip` (45.3 KB)
+- **工程化入库**：
+  - 在 `@dsh-selfuse/control-gui` 包中固化 `installer-src/` 与一键打包脚本 `build-installer.ps1`；
+  - `package.json` 添加 `"build:installer"` 命令；
+  - `DshControl-Setup.exe -SmokeTest` 自检 EXIT=0。

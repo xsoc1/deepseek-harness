@@ -1,4 +1,4 @@
-﻿# @dsh-selfuse/control-gui
+# @dsh-selfuse/control-gui
 
 DeepSeek Harness 独立图形控制台程序。
 
@@ -11,13 +11,26 @@ DeepSeek Harness 独立图形控制台程序。
 
 ## 文件结构
 - `dsh-control-gui.exe`：编译生成的可执行文件
-- `build-gui-exe.ps1`：一键编译脚本
+- `build-gui-exe.ps1`：控制台主程序一键编译脚本
+- `build-installer.ps1`：完整安装包与向导生成脚本（输出至 Downloads 目录）
+- `install.ps1` / `install.bat`：压缩包便携一键配置与快捷方式安装脚本
 - `dsh-gui-poller.ps1`：后台状态探测与控制守护脚本
 - `gui-src/`：C# 源码 (`DshControlApp.cs`) 与应用程序清单 (`app.manifest`)
+- `installer-src/`：安装向导 C# 源码 (`InstallerApp.cs`) 与清单
+- `dist/`：打包生成的 `DshControl-Setup.exe` 与完整 zip
 - `dsh.ico`：控制台应用图标
 
 ## 构建方式
+1. **编译主控制台**：
 ```powershell
 powershell -ExecutionPolicy Bypass -File ./build-gui-exe.ps1
 ```
 附加 `-CreateDesktopShortcut` 可直接在桌面生成快捷方式。
+
+2. **生成完整安装包 (放置于 Downloads)**：
+```powershell
+powershell -ExecutionPolicy Bypass -File ./build-installer.ps1
+```
+将自动生成并输出：
+- `Downloads/DshControl-Setup.exe`（单文件原生 GUI 安装向导，内嵌完整组件）
+- `Downloads/dsh-control-gui-v0.1.0-windows-x64.zip`（全套便携安装包）
