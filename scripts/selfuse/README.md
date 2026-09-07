@@ -57,7 +57,7 @@ config/selfuse/remote-desktop.md
 本地运行的 Windows 侧管理脚本已随 selfuse 分支收录：
 
 - `dsh-control.ps1`：start/restart/stop/status/ui/logs/check-update/update
-- `dsh-control-gui.ps1`：WinForms 图形控制台
+- `packages/selfuse/control-gui/dsh-control-gui.exe`：WinForms 独立图形控制台程序
 - `dsh-watchdog.ps1` / `dsh-watchdog.vbs`：看门狗
 - `ensure-dsh-watchdog.ps1` / `ensure-dsh-watchdog.vbs`：兜底任务
 - `run-dsh-web.ps1`：在 WSL 内启动 dsh web
@@ -69,7 +69,7 @@ config/selfuse/remote-desktop.md
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control.ps1 status
 powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control.ps1 restart
-powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control-gui.ps1
+Start-Process F:\tools\deepseek-harness\packages\selfuse\control-gui\dsh-control-gui.exe
 ```
 
 完整管理脚本副本（含 repair/patch/sync/prune 等）收录于：

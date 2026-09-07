@@ -5,7 +5,7 @@
 | 文件 | 作用 |
 |---|---|
 | `dsh-control.ps1` | dsh 启停/状态/UI/日志 CLI |
-| `dsh-control-gui.ps1` | WinForms 图形控制台（状态轮询、按钮命令） |
+| `packages/selfuse/control-gui/` | WinForms 独立图形控制台程序（已入库为独立包，含 dsh-control-gui.exe 及源码） |
 | `run-dsh-web.ps1` | 启动 dsh web（WSL 网关、trusted-host、日志） |
 | `dsh-watchdog.ps1` | 看门狗：探活/重启/心跳 |
 | `ensure-dsh-watchdog.ps1` | 计划任务兜底 |

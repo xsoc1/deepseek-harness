@@ -30,7 +30,7 @@
 - Web UI：`http://127.0.0.1:3080`；`run-dsh-web.ps1` 在 WSL 网关 `172.22.112.1:3080` 已监听时跳过 netsh，否则补 portproxy，并以 `--trusted-host` 启动（当前版本不强制启动 WSL Ubuntu）。
 - watchdog：`dsh-watchdog.ps1`，v3 逻辑为 3 秒快速探测启动、10 秒常规轮询、180 秒启动超时、连续 3 次探活失败才重启，写心跳文件 `dsh-watchdog.heartbeat`；计划任务 `dsh-watchdog`（登录触发）和 `dsh-watchdog-ensure`（5 分钟周期兜底），均以 `-WindowStyle Hidden` 运行。
 - 管理脚本：`deepseek-harness/dsh-control.ps1 start|restart|stop|status|ui|logs`。
-- 图形控制台：`deepseek-harness/dsh-control-gui.ps1`（WinForms，自动提权，状态/日志/操作一体化，状态由独立后台轮询进程提供）。
+- 图形控制台：`deepseek-harness/packages/selfuse/control-gui/dsh-control-gui.exe`（WinForms 独立原生 exe，状态/日志/操作一体化，内置设置面板与横幅调节，后台守护轮询）。
   - 轮询进程每 3 秒写 `%TEMP%\dsh-gui-status.json`；按钮命令写 `%TEMP%\dsh-gui-cmd.json`，轮询进程执行后回写 `%TEMP%\dsh-gui-result-<id>.json`，UI 线程只做轻量文件读写。
 - 日志：`deepseek-harness/dsh-web.log`、`dsh-watchdog.log`、`dsh-restart.log`。
 - 用户配置：`%USERPROFILE%\.dsh\`；web profile 位于 `profiles\web\`，补丁层为 `cordis.patch.yml`；默认 agent preset 为 `router-standard`，默认权限 `danger-full-access`，默认模型 `opencode-go / deepseek-v4-flash`。
@@ -197,6 +197,30 @@
 - 验证：后端 `/generate` 实测 512×512 11.6s、384×384 8.4s；`systemPrompt.assemble().tools` 含 generate_image；staging 模拟调用 200 并保存 `~/.dsh/image-gen/verify-*.png`。
 - **注意：生图服务（17821）是后台 job 运行，dsh 重启后需手动 `start-image-gen.ps1` 或注册自启；generate_image 依赖该服务在线。**
 - 未实施：img2img（图生图）、ComfyUI；后续可扩展 `generate_image` 支持输入图片做图生图。
+
+### 2026-09-06 修复 Codex 在 WSL 环境中的网络连接问题
+
+- **现象**：用户反馈 Codex 在 WSL 环境里出现网络连接故障；`codex doctor` 报告 `reachability one or more required provider endpoints are unreachable over HTTP (connect failed)`；官方 Codex Desktop App 在 WSL 模式下无法连接网络。
+- **根因分析**：
+  1. **WSL2 NAT 模式 DNS 严重超时/失效**：WSL 自动生成的 `/etc/resolv.conf` 继承了 Windows 宿主的 Tailscale (`tail6cf486.ts.net`) 与校园网 (`sysu.edu.cn`) 搜索域，且指向虚拟 DNS `10.255.255.254`。glibc 解析任意公网域名（包括 `api.deepseek.com` 与 `api.openai.com`）时，反复尝试尾随搜索域拼接导致 5+ 秒超时或报 `[Errno -3] Temporary failure in name resolution`。
+  2. **Codex Desktop 环境变量穿透回环孤岛**：Windows 版 Codex Desktop App 通过 `WSLENV` 强制向 WSL 注入了 Windows 宿主的环境变量 `HTTP_PROXY=http://127.0.0.1:7897` 与 `HTTPS_PROXY=http://127.0.0.1:7897`；而 WSL2 NAT 模式拥有独立网络命名空间，内部 `127.0.0.1:7897` 端口并无代理服务监听，直接导致 Codex app-server 发起的所有网络请求报 `(7) Failed to connect to port 7897 via 127.0.0.1: Could not connect to server`。
+  3. **Windows 代理未开放局域网访问**：宿主 Clash Verge (mihomo) 核心默认配置 `allow-lan: false`，仅绑定了 `127.0.0.1:7897`，导致 WSL 即使定向访问宿主网关 `172.22.112.1:7897` 也被拒绝。
+- **修复方案与改动**：
+  1. **持久化修复 WSL DNS 解析**：
+     - 修改 `/etc/wsl.conf`，追加 `[network] generateResolvConf = false`；
+     - 移除动态软链，写入可靠静态 `/etc/resolv.conf`（`223.5.5.5`, `119.29.29.29`, `8.8.8.8`，配置 `options timeout:2 attempts:2 rotate`）；
+     - 验证：DNS 解析由超时降低至 10ms 以内，`curl https://api.deepseek.com` 毫秒级响应。
+  2. **开放 Clash Verge 局域网访问权限并持久化**：
+     - 修改 `C:\Users\HuangZY\AppData\Roaming\io.github.clash-verge-rev.clash-verge-rev` 下的 `config.yaml`、`clash-verge.yaml` 与 `clash-verge-check.yaml`，设置 `allow-lan: true`；
+     - 通过 Mihomo 外部控制器接口 (`PATCH http://127.0.0.1:9097/configs`) 热更新核心配置，使其监听在 `0.0.0.0:7897`。
+  3. **构建 WSL 内部 127.0.0.1:7897 透明转发服务**：
+     - 安装 `socat`，部署脚本 `/usr/local/bin/wsl-proxy-forwarder.sh`，自动获取宿主网关 IP 并将 WSL 内部 `127.0.0.1:7897` 转发至宿主代理端口；
+     - 注册并启用 systemd 服务 `/etc/systemd/system/wsl-proxy-forwarder.service`，实现开机自启与进程守护；
+     - 完美兼容 Codex Desktop App 通过 `WSLENV` 注入的 `127.0.0.1:7897` 代理地址，实现零侵入无缝互通。
+  4. **WSL 环境完善与验证**：
+     - 安装 `ripgrep`，消除 `codex doctor` 的工具链警告；
+     - 在 `~/.bashrc` 中追加 PATH 补全（`~/.local/bin`、`~/.local/node/bin`）以及快捷函数 `set_proxy`/`unset_proxy`；
+     - 重启 Codex Desktop App 派生的 WSL app-server 后，`lsof` 确认 5 条 TCP 连接成功 ESTABLISHED 到代理端口；`codex doctor` 连通性测试全部通过。
 
 ### 2026-09-04 修复对话运行报错 Cannot read properties of undefined (reading 'find')
 
@@ -1314,4 +1338,92 @@
      - 使用 CDP 真实浏览器自动化脚本测试点击历史会话（如 `Riemann Conjecture 14天`），成功挂载 60 个对话轮次（Turn），完整渲染思考过程、代码块、工具条与消息气泡，控制台 0 错误；
      - 修复已提交至 `selfuse` 分支并推送到远程仓库。
 
+### 2026-09-06 根治重启后远程端首屏打开与对话加载延迟（冷启动秒开架构重构）
 
+- **现象**：每次 DSH 重启后，远程端（Tailscale 蜂窝网 / 移动端 / 外部 Web）在打开主页时，从进入到展示会话列表以及渲染当前对话耗时极长（经常长达 10~30 秒）。
+- **深度排查与三大叠加系统性延迟根因**：
+  1. **服务端重复目录扫描与解压放大（冷态 ~1.6 秒）**：
+     - 本地积聚 258 个历史会话分布在 23 个工程目录；
+     - `SessionPersistence.list()` 已获得各会话文件的物理大小 `sizeBytes`，但 `SessionRecord` 原定义将其丢弃；
+     - `ApiSessionList.list()` 为了排查 `< 1024` 字节的 blank 会话，对全量 258 个会话重复调用 `persistence.stat(header.id)`。每次 `stat` 均调用 `findLog` 重新全量扫描 23 个目录并解压 Zstandard 帧头部；实测 258 个会话中 241 个远大于 1024 字节，造成 1593ms 的无效 IO 耗时。
+  2. **客户端严格串行化阻塞当前对话拉取**：
+     - 客户端已从 `localStorage`（`dsh.sessions.current`）秒级还原出目标会话 ID；
+     - 但 `SessionManager.buildListSnapshot()` 强制要求 `items.some(item => item.sessionId === selected)`。在全量会话列表通过 WebSocket 传输并解析完毕前（`phase === 'pending'`），`items` 为空导致 `current` 强制退化为 `undefined`；
+     - `ClientSessions.followCurrent()` 必须等 `current` 存在才会调用 `session.open()` 发起 `session/follow`，导致对话加载被串行死锁在全量会话列表传输之后。
+  3. **服务端重启零缓存与无序被动解压**：
+     - 服务端冷启动后零缓存，被动等待客户端首个 follow 请求后临时做全量 Zstandard 解压缩和长序列投影计算。
+- **架构重构与优化方案**：
+  1. **Pillar 1: Session Query & Persistence Snapshot 透传**：
+     - 在 `SessionRecord` 中增加 `sizeBytes?: number` 与 `eventCount?: number`；
+     - `SessionCorpus.listSessions` 保持底层持久化快照的物理属性；
+     - `SessionCorpus.load` 及相关单测全面适配快照头与兼容性映射。
+  2. **Pillar 2: ApiSessionList 物理指标短路过滤**：
+     - `ApiSessionList.probeSmallCold` 优先读取透传的 `sizeBytes`/`eventCount`。对大于 1024 字节的会话直接内存短路跳过，彻底消除 241 个大体积会话的重复 stat 与目录扫描；
+     - 真实 258 个会话基准测试：全量扫描从 278ms（冷态 1593ms）大幅降低至 **18ms**（**15~80 倍提速**）！
+  3. **Pillar 3: SessionPersistenceJsonl 路径缓存加速（logPathCache）**：
+     - `JsonlSessionPersistence` 引入 `logPathCache`（Map<SessionId, string>）；
+     - `listArtifacts()` 与 `materialize()` 自动填充路径映射；`findLog(id)` 优先校验缓存文件有效性并返回，消除单会话定位时对 23 个工程目录的多轮扫描。
+  4. **Pillar 4: 客户端 Eager Follow 并行加载机制**：
+     - `SessionManager.buildListSnapshot()` 允许在 `listPhase === 'pending'` 且 `selected !== undefined` 时保持 `current = selected`；
+     - `ClientSessions.projectList()` 提供安全占位 summary，避免未拉取列表前 UI 空白；
+     - 客户端连上 WebSocket 瞬间即可并发启动 `session/follow`，当前对话与会话列表实现**真正的首屏并行加载**。
+  5. **Pillar 5: 服务端后台启动预热**：
+     - `SessionController` 构造函数以 `setImmediate` 异步后台执行轻量 `listSessions()` 与最近活跃会话的观测预热，不阻塞启动即可提前填充路径缓存与投影数据。
+- **验证结果**：
+  - `packages/session/session-persistence-jsonl` 4 个测试套件 193 项单测 100% 通过；
+  - `packages/session-query/session-query` 4 个测试套件 96 项单测 100% 通过；
+  - `packages/api/session-controller` 33 个测试套件 434 项单测 100% 通过；
+  - 核心模块共 43 个测试文件、793 个单测全数 PASS；
+  - 真实数据基准脚本测试验证通过。
+
+### 2026-09-07 控制台打包为独立 exe 与设置/自动搜索功能目录/背景图定制
+
+- **需求**：控制台打包成一个 exe，加入设置、自动搜索功能目录、更改背景图及其大小的功能。
+- **独立可执行程序 (`dsh-control-gui.exe`)**：
+  - 利用 Windows 内置 .NET Framework 4.8 C# 编译器（`csc.exe`）单文件编译（`/target:winexe`，产物仅 80 KB），实现真正 Windows 原生秒开，彻底消除黑框控制台闪烁；
+  - 应用程序清单 `app.manifest` 配置 `PerMonitorV2` 高 DPI 适配，并在启动时智能处理管理员权限（UAC 自动提权），支持 `-SmokeTest` 免提权静默自检；
+  - 自动化构建脚本 `build-gui-exe.ps1` 支持一键编译并在桌面创建快捷方式（`DSH Control.lnk` 与 `DSH控制台.lnk`）。
+- **设置中心 (`SettingsForm`) 与持久化 (`gui-settings.json`)**：
+  - 在主界面控制按钮区新增「⚙ 设置」按钮，并在顶部横幅右键菜单提供快捷入口；
+  - 配置持久化于 `%USERPROFILE%\.dsh\gui-settings.json`（支持 `HarnessRoot`、`DshHome`、`BannerImagePath`、`BannerHeight`、`BannerSizeMode`、窗口尺寸等），点击保存即刻生效，无需重启应用。
+- **一键自动搜索功能目录 (Auto-Search Harness Root)**：
+  - 在设置中提供「🔍 一键自动搜索功能目录」；
+  - 深度扫描当前目录树、环境变量 `%DSH_ROOT%`、各大盘符开发目录及 WSL 挂载路径；
+  - 严格校验判定规则（识别 `@deepseek-ai/dsh-root` 或核心管理脚本加工程结构），精确排除干扰目录；
+  - 命中多个有效目录时，自动展开候选下拉列表供用户一键点选切换。
+- **背景图定制与尺寸调节**：
+  - 支持任意格式图片文件浏览（PNG/JPG/BMP/GIF/WEBP），内存流加载避免磁盘图片文件锁；
+  - 提供 0~500px 滑动条与数字调节框（0px 自动折叠隐藏横幅），并提供「隐藏(0)」、「紧凑(180)」、「标准(280)」、「大图(380)」一键快速预设；
+  - 支持 Zoom（等比适应）、Stretch（拉伸铺满）、Center（居中）三种缩放模式，设置面板内提供实时小窗预览，主界面动态自适应窗口高度。
+- **双轨同步支持 (`dsh-control-gui.ps1`)**：
+  - `dsh-control-gui.ps1` 增加 `param([switch]$SmokeTest, [switch]$StatusPollerOnly)`；
+  - 独立 exe 与后台轮询守护进程解耦，支持与 `.ps1` 共享同一套 `gui-settings.json` 设置与设置窗口。
+- **验证**：
+  - `csc.exe` 零错误编译生成 `dsh-control-gui.exe`（80 KB）；
+  - `.\dsh-control-gui.exe -SmokeTest` 自检退出码 0；
+  - `.\dsh-control-gui.ps1 -SmokeTest` 自检退出码 0；
+  - 桌面成功创建指向 `dsh-control-gui.exe` 的快捷方式；
+  - 移除 `app.manifest` 中强制的 `PerMonitorV2` 接管，恢复 Windows DWM 自动缩放，界面尺寸与横幅大小完全还原为与脚本一致的大尺寸形态。
+
+### 2026-09-07 控制台全面迁移至 selfuse 库并清理旧文件
+
+- **需求**：把旧的控制台全部删除，新的控制台放到 selfuse 库里。
+- **清理旧控制台**：
+  - 彻底删除根目录原 PowerShell 版控制台 `dsh-control-gui.ps1` 与旧镜像 `scripts/selfuse/management/dsh-control-gui.ps1`（`git rm`）；
+  - 清理根目录构建临时文件 `dsh-control-gui.exe`、`gui-src/` 与 `build-gui-exe.ps1`。
+- **自用包建立 (`packages/selfuse/control-gui/`)**：
+  - 在 monorepo 自用包目录 `packages/selfuse/` 下建立标准子包 `@dsh-selfuse/control-gui`；
+  - 迁移并维护完整源码与构建管线：
+    - `gui-src/DshControlApp.cs`：C# WinForms 原生控制台源码，内置高分屏 DWM 系统缩放适配、设置中心、自动搜索工作区、横幅尺寸与显示模式调节、窗口尺寸持久化记忆；
+    - `gui-src/app.manifest`：Windows 10/11 应用程序清单，支持 asInvoker 自动 UAC 交互；
+    - `dsh-gui-poller.ps1`：独立解耦的后台守护轮询脚本，完全脱离旧脚本依赖；
+    - `build-gui-exe.ps1`：一键编译脚本（支持 `-CreateDesktopShortcut`）；
+    - `package.json` 与 `README.md`：自用包元数据与开发文档；
+    - `dsh.ico`：独立图标资源；
+    - `dsh-control-gui.exe`：编译完成的高性能原生 Windows 二进制（81.5 KB）。
+- **快捷方式更新**：
+  - 更新桌面全部快捷方式（`C:\Users\HuangZY\Desktop\DSH Control.lnk`、`DSH控制台.lnk` 及 `应用\dsh 控制台.lnk`），统一直接指向 `F:\tools\deepseek-harness\packages\selfuse\control-gui\dsh-control-gui.exe`。
+- **验证**：
+  - `packages/selfuse/control-gui/build-gui-exe.ps1` 编译 EXIT=0；
+  - `dsh-control-gui.exe -SmokeTest` 自检 EXIT=0，守护进程自动拉起并于退出时彻底释放，无残留进程；
+  - 桌面所有快捷方式指向新包并验证正常。
