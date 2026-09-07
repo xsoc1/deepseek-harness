@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -19,6 +19,7 @@ namespace DshControlInstaller
         private Label lblSubtitle;
         private PictureBox picIcon;
 
+        private Panel pnlContent;
         private GroupBox grpPath;
         private TextBox txtPath;
         private Button btnBrowse;
@@ -113,14 +114,13 @@ namespace DshControlInstaller
             // 2. 底部按钮栏
             pnlBottom = new Panel();
             pnlBottom.Dock = DockStyle.Bottom;
-            pnlBottom.Height = 52;
+            pnlBottom.Height = 56;
             pnlBottom.BackColor = Color.FromArgb(20, 24, 34);
+            this.Controls.Add(pnlBottom);
 
             btnCancel = new Button();
             btnCancel.Text = "退出";
-            btnCancel.Size = new Size(88, 32);
-            btnCancel.Location = new Point(this.ClientSize.Width - 104, 10);
-            btnCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnCancel.Size = new Size(88, 34);
             btnCancel.FlatStyle = FlatStyle.Flat;
             btnCancel.FlatAppearance.BorderColor = Color.FromArgb(70, 80, 100);
             btnCancel.BackColor = Color.FromArgb(40, 46, 62);
@@ -130,9 +130,7 @@ namespace DshControlInstaller
 
             btnInstall = new Button();
             btnInstall.Text = "开始安装";
-            btnInstall.Size = new Size(110, 32);
-            btnInstall.Location = new Point(this.ClientSize.Width - 224, 10);
-            btnInstall.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            btnInstall.Size = new Size(110, 34);
             btnInstall.FlatStyle = FlatStyle.Flat;
             btnInstall.FlatAppearance.BorderColor = Color.FromArgb(46, 125, 50);
             btnInstall.BackColor = Color.FromArgb(46, 125, 50);
@@ -141,26 +139,22 @@ namespace DshControlInstaller
             btnInstall.Click += (s, e) => OnInstallClick();
             pnlBottom.Controls.Add(btnInstall);
 
-            this.Controls.Add(pnlBottom);
+            pnlBottom.Resize += (s, e) => LayoutBottomButtons();
 
             // 3. 中间内容容器
-            Panel pnlContent = new Panel();
+            pnlContent = new Panel();
             pnlContent.Dock = DockStyle.Fill;
             pnlContent.Padding = new Padding(16, 12, 16, 8);
-            pnlContent.AutoScroll = true;
+            this.Controls.Add(pnlContent);
+            pnlContent.BringToFront();
 
             // Group 1: 路径设置
             grpPath = new GroupBox();
             grpPath.Text = "安装目标路径";
             grpPath.ForeColor = Color.FromArgb(200, 215, 235);
-            grpPath.Size = new Size(pnlContent.ClientSize.Width - 32, 68);
-            grpPath.Location = new Point(16, 12);
-            grpPath.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            pnlContent.Controls.Add(grpPath);
 
             txtPath = new TextBox();
-            txtPath.Location = new Point(12, 26);
-            txtPath.Size = new Size(grpPath.ClientSize.Width - 210, 24);
-            txtPath.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             txtPath.BackColor = Color.FromArgb(16, 18, 26);
             txtPath.ForeColor = Color.WhiteSmoke;
             txtPath.BorderStyle = BorderStyle.FixedSingle;
@@ -176,8 +170,6 @@ namespace DshControlInstaller
             btnBrowse = new Button();
             btnBrowse.Text = "浏览...";
             btnBrowse.Size = new Size(74, 25);
-            btnBrowse.Location = new Point(grpPath.ClientSize.Width - 190, 25);
-            btnBrowse.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnBrowse.FlatStyle = FlatStyle.Flat;
             btnBrowse.FlatAppearance.BorderColor = Color.FromArgb(70, 80, 100);
             btnBrowse.BackColor = Color.FromArgb(36, 42, 58);
@@ -198,8 +190,6 @@ namespace DshControlInstaller
             btnAutoDetect = new Button();
             btnAutoDetect.Text = "自动探测";
             btnAutoDetect.Size = new Size(84, 25);
-            btnAutoDetect.Location = new Point(grpPath.ClientSize.Width - 106, 25);
-            btnAutoDetect.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnAutoDetect.FlatStyle = FlatStyle.Flat;
             btnAutoDetect.FlatAppearance.BorderColor = Color.FromArgb(70, 80, 100);
             btnAutoDetect.BackColor = Color.FromArgb(36, 42, 58);
@@ -214,15 +204,12 @@ namespace DshControlInstaller
             grpPath.Controls.Add(txtPath);
             grpPath.Controls.Add(btnBrowse);
             grpPath.Controls.Add(btnAutoDetect);
-            pnlContent.Controls.Add(grpPath);
 
             // Group 2: 安装选项
             grpOptions = new GroupBox();
             grpOptions.Text = "安装选项";
             grpOptions.ForeColor = Color.FromArgb(200, 215, 235);
-            grpOptions.Size = new Size(pnlContent.ClientSize.Width - 32, 58);
-            grpOptions.Location = new Point(16, 88);
-            grpOptions.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            pnlContent.Controls.Add(grpOptions);
 
             chkDesktopShortcut = new CheckBox();
             chkDesktopShortcut.Text = "创建桌面快捷方式";
@@ -248,33 +235,21 @@ namespace DshControlInstaller
             grpOptions.Controls.Add(chkDesktopShortcut);
             grpOptions.Controls.Add(chkStartMenuShortcut);
             grpOptions.Controls.Add(chkLaunchAfter);
-            pnlContent.Controls.Add(grpOptions);
 
             // Group 3: 进度与日志
             grpProgress = new GroupBox();
             grpProgress.Text = "安装进度与详情";
             grpProgress.ForeColor = Color.FromArgb(200, 215, 235);
-            grpProgress.Size = new Size(pnlContent.ClientSize.Width - 32, 260);
-            grpProgress.Location = new Point(16, 154);
-            grpProgress.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            pnlContent.Controls.Add(grpProgress);
 
             prgBar = new ProgressBar();
-            prgBar.Location = new Point(16, 24);
-            prgBar.Size = new Size(grpProgress.ClientSize.Width - 32, 20);
-            prgBar.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             prgBar.Value = 0;
 
             lblStatus = new Label();
             lblStatus.Text = "准备就绪，点击「开始安装」按钮以开始部署。";
-            lblStatus.Location = new Point(16, 48);
-            lblStatus.Size = new Size(grpProgress.ClientSize.Width - 32, 18);
-            lblStatus.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             lblStatus.ForeColor = Color.FromArgb(170, 210, 170);
 
             txtLog = new RichTextBox();
-            txtLog.Location = new Point(16, 72);
-            txtLog.Size = new Size(grpProgress.ClientSize.Width - 32, grpProgress.ClientSize.Height - 84);
-            txtLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             txtLog.ReadOnly = true;
             txtLog.BackColor = Color.FromArgb(16, 18, 26);
             txtLog.ForeColor = Color.FromArgb(190, 205, 225);
@@ -284,17 +259,61 @@ namespace DshControlInstaller
             grpProgress.Controls.Add(prgBar);
             grpProgress.Controls.Add(lblStatus);
             grpProgress.Controls.Add(txtLog);
-            pnlContent.Controls.Add(grpProgress);
 
-            this.Controls.Add(pnlContent);
+            pnlContent.Resize += (s, e) => LayoutContent();
+            this.Shown += (s, e) => { LayoutBottomButtons(); LayoutContent(); };
 
-            // 保持停靠层级正常
-            this.Controls.SetChildIndex(pnlContent, 0);
-            this.Controls.SetChildIndex(pnlBottom, 1);
-            this.Controls.SetChildIndex(pnlHeader, 2);
+            LayoutBottomButtons();
+            LayoutContent();
 
             AddLog("安装向导已初始化");
             AddLog("推荐目标路径: " + txtPath.Text);
+        }
+
+        private void LayoutBottomButtons()
+        {
+            if (pnlBottom == null || btnInstall == null || btnCancel == null) return;
+            int rightMargin = 20;
+            int spacing = 12;
+            int y = (pnlBottom.ClientSize.Height - btnInstall.Height) / 2;
+            if (y < 4) y = 10;
+
+            btnCancel.Location = new Point(pnlBottom.ClientSize.Width - rightMargin - btnCancel.Width, y);
+            btnInstall.Location = new Point(btnCancel.Left - spacing - btnInstall.Width, y);
+        }
+
+        private void LayoutContent()
+        {
+            if (pnlContent == null || grpPath == null || grpOptions == null || grpProgress == null) return;
+
+            int margin = 16;
+            int contentWidth = pnlContent.ClientSize.Width - (margin * 2);
+            if (contentWidth < 200) contentWidth = 200;
+
+            grpPath.Location = new Point(margin, 12);
+            grpPath.Size = new Size(contentWidth, 68);
+
+            btnAutoDetect.Location = new Point(grpPath.ClientSize.Width - 96, 25);
+            btnBrowse.Location = new Point(btnAutoDetect.Left - 8 - btnBrowse.Width, 25);
+            txtPath.Location = new Point(12, 26);
+            txtPath.Width = Math.Max(100, btnBrowse.Left - 12 - txtPath.Left);
+
+            grpOptions.Location = new Point(margin, 88);
+            grpOptions.Size = new Size(contentWidth, 58);
+
+            grpProgress.Location = new Point(margin, 154);
+            int progHeight = pnlContent.ClientSize.Height - grpProgress.Top - 12;
+            grpProgress.Size = new Size(contentWidth, Math.Max(160, progHeight));
+
+            prgBar.Location = new Point(16, 24);
+            prgBar.Size = new Size(grpProgress.ClientSize.Width - 32, 20);
+
+            lblStatus.Location = new Point(16, 48);
+            lblStatus.Size = new Size(grpProgress.ClientSize.Width - 32, 18);
+
+            txtLog.Location = new Point(16, 72);
+            int logHeight = grpProgress.ClientSize.Height - txtLog.Top - 12;
+            txtLog.Size = new Size(grpProgress.ClientSize.Width - 32, Math.Max(60, logHeight));
         }
 
         private string DetectDefaultInstallPath()

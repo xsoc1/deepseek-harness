@@ -14,11 +14,20 @@ Write-Host "=================================================" -ForegroundColor 
 
 # 1. 编译最新的控制台可执行文件
 $buildGuiScript = Join-Path $PSScriptRoot 'build-gui-exe.ps1'
-Write-Host "[1/5] 编译控制台核心二进制..." -ForegroundColor Yellow
-& powershell.exe -ExecutionPolicy Bypass -File $buildGuiScript
-if ($LASTEXITCODE -ne 0) { throw "编译 dsh-control-gui.exe 失败" }
-
 $exePath = Join-Path $PSScriptRoot 'dsh-control-gui.exe'
+Write-Host "[1/5] Checking DSH Control GUI binary..." -ForegroundColor Yellow
+$needBuildGui = $true
+if (Test-Path $exePath) {
+    $csSrc = Join-Path $PSScriptRoot 'gui-src\DshControlApp.cs'
+    if ((Get-Item $exePath).LastWriteTime -ge (Get-Item $csSrc).LastWriteTime) {
+        Write-Host "    Existing dsh-control-gui.exe is up-to-date, reusing." -ForegroundColor Green
+        $needBuildGui = $false
+    }
+}
+if ($needBuildGui) {
+    & powershell.exe -ExecutionPolicy Bypass -File $buildGuiScript
+    if ($LASTEXITCODE -ne 0) { throw "Build dsh-control-gui.exe failed" }
+}
 $iconPath = Join-Path $PSScriptRoot 'dsh.ico'
 if (-not (Test-Path $exePath)) { throw "未找到控制台可执行文件: $exePath" }
 
@@ -133,11 +142,11 @@ $zipKb = [Math]::Round($zipInfo.Length / 1024, 1)
 $zipHash = (Get-FileHash $finalZip -Algorithm SHA256).Hash
 
 Write-Host "1. 安装向导程序 (双击直接运行安装):" -ForegroundColor Cyan
-Write-Host "   路径  : $finalSetup"
-Write-Host "   大小  : $($setupInfo.Length) 字节 ($setupKb KB)"
-Write-Host "   SHA256: $setupHash"
+Write-Host ('   路径  : ' + $finalSetup)
+Write-Host ('   大小  : ' + $setupInfo.Length + ' 字节 (' + $setupKb + ' KB)')
+Write-Host ('   SHA256: ' + $setupHash)
 
 Write-Host "`n2. 完整便携压缩包 (解压即用 / 含一键脚本):" -ForegroundColor Cyan
-Write-Host "   路径  : $finalZip"
-Write-Host "   大小  : $($zipInfo.Length) 字节 ($zipKb KB)"
-Write-Host "   SHA256: $zipHash"
+Write-Host ('   路径  : ' + $finalZip)
+Write-Host ('   大小  : ' + $zipInfo.Length + ' 字节 (' + $zipKb + ' KB)')
+Write-Host ('   SHA256: ' + $zipHash)

@@ -28,6 +28,7 @@ patchPlugins:
   - "@deepseek-ai/dsh-task-notify"
   - "@dsh-selfuse/soul-md"
   - "@dsh-selfuse/skill-router"
+  - "@dsh-selfuse/content-risk-guard"
 skills:
   - math-research-dsh
   - mattpocock-skills

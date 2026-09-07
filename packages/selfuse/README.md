@@ -9,7 +9,7 @@
 - market
 - mineru
 - backup / git-workflow / undo / wsl-workspace
-- 本机自研：memory-panel（本地记忆面板）、skill-router（技能路由提示段）
+- 本机自研：memory-panel（本地记忆面板）、skill-router（技能路由提示段）、content-risk-guard（内容风控自动拦截与自愈守卫）
 - 人设/桌面配套：soul-md（soul.md 人设卡）、EAC 桌面配套（web-shell-bridge / balance / file-changes / client-file-changes / shell-terminal / easy-setup / task-notify）
 - 管理控制台：control-gui（WinForms 独立 GUI 控制台，含设置、自动目录感知、横幅定制与状态轮询）
 
