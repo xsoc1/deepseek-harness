@@ -17,7 +17,9 @@ export default defineConfig(({ env }) => {
   const client = isBuildFaceClient(env?.DSH_BUILD_FACE)
   return {
     workspace: {
-      include: ['vendor/*', 'packages/*/*', 'apps/cli'],
+      include: client
+        ? ['vendor/*', 'packages/*/*', 'apps/cli']
+        : ['vendor/*', 'packages/*/*', 'apps/cli', 'apps/desktop', 'apps/desktop-host'],
       exclude: ['packages/selfuse/**'],
     },
     entry: client ? '' : ['lib/types/{index,invariant,startup}.js'],
