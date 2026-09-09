@@ -3159,17 +3159,7 @@ window.__ModuleLoader__.load({
 					dispose: () => wallpaper.dispose()
 				}
 			});
-			// Keep settings menu clean - background & skin runtime active without extra settings section
-			/*
-			ctx.slots.inject("settings.section", () => ctx.slots.register({
-				name: "settings.section",
-				id: "skin-center",
-				order: 120,
-				label: () => ctx.locale.bind("skinCenter")("title"),
-				locale: "skinCenter",
-				inject: injected
-			}, SkinCenterSection));
-			*/
+			// Settings menu kept clean - background & skin runtime active without extra settings section
 		}
 		//#endregion
 		exports.NS = NS;
