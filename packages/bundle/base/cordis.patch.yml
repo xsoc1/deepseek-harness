@@ -44,6 +44,8 @@
 
     - id: typert-gateway
       name: '@deepseek-ai/dsh-api-gateway'
+      config:
+        websocketHeartbeatIntervalMs: 10000
 
     - id: session-title
       name: '@deepseek-ai/dsh-session-title'

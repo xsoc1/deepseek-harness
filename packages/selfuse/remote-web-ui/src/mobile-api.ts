@@ -59,7 +59,7 @@ const MOBILE_PREFERENCES_METHOD = 'mobile.preferences'
 /** One session.list page (thin phones load incrementally). */
 const SESSION_PAGE_SIZE = 20
 /** SSE keep-alive ping cadence for the live mux stream (single connection). */
-const DEFAULT_EVENTS_HEARTBEAT_MS = 15_000
+const DEFAULT_EVENTS_HEARTBEAT_MS = 5_000
 
 /** Encode one list position as an opaque continuation cursor. */
 function sessionListCursor(updatedAt: number, sessionId: string): string {
@@ -277,7 +277,9 @@ async function dispatch(apiProxy: ApiProxy, method: string, payload: unknown, rp
     if (targetWsId !== undefined && targetWsId !== '') {
       const wsRes = await apiProxy.workspace.list(request as never)
       if (wsRes.result.ok) {
-        const ws = (wsRes.result.value.items as Array<{ workspaceId: string; path: string; sessionIds: string[] }>).find(w => w.workspaceId === targetWsId)
+        type WsItem = { workspaceId: string; path: string; sessionIds: string[] }
+        const wsList = wsRes.result.value.items as WsItem[]
+        const ws = wsList.find(w => w.workspaceId === targetWsId)
         if (ws !== undefined) {
           const owned = new Set(ws.sessionIds || [])
           items = items.filter(row => owned.has(row.sessionId as never) || (row.cwd !== undefined && row.cwd === ws.path))

@@ -1506,7 +1506,7 @@ const MOBILE_PREFERENCES_METHOD = "mobile.preferences";
 /** One session.list page (thin phones load incrementally). */
 const SESSION_PAGE_SIZE = 20;
 /** SSE keep-alive ping cadence for the live mux stream (single connection). */
-const DEFAULT_EVENTS_HEARTBEAT_MS = 15e3;
+const DEFAULT_EVENTS_HEARTBEAT_MS = 5e3;
 /** Encode one list position as an opaque continuation cursor. */
 function sessionListCursor(updatedAt, sessionId) {
 	return `${updatedAt}:${sessionId}`;

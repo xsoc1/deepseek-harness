@@ -1614,8 +1614,23 @@
      - 同步更新 `repair-dsh.ps1`，移除对 `DSH-better-sidebar` 的遗留依赖检测用例。
 - **验证**：
   - 代码库与 Git 追踪完全干净；
-  - DSH Web 持续稳定监听 3080 端口，探活 HTTP 200 OK，服务正常。
+### 2026-09-09 远程端频繁跳断线重连深度排查与长连接保活优化
 
-
-
-
+- **现象**：远程端（Tailscale / 局域网 / 移动端）经常跳出“连接中断，正在自动重试”或频繁断线重连。
+- **根因分析**：
+  1. **Windows ↔ WSL 桥接层同步阻塞（关键根因）**：`F:\tools\deepseek-harness\dsh-bridge.mjs` 每 10 秒调用一次同步 `execSync('wsl.exe -d Ubuntu -e hostname -I')`，导致 Node.js 单线程事件循环周期性彻底挂起 100ms~2000ms，在途数据帧（尤其是 WebSocket 心跳 Ping/Pong）严重丢包或超时；
+  2. **WebSocket 心跳判定过于严苛（4秒误杀）**：`packages/api/gateway/src/stream-server.ts` 默认心跳间隔为 2 秒，最多允许错过 2 次心跳（即 4 秒未回 Pong 服务端即调用 `socket.terminate()` 掐断连接）。在蜂窝移动网络、Tailscale 中继中转或手机切后台时极易因瞬时抖动被误杀；
+  3. **TCP 桥接层缺少 KeepAlive**：`dsh-bridge.mjs` 客户端与目标端 socket 均未开启 TCP KeepAlive，空闲连接易被 NAT/防火墙静默切断；
+  4. **移动端 SSE 心跳周期倒挂**：`mobile-api.ts` 的 SSE 默认保活周期为 15 秒，而移动端客户端判定失活超时为 12 秒，且 `: keepalive` 注释不触发 `EventSource.onmessage`，导致空闲时误判重连。
+- **优化与修复**：
+  1. **`dsh-bridge.mjs` 异步无阻塞改造与 KeepAlive**：
+     - 启动时预读初始 WSL IP，后续将 10 秒同步 `execSync` 改造为 60 秒一次的**非阻塞异步 `exec`**（带异常静默处理），彻底消除事件循环挂起；
+     - `clientSocket` 与 `targetSocket` 均显式开启 `setKeepAlive(true, 10000)`；
+     - 完善双向对等 `destroy()` 清理，消除半开连接。
+  2. **放宽 WebSocket 心跳超时容忍度**：
+     - 在 `packages/bundle/base/cordis.patch.yml` 中为 `typert-gateway` 配置 `websocketHeartbeatIntervalMs: 10000`（10秒心跳，容忍 20 秒），从 4 秒放宽至 20 秒，适应蜂窝/Tailscale 网络波动。
+  3. **校准移动端 SSE 心跳间隔**：
+     - `packages/selfuse/remote-web-ui/src/mobile-api.ts` 与 `lib/index.js` 的 `DEFAULT_EVENTS_HEARTBEAT_MS` 从 `15_000` 下调至 `5_000`（5秒），远低于客户端 12 秒判定线。
+- **验证与效果**：
+  - 看门狗联动重启，加载全新异步保活桥接器与 10s WebSocket 心跳配置；
+  - 端口 3080 监听正常，HTTP 200 OK，长连接平稳不跳连。
