@@ -10,16 +10,13 @@
  */
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
 import { homedir } from 'node:os'
+import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 import { createRequire } from 'node:module'
 import yaml from 'js-yaml'
 
 const require = createRequire(import.meta.url)
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
-
-function fileURLToPath(url) {
-  return url.replace(/^file:\/\//, '')
-}
 
 const args = process.argv.slice(2)
 function argValue(name, fallback) {
