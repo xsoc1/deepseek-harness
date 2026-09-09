@@ -38,20 +38,10 @@
     - id: web-ui-ssh
       name: '@dsh-selfuse/ssh'
 
-# from ../dsh-chat-recovery
-- insert:
-    - id: web-ui-chat-recovery
-      name: '@dsh-selfuse/chat-recovery'
-
 # from ../skins/skin-center (via ../dsh-skins)
 - insert:
     - id: web-ui-skin-center
       name: '@dsh-selfuse/skin-center'
-
-# external: @dsh-selfuse/better-sidebar
-- insert:
-    - id: web-ui-better-sidebar
-      name: '@dsh-selfuse/better-sidebar'
 
 # host apiproxy SDK compatibility
 - insert:

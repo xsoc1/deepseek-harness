@@ -28,13 +28,11 @@
     "url": "https://github.com/zhu1090093659/dsh-web-ui.git"
   },
   "dependencies": {
-    "@dsh-selfuse/better-sidebar": "workspace:*",
     "@dsh-selfuse/web-ui-community-plugins": "workspace:*",
     "@dsh-selfuse/web-ui-task-board": "workspace:*",
     "@dsh-selfuse/web-ui-git-graph": "workspace:*",
     "@dsh-selfuse/remote-web-ui": "workspace:*",
     "@dsh-selfuse/ssh": "workspace:*",
-    "@dsh-selfuse/chat-recovery": "workspace:*",
     "@dsh-selfuse/web-ui-settings": "workspace:*",
     "@dsh-selfuse/skins": "workspace:*",
     "@dsh-selfuse/skin-center": "workspace:*"

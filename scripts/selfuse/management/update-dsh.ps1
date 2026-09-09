@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     检查 / 更新本地 DeepSeek Harness 到上游最新版本。
 
@@ -190,8 +190,7 @@ function Update-Dsh {
         "pnpm install --no-frozen-lockfile",
         "pnpm run build:lib:host",
         "pnpm run build:lib:client",
-        "pnpm run build:web",
-        "pnpm --filter @dsh-selfuse/better-sidebar run prepare 2>/dev/null || true"
+        "pnpm run build:web"
     )
     $wslFullCmd = $wslCmds -join ' && '
     $wslResult = & wsl.exe -d Ubuntu -e bash -lc $wslFullCmd 2>&1

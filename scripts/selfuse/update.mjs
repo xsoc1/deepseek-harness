@@ -100,7 +100,7 @@ function buildSelfuse() {
   }
   console.log('  rebuilding @dsh-selfuse packages ...')
   const pkgs = []
-  for (const entry of ['backup','better-sidebar','chat-recovery','file-upload','git-workflow','market','memory-panel','mineru','remote-web-ui','skin-center','skins','ssh','undo','web-ui-all','web-ui-community-plugins','web-ui-git-graph','web-ui-settings','web-ui-task-board','wsl-workspace']) {
+  for (const entry of ['backup','content-risk-guard','git-workflow','market','memory-panel','mineru','remote-web-ui','skin-center','skins','ssh','undo','web-ui-all','web-ui-community-plugins','web-ui-git-graph','web-ui-settings','web-ui-task-board','wsl-workspace']) {
     const p = join(repoRoot, 'packages/selfuse', entry, 'package.json')
     if (!existsSync(p)) continue
     const pkg = JSON.parse(readFileSync(p, 'utf8'))
