@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { Remote, TypertRemoteService } from "@deepseek-ai/dsh-typert-protocol";
-import { buildMigrationPrompt, resolvePersonaPath } from "./logic.js";
+import { resolvePersonaPath } from "./logic.js";
 
 /**
  * dsh-easy-setup — host half.
@@ -14,8 +14,6 @@ import { buildMigrationPrompt, resolvePersonaPath } from "./logic.js";
  *     renders (path resolved exactly like the plugin does: settings.yaml
  *     user overlay → cordis.patch.yml composition layer → <home>/soul.md).
  *     Writes land on disk; the plugin's watcher hot-reloads the section.
- *   - migrationPrompt — the instruction the one-click migration flow copies
- *     into a fresh session whose workspace is a Codex / Claude Code folder.
  *
  * Same strict-descriptor registration as dsh-plugin-marketplace: the
  * companion copy is not the same module instance as the host's typert
@@ -41,8 +39,7 @@ const descriptor = (method, parameters) => ({
 });
 const REMOTE_INVOCATIONS = [
 	descriptor("readPersona", []),
-	descriptor("writePersona", ["content"]),
-	descriptor("migrationPrompt", [])
+	descriptor("writePersona", ["content"])
 ];
 
 /** The harness home the host booted with (same rule dsh itself uses). */
@@ -73,7 +70,7 @@ class EasySetupGateway extends TypertRemoteService {
 
 	constructor(ctx) {
 		super(ctx, "easySetup");
-		for (const name of ["readPersona", "writePersona", "migrationPrompt"]) {
+		for (const name of ["readPersona", "writePersona"]) {
 			const decorator = Remote(name);
 			decorator(EasySetupGateway.prototype[name], {
 				name,
@@ -121,11 +118,6 @@ class EasySetupGateway extends TypertRemoteService {
 		} catch (error) {
 			return { ok: false, path, error: String((error && error.message) || error) };
 		}
-	}
-
-	/** The ready-made instruction for the one-click migration session. */
-	migrationPrompt() {
-		return { ok: true, prompt: buildMigrationPrompt({ home: homeDir() }) };
 	}
 }
 

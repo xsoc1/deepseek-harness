@@ -224,6 +224,24 @@
   4. 执行 SQL 删除操作，清空所有匹配项；二次检索验证确认残留为 0 条。
   5. 自动重新拉起 Chrome 浏览器，清理临时脚本，工作环境恢复正常。
 
+### 2026-09-09 移除「一键迁移（夺舍）」功能（easy-migration）
+
+- **需求**：用户要求彻底删除设置（Settings）中的「一键迁移」功能。
+- **清理与改动**：
+  1. **前端组件与设置注册移除**：
+     - 在 `packages/selfuse/eac-easy-setup/lib/client.js` 中彻底移除 `easy-migration` 的 `settings.section` 注册（order 27）；
+     - 移除 `Migration` React 组件及其中文/英文国际化文案（`migrationNav`, `migrationIntro`, `start`, `working`, `cancelHint`, `sentHint`, `failHint`, `copyOnly`, `viewPrompt`）；
+     - 移除 `REMOTE.descriptors` 中的 `migrationPrompt`，并从插件 inject 列表中精简掉仅迁移使用的 `sessions` 与 `workspaces`。
+  2. **后端服务与提示词逻辑移除**：
+     - 在 `packages/selfuse/eac-easy-setup/lib/index.js` 中移除 `migrationPrompt` endpoint 注册、Typert Remote 装饰器及逻辑导入；
+     - 在 `packages/selfuse/eac-easy-setup/lib/logic.js` 中彻底删除 `buildMigrationPrompt` 提示词生成函数。
+  3. **保留正常功能**：
+     - `eac-easy-setup` 插件中用户仍在使用的「视觉模型（快速配置）」(`easy-vision`) 与「人设卡编辑」(`easy-persona`) 保持完整保留，不受任何影响。
+- **验证**：
+  - 语法检查通过（`node --check` 0 错误）；
+  - 代码同步至 WSL 并提交；
+  - 重启 DSH Web 服务后校验 `settings.section`，确认设置菜单已彻底无 `easy-migration` 残留。
+
 ### 2026-09-09 恢复背景图（夏沫琉璃）与修复远程配对访问
 
 - **需求**：恢复主界面夏沫琉璃 (`summer-liquid-glass`) 皮肤与 `IMG_1891` 背景壁纸；修复通过 Tailscale 及桌面客户端访问远程配对功能报 403 Forbidden 的问题；保持设置界面精炼无冗余目录。

@@ -1,18 +1,13 @@
 /**
  * dsh-easy-setup — browser half.
  *
- * Three sections inside the Web UI settings page:
+ * Two sections inside the Web UI settings page:
  *
  *   1. 视觉模型（快速配置） — provider + model dropdowns over the
  *      `tool-vision` settings namespace (the dsh-tool-vision plugin's own
  *      section stays for advanced fields).
  *   2. 人设编辑 — a textarea over the real soul.md file through the
  *      easySetup remote; dsh-soul-md hot-reloads edits within ~300ms.
- *   3. 一键迁移 — pick a Codex / Claude Code folder (their install/config
- *      dir or a project dir), register it as a workspace, open a fresh
- *      session there, and AUTO-SEND the migration instruction through the
- *      session-scoped conversation service; the agent then performs the
- *      migration visibly in the conversation as tool calls.
  *
  * Hand-written ModuleLoader bundle — no build step required.
  */
@@ -74,16 +69,7 @@ window.__ModuleLoader__.load({
       personaBraceWarn: "内容包含双花括号定界符（提示词变量语法，soul-md 无转义），保存后对话会渲染失败——请改写这些位置后再保存。",
       loadFail: "读取人设失败",
       saveFail: "保存失败",
-      missing: "（文件尚不存在，保存时将创建）",
-      migrationNav: "一键迁移（夺舍）",
-      migrationIntro: "从 Codex / Claude Code 一键迁移：选择它们的安装/配置目录（如 ~/.codex、~/.claude，也可以是普通项目目录）→ 目录自动注册为工作区并新建对话 → 迁移指令自动发送，AI 会在对话里把技能（skills）、MCP 服务器和长期记忆（CLAUDE.md / AGENTS.md）全部搬进 DSH，每一步的工具调用全程可视化。",
-      start: "选择文件夹并开始迁移",
-      working: "处理中…",
-      cancelHint: "已取消选择",
-      sentHint: "已新建对话并自动发送迁移指令——切换到该对话即可观看 AI 逐步完成迁移。",
-      failHint: "迁移启动失败",
-      copyOnly: "仅复制迁移指令",
-      viewPrompt: "查看迁移指令内容"
+      missing: "（文件尚不存在，保存时将创建）"
     };
     var en = {
       visionNav: "Vision (Quick Setup)",
@@ -103,16 +89,7 @@ window.__ModuleLoader__.load({
       personaBraceWarn: "The content contains double-brace delimiters (prompt-variable syntax; soul-md has no escape) — sending will fail to render. Rewrite those spots before saving.",
       loadFail: "Failed to load persona",
       saveFail: "Save failed",
-      missing: "(file missing; created on save)",
-      migrationNav: "One-click Migration",
-      migrationIntro: "Migrate from Codex / Claude Code in one click: pick their install/config folder (e.g. ~/.codex, ~/.claude — an ordinary project folder works too) → it becomes a workspace with a fresh session → the migration prompt is sent automatically, and the agent moves skills, MCP servers and memories into DSH with every tool call visible in the conversation.",
-      start: "Pick folder & start",
-      working: "Working…",
-      cancelHint: "Cancelled",
-      sentHint: "Session ready and the migration prompt was sent — switch to it and watch the agent migrate step by step.",
-      failHint: "Failed to start migration",
-      copyOnly: "Copy prompt only",
-      viewPrompt: "View the migration prompt"
+      missing: "(file missing; created on save)"
     };
 
     // ── vision provider presets (UI-side constant) ───────────────────────
@@ -144,8 +121,7 @@ window.__ModuleLoader__.load({
       package: "@deepseek-ai/dsh-easy-setup",
       descriptors: [
         descriptor("readPersona", []),
-        descriptor("writePersona", ["content"]),
-        descriptor("migrationPrompt", [])
+        descriptor("writePersona", ["content"])
       ]
     };
 
@@ -332,94 +308,8 @@ window.__ModuleLoader__.load({
       );
     }
 
-    // ── section 3: one-click migration ───────────────────────────────────
-    function Migration(props) {
-      var t = props.t;
-      var ctx = props.ctx;
-      var remote = props.remote;
-      var state = react.useState({ status: "idle", prompt: "", path: "" });
-      var data = state[0];
-      var setState = state[1];
-
-      react.useEffect(function () {
-        var alive = true;
-        remote().then(function (svc) { return svc.migrationPrompt(); }).then(function (res) {
-          var data2 = res && res.ok ? res.value : null;
-          if (alive && data2 && data2.ok) setState(function (prev) { return { status: prev.status, prompt: data2.prompt, path: prev.path }; });
-        }).catch(function () {});
-        return function () { alive = false; };
-      }, []);
-
-      function stagePrompt(text) {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          return navigator.clipboard.writeText(text).catch(function () {});
-        }
-        return Promise.resolve();
-      }
-
-      // Resolve the session-scoped conversation face (same pattern the
-      // conversation package's own scopedConversation helper uses), retrying
-      // briefly while the fresh session lands in the list store.
-      function scopedConversation(sessionId, remaining) {
-        return new Promise(function (resolve, reject) {
-          var attempt = function (left) {
-            var scoped;
-            var conversation;
-            try {
-              scoped = ctx.sessions.scope(sessionId);
-              conversation = scoped ? scoped.get("conversation") : undefined;
-            } catch (e) { /* retry below */ }
-            if (conversation && typeof conversation.send === "function") { resolve(conversation); return; }
-            if (left <= 0) { reject(new Error("无法在会话作用域内解析 conversation 服务")); return; }
-            setTimeout(function () { attempt(left - 120); }, 120);
-          };
-          attempt(remaining);
-        });
-      }
-
-      function onStart() {
-        if (!ctx.workspaces || !ctx.sessions) {
-          setState({ status: "error", prompt: data.prompt, path: "workspaces/sessions 服务不可用" });
-          return;
-        }
-        setState({ status: "working", prompt: data.prompt, path: "" });
-        ctx.workspaces.pickDirectory().then(function (path) {
-          if (!path) { setState({ status: "idle", prompt: data.prompt, path: "" }); return null; }
-          return ctx.workspaces.create({ path: path }).then(function (ws) {
-            return ctx.workspaces.connectWorkspace(ws.workspaceId).then(function (sessionId) {
-              ctx.sessions.open(sessionId);
-              return scopedConversation(sessionId, 8000).then(function (conversation) {
-                // Fire the migration turn; its tool calls unfold visibly in
-                // the conversation view (send resolves when the turn ends).
-                conversation.send(data.prompt).catch(function () {});
-                setState({ status: "sent", prompt: data.prompt, path: path });
-              });
-            });
-          });
-        }).catch(function (e) {
-          setState({ status: "error", prompt: data.prompt, path: String(e && e.message || e) });
-        });
-      }
-
-      return h("div", { className: "__es_root" },
-        h("p", { className: "__es_hint", style: { margin: 0 } }, t("migrationIntro")),
-        h("div", { className: "__es_actions" },
-          h("button", { className: "__es_btn __es_btnPrimary", disabled: data.status === "working" || !data.prompt, onClick: onStart },
-            data.status === "working" ? t("working") : t("start")),
-          data.prompt ? h("button", { className: "__es_btn", onClick: function () { stagePrompt(data.prompt); } }, t("copyOnly")) : null
-        ),
-        data.status === "sent" ? h("span", { className: "__es_ok" }, t("sentHint")) : null,
-        data.status === "error" ? h("span", { className: "__es_error" }, t("failHint") + ": " + data.path) : null,
-        data.path && data.status === "sent" ? h("span", { className: "__es_path" }, data.path) : null,
-        data.prompt ? h("details", { className: "__es_details" },
-          h("summary", null, t("viewPrompt")),
-          h("pre", { className: "__es_prompt" }, data.prompt)
-        ) : null
-      );
-    }
-
     // ── plugin ────────────────────────────────────────────────────────────
-    var inject = ["slots", "locale", "remote", "settingsScope", "sessions", "workspaces"];
+    var inject = ["slots", "locale", "remote", "settingsScope"];
 
     function apply(ctx) {
       var t = ctx.locale.bind(NS);
@@ -463,17 +353,6 @@ window.__ModuleLoader__.load({
           locale: NS
         }, function (props) {
           return h(PersonaEditor, Object.assign({}, props, { remote: remote }));
-        });
-      });
-      ctx.slots.inject("settings.section", function () {
-        return ctx.slots.register({
-          name: "settings.section",
-          id: "easy-migration",
-          order: 27,
-          label: function () { return t("migrationNav"); },
-          locale: NS
-        }, function (props) {
-          return h(Migration, Object.assign({}, props, { remote: remote, ctx: ctx }));
         });
       });
     }
