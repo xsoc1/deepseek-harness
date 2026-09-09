@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     dsh 抢救/自检：补齐 client/web 构建产物、共享插件依赖。
 .DESCRIPTION
@@ -93,7 +93,6 @@ const cases = [
   ['\\wsl.localhost\Ubuntu\home\huangzy\tools\community-plugins/dsh-wsl-workspace/lib/index.js', '@deepseek-ai/dsh-fs-local'],
   ['\\wsl.localhost\Ubuntu\home\huangzy\tools\community-plugins/dsh-backup/lib/index.js', '@deepseek-ai/dsh-tools'],
   ['\\wsl.localhost\Ubuntu\home\huangzy\tools\community-plugins/dsh-backup/lib/index.js', '@deepseek-ai/dsh-typert-protocol'],
-  ['\\wsl.localhost\Ubuntu\home\huangzy\tools\community-plugins/DSH-better-sidebar/lib/index.js', '@deepseek-ai/dsh-tools'],
   ['\\wsl.localhost\Ubuntu\home\huangzy\tools\dsh-local/plugins/dsh-routing-suite/injector-release/lib/index.js', 'schemastery'],
   ['\\wsl.localhost\Ubuntu\home\huangzy\tools\dsh-local/plugins/dsh-routing-suite/injector-release/lib/index.js', '@deepseek-ai/dsh-llm']
 ]
