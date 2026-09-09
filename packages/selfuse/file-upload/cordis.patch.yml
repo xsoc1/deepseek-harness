@@ -1,7 +1,7 @@
 # @dsh-selfuse/file-upload bundle patch: one insert registering the dual-face plugin.
 # The row id must match the node half's exported cordis `name`.
 - insert:
-    - id: file-upload
+    - id: dsh-file-upload
       name: '@dsh-selfuse/file-upload'
       config:
         uploadMaxBytes: 26214400
