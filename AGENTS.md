@@ -224,6 +224,31 @@
   4. 执行 SQL 删除操作，清空所有匹配项；二次检索验证确认残留为 0 条。
   5. 自动重新拉起 Chrome 浏览器，清理临时脚本，工作环境恢复正常。
 
+### 2026-09-09 恢复背景图（夏沫琉璃）与修复远程配对访问
+
+- **需求**：恢复主界面夏沫琉璃 (`summer-liquid-glass`) 皮肤与 `IMG_1891` 背景壁纸；修复通过 Tailscale 及桌面客户端访问远程配对功能报 403 Forbidden 的问题；保持设置界面精炼无冗余目录。
+- **根因与修复**：
+  1. **背景图恢复与设置项抑制**：
+     - 在 `packages/selfuse/web-ui-all/cordis.patch.yml` 中重新挂载 `@dsh-selfuse/skin-center`（id: `web-ui-skin-center`），重新激活 `summer-liquid-glass` 样式与 `IMG_1891.jpg` 静态资产路由；
+     - 在 `packages/selfuse/skin-center/lib/client.js` 中抑制 `settings.section`（皮肤中心）的导航栏注入，确保皮肤和背景正常生效的同时，不给「设置」左侧菜单栏增加冗余条目；
+  2. **远程访问 403 修复**：
+     - DSH 运行于 WSL 内部，Windows 宿主及经由 Tailscale Serve 转发至 WSL 的 HTTP 请求到达 socket 时，源 IP 为 WSL 网关虚拟 IP `172.22.112.1`（或 `::ffff:172.22.112.1`）；
+     - `packages/selfuse/remote-web-ui` 中的 `isLoopbackAddress` 和 `isLoopbackHostname` 原仅判断标准回环，导致请求被 `loopbackFence` 判定为非本地并拒绝；
+     - 修复 `packages/selfuse/remote-web-ui/lib/index.js` 及 `src/loopback.ts`，扩展 `isLoopbackAddress` 与 `isLoopbackHostname` 识别 WSL 网关 IP（`172.22.*`, `172.*`, `10.*`, `192.168.*`）与 Tailscale 主机名（`*.ts.net`）；
+  3. **环境同步与端到端验证**：
+     - 变更快速同步至 WSL 本地代码库 `/home/huangzy/tools/deepseek-harness`；
+     - 重启 DSH Web 服务并完成端到端验证：
+       - `http://127.0.0.1:3080/` 成功注入 `<html data-dsh-skin="summer-liquid-glass">` 并正常加载 `IMG_1891.jpg`（HTTP 200）；
+       - 本地及 Tailscale 端点 `/api/pair/status` 正常返回 HTTP 200；
+       - `/api/pair/issue` 配对码与二维码 URL 生成正常（HTTP 200）；
+       - Tailscale 移动端 `https://xsoc.tail6cf486.ts.net/m/` 访问正常（HTTP 200）。
+
+### 2026-09-09 修复 Windows 终端闪窗
+
+- 用户反馈系统无故弹出终端窗口, 后续补充观察到窗口中出现 Python 字样。
+- 证据检查确认 `dsh-bridge.mjs` 每 10 秒通过 Node `execSync` 调用 `wsl.exe -d Ubuntu -e hostname -I`, 未设置 `windowsHide`, 会创建可见的 Windows shell/conhost 子进程。WSL 内正在运行的 Python 测试进程无 TTY, 不是可见窗口来源。
+- 修复: 在 `dsh-bridge.mjs` 的 `execSync` 选项加入 `windowsHide: true`, `node --check` 通过, 并重启桥接进程使修复立即生效。
+
 ### 2026-09-06 修复 Codex 在 WSL 环境中的网络连接问题
 
 - **现象**：用户反馈 Codex 在 WSL 环境里出现网络连接故障；`codex doctor` 报告 `reachability one or more required provider endpoints are unreachable over HTTP (connect failed)`；官方 Codex Desktop App 在 WSL 模式下无法连接网络。
@@ -1572,7 +1597,6 @@
 - **验证**：
   - 代码库与 Git 追踪完全干净；
   - DSH Web 持续稳定监听 3080 端口，探活 HTTP 200 OK，服务正常。
-
 
 
 
