@@ -8,21 +8,6 @@
     - id: web-ui-compat
       name: '@dsh-selfuse/web-ui-all'
 
-# from ../dsh-web-ui-settings
-- insert:
-    - id: web-ui-settings
-      name: '@dsh-selfuse/web-ui-settings'
-
-# from ../dsh-community-plugins
-- insert:
-    - id: web-ui-community-plugins
-      name: '@dsh-selfuse/web-ui-community-plugins'
-
-# from ../dsh-task-board
-- insert:
-    - id: web-ui-task-board
-      name: '@dsh-selfuse/web-ui-task-board'
-
 # from ../dsh-git-graph
 - insert:
     - id: web-ui-git-graph
@@ -32,16 +17,6 @@
 - insert:
     - id: web-ui-remote-web-ui
       name: '@dsh-selfuse/remote-web-ui'
-
-# from ../dsh-ssh
-- insert:
-    - id: web-ui-ssh
-      name: '@dsh-selfuse/ssh'
-
-# from ../skins/skin-center (via ../dsh-skins)
-- insert:
-    - id: web-ui-skin-center
-      name: '@dsh-selfuse/skin-center'
 
 # host apiproxy SDK compatibility
 - insert:

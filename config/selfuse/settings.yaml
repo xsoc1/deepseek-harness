@@ -14,12 +14,6 @@ agent-default-model:
   provider: deepseek-official
   model: deepseek-v4-flash-vision-exp
   reasoningEffort: max
-pet:
-  visible: false
-  size: 160
-  right: 25
-  bottom: 20
-  petId: whale-girl
 remote-web-ui:
   autoTunnel: false
   publicBaseUrl: 'https://xsoc.tail6cf486.ts.net'

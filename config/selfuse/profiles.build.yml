@@ -11,10 +11,8 @@ bundles:
   - "@deepseek-ai/dsh-web-app"
   - "@dsh-selfuse/web-ui-all"
   - "@dsh-selfuse/market"
-  - "@dsh-selfuse/mineru"
   - "@dsh-selfuse/backup"
   - "@dsh-selfuse/git-workflow"
-  - "@dsh-selfuse/undo"
   - "@dsh-selfuse/wsl-workspace"
   - "@dsh-selfuse/memory-panel"
 patchPlugins:
