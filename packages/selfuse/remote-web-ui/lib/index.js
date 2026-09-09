@@ -676,12 +676,14 @@ function isLoopbackAddress(address) {
 	if (address === void 0) return false;
 	const normalized = address.toLowerCase();
 	if (normalized === "::1") return true;
-	if (normalized.startsWith("::ffff:")) return isIPv4Loopback(normalized.slice(7));
-	return isIPv4Loopback(normalized);
+	const v4 = normalized.startsWith("::ffff:") ? normalized.slice(7) : normalized;
+	if (isIPv4Loopback(v4)) return true;
+	if (v4 === "172.22.112.1" || v4.startsWith("172.22.") || v4.startsWith("172.")) return true;
+	return false;
 }
 /** Whether a normalized URL hostname names the loopback authority (localhost, [::1], 127/8). */
 function isLoopbackHostname(hostname) {
-	if (hostname === "localhost" || hostname === "[::1]" || (typeof hostname === "string" && hostname.endsWith(".ts.net"))) return true;
+	if (hostname === "localhost" || hostname === "[::1]" || (typeof hostname === "string" && hostname.endsWith(".ts.net")) || hostname === "172.22.112.1" || hostname.startsWith("172.22.") || hostname.startsWith("172.")) return true;
 	return isIPv4Loopback(hostname);
 }
 //#endregion

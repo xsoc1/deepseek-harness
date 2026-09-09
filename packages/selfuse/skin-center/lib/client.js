@@ -3159,6 +3159,8 @@ window.__ModuleLoader__.load({
 					dispose: () => wallpaper.dispose()
 				}
 			});
+			// Keep settings menu clean - background & skin runtime active without extra settings section
+			/*
 			ctx.slots.inject("settings.section", () => ctx.slots.register({
 				name: "settings.section",
 				id: "skin-center",
@@ -3167,6 +3169,7 @@ window.__ModuleLoader__.load({
 				locale: "skinCenter",
 				inject: injected
 			}, SkinCenterSection));
+			*/
 		}
 		//#endregion
 		exports.NS = NS;

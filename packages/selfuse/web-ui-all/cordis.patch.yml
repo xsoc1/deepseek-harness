@@ -18,6 +18,11 @@
     - id: web-ui-remote-web-ui
       name: '@dsh-selfuse/remote-web-ui'
 
+# from ../skins/skin-center
+- insert:
+    - id: web-ui-skin-center
+      name: '@dsh-selfuse/skin-center'
+
 # host apiproxy SDK compatibility
 - insert:
     - id: web-ui-host-apiproxy
