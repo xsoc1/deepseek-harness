@@ -1555,6 +1555,25 @@
   - 重启 DSH Web 服务，watchdog 正常探活（15.2s 启动），本地 `http://127.0.0.1:3080` 返回 `HTTP 200 OK`；
   - Tailscale 远程与 LAN 均正常联通，代码库体积与依赖显著精简。
 
+### 2026-09-09 深度清理冗余历史包与测试产物
+
+- **清理范围与执行**：
+  1. **profile 运行时 `node_modules` 残留**：
+     - 清理 WSL `~/.dsh/profiles/web/node_modules/` 与 Windows `C:\Users\HuangZY\.dsh\profiles\web\node_modules/` 中残存的软链接与目录：`dsh-better-sidebar`、`dsh-file-upload`；
+  2. **`community-plugins/` 废弃外部克隆库清理**：
+     - 删除 `F:\tools\community-plugins\DSH-better-sidebar`（释放 234.7 MB 废弃依赖与构建产物）；
+     - 删除 `F:\tools\community-plugins\dsh-ssh-ops`（释放 12.9 MB 废弃包，已被全家桶 dsh-ssh 替代）；
+     - 删除 `F:\tools\community-plugins\dsh-undo-plugin`（释放 5 MB 废弃源分支，现由修复版与 `@dsh-selfuse/undo` 提供）；
+  3. **`~/.dsh` 历史临时测试目录清理**：
+     - 彻底清除早期 AB 测试与临时目录：`_ab_test`、`_awesome-fork`、`_backup_profile_web_20260814`、`_ci-sim`、`_math-research-upstream` 及历史配置备份 `settings.yaml.bak-*`；
+  4. **`dsh-local/` 与维护脚本微调**：
+     - 清理 `F:\tools\dsh-local\vendor/` 中的空目录与过期日志；
+     - 同步更新 `repair-dsh.ps1`，移除对 `DSH-better-sidebar` 的遗留依赖检测用例。
+- **验证**：
+  - 代码库与 Git 追踪完全干净；
+  - DSH Web 持续稳定监听 3080 端口，探活 HTTP 200 OK，服务正常。
+
+
 
 
 
