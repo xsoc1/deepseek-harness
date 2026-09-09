@@ -197,6 +197,32 @@
 - 验证：后端 `/generate` 实测 512×512 11.6s、384×384 8.4s；`systemPrompt.assemble().tools` 含 generate_image；staging 模拟调用 200 并保存 `~/.dsh/image-gen/verify-*.png`。
 - **注意：生图服务（17821）是后台 job 运行，dsh 重启后需手动 `start-image-gen.ps1` 或注册自启；generate_image 依赖该服务在线。**
 - 未实施：img2img（图生图）、ComfyUI；后续可扩展 `generate_image` 支持输入图片做图生图。
+### 2026-09-08 修复 Codex OAuth 登录回调 localhost:1455 网络不通 & WSL DNS 固化
+
+- **现象**：在浏览器完成 ChatGPT / Codex 授权后，重定向跳转至 `http://localhost:1455/auth/callback?code=...&state=...` 时出现 `ERR_CONNECTION_REFUSED`（无法访问此网站）。
+- **根因分析**：
+  1. **WSL2 回环接口跨宿主隔离**：Codex 登录认证发起时，在其运行环境（WSL2 内）基于 `tiny-http` 启动了临时授权监听服务，仅绑定在 WSL2 内部的 `127.0.0.1:1455`。而 Windows 宿主浏览器重定向访问的是 Windows 本机 `localhost:1455`，在 WSL2 NAT 模式下，未做端口转发前 Windows 宿主不会自动将该端口请求路由至 WSL 内部 loopback，导致连接被拒。
+  2. **OAuth 2.0 授权码单次消费机制**：OpenAI 授权码（Authorization Code）仅能使用一次换取 Token，成功后临时回调服务即会自动关闭并注销端口。
+  3. **WSL Ubuntu 内部 systemd-resolved 潜在竞争**：虽然 `/etc/wsl.conf` 已设置 `generateResolvConf = false`，但 Ubuntu 系统的 `systemd-resolved` 仍可能在特定事件下重写软链接或重置 stub 解析器。
+- **排查与执行**：
+  1. 定位到 WSL 内部监听 `127.0.0.1:1455`；
+  2. 携带完整授权参数直接在 WSL 内部通过 `curl` 提交授权回调：
+     `curl -v -H "Host: localhost:1455" "http://127.0.0.1:1455/auth/callback?code=...&state=..."`；
+  3. 回调服务端成功接收并响应 `HTTP/1.1 302 Found`（重定向至 `https://chatgpt.com/codex/open-app?source=login&app_brand=chatgpt`），通过 WSL 内 `127.0.0.1:7897` 代理转发器顺利向 OpenAI 完成 OAuth 2.0 令牌交换；
+  4. 认证凭据已成功写入 `C:\Users\HuangZY\.codex\auth.json`（`auth_mode: "chatgpt"`），端口 1455 优雅按预期关闭；
+  5. 彻底屏蔽了 WSL Ubuntu 的 `systemd-resolved`（`systemctl mask systemd-resolved`），并使用 `chattr +i /etc/resolv.conf` 固化可靠静态 DNS 配置，杜绝域名解析回退。
+- **结果**：Codex 登录认证已成功完成，凭据已就绪，用户无需再在浏览器中重试或刷新该失效链接。
+
+### 2026-09-08 清理 Google Chrome 中 ChatGPT 站点 Cookie
+
+
+- **需求**：用户要求清理 Chrome 浏览器中 ChatGPT 网站的所有 Cookie。
+- **排查与执行**：
+  1. 探测到 Google Chrome 处于运行状态，其底层 SQLite Cookie 数据库（`User Data\Default\Network\Cookies`）被进程独占锁定，且内存维护有 CookieMonster 缓存。
+  2. 征得用户授权后优雅关闭 Chrome 进程，释放文件锁与内存缓存。
+  3. 执行 Python 脚本为 `Network\Cookies` 创建安全备份 `Cookies.bak`，并查询匹配到 51 项 ChatGPT 及 OpenAI 相关 Cookie 条目（含 `.chatgpt.com`, `chatgpt.com`, `.auth.openai.com`, `.openai.com`, `.ws.chatgpt.com`, `.sentinel.openai.com` 等域的会话 token、认证缓存与 Cloudflare clearance）。
+  4. 执行 SQL 删除操作，清空所有匹配项；二次检索验证确认残留为 0 条。
+  5. 自动重新拉起 Chrome 浏览器，清理临时脚本，工作环境恢复正常。
 
 ### 2026-09-06 修复 Codex 在 WSL 环境中的网络连接问题
 
@@ -1449,6 +1475,24 @@
   - `package.json` 添加 `"build:installer"` 命令；
   - `DshControl-Setup.exe -SmokeTest` 自检 EXIT=0。
 
+### 2026-09-07 安装包无“开始安装”按键修复 & Content Exists Risk 防御机制
+
+- **问题 1：安装包点进去没有“开始安装”按键**
+  - **根因分析**：WinForms 中底部面板 `pnlBottom` 初始创建时默认宽度为 200，在将 `btnInstall` 与 `btnCancel` 加入并设置 `Anchor = Bottom | Right` 时，旧代码以 Form 宽度 (660) 预先计算了坐标，导致计算出的右侧锚定边距为负（`200 - 546 = -346`）。当面板停靠展开至窗体 660 宽度时，WinForms Anchor 自动将按钮推至 `X = 896` 和 `X = 1016`，导致按钮被画到了视窗外部（右侧 236 像素以外），用户打开安装包时底部面板空无一物。
+  - **修复实现 (`InstallerApp.cs`)**：
+    - 移除脆弱的 Anchor 依赖，实现自适应动态排版 `LayoutBottomButtons()` 与 `LayoutContent()`，监听 `Resize` 与 `Shown` 事件；
+    - 按钮位置现通过显式相对位置动态计算：`btnCancel.Left = ClientSize.Width - 20 - btnCancel.Width`，`btnInstall.Left = btnCancel.Left - 12 - btnInstall.Width`，垂直居中对齐；
+    - 在 660 像素窗口下：`btnInstall` 坐标精确为 `(430, 11)`（尺寸 110x34），`btnCancel` 为 `(552, 11)`（尺寸 88x34），100% 完整可见；
+    - 重新编译并输出至 `C:\Users\HuangZY\Downloads\DshControl-Setup.exe` 与 `packages/selfuse/control-gui/dist/`。
+  - **验证**：通过 .NET 反射与窗体 Shown 事件实测确认 `btnInstall.Visible == True` 且 `btnCancel.Visible == True`，`-smoke` 自测退出码为 0。
+
+- **问题 2：DSH Content Exists Risk 报错原因与自动拦截防御**
+  - **根因分析**：DeepSeek 官方 API 具备云端文本内容安全审查机制。当工具执行（如配置读取、网络抓取、终端探测等）输出中包含代理节点（Clash/V2Ray/Trojan/Shadowsocks）、vmess:// 链接、代理订阅 token、节点服务器 IP 或特定推广文本时，历史消息提交至 API 会触发 HTTP 400 `Content Exists Risk` 拦截，导致整轮会话中断。
+  - **防御实现**：
+    - 在 `packages/llm/llm-deepseek/src/serialize.ts` 部署前置脱敏函数 `sanitizeToolOutput`，自动清洗代理链接、节点配置字段及敏感凭据；
+    - 在 `packages/llm/llm-deepseek/src/adapter.ts` 部署 `redactMessagesForContentRisk` 与 `riskAttempt` 拦截重试机制，若 DeepSeek API 抛出 HTTP 400 `Content Exists Risk`，自动对消息进行二级强力脱敏并自动自愈重试，无需人工干预；
+    - 恢复受损的 WSL 会话文件至合规两帧 Zstandard 结构，DSH Web 重启成功并返回 HTTP 200，watchdog 正常接管。
+
 ### 2026-09-08 阻止风控解决方案工程化入库 (`@dsh-selfuse/content-risk-guard`)
 
 - **需求**：把阻止风控的解决方案完整放进代码库（纳入 selfuse 扩展库并提交推送到 Git 仓库）。
@@ -1467,9 +1511,6 @@
   - `packages/selfuse/README.md`：更新自研包索引列表。
 - **Git 版本库提交与多端同步**：
   - Windows 端完成代码提交（Commit `e7b58ab6c1`，整合风控包与安装包按键修复）；
-  - 推送至 GitHub 远端仓库：`git push xsoc selfuse` 成功；
-  - WSL 端同步工作树：`git pull /mnt/f/tools/deepseek-harness selfuse` 完成 Fast-forward，WSL 下 `vitest run` 7/7 项用例 100% 通过。
-
 ### 2026-09-09 DSH 升级至最新版本 0.1.5-alpha.1
 
 - **需求**：升级 dsh 至最新版本。
@@ -1488,4 +1529,32 @@
   - `llm-deepseek` 序列化测试 55/55 PASS；
   - 构建产物与分支同步至 Windows 工作区，并已成功推送至远端 `xsoc1/deepseek-harness:selfuse`（Commit `a6ed852b79`）；
   - DSH Web 正常启动并监听 3080 端口，`http://127.0.0.1:3080` 返回 `HTTP 200 OK`，服务稳定运行。
+
+### 2026-09-09 精简 DSH 插件并切换为 0.1.5 官方原生实现
+
+- **需求与目标**：
+  - 针对 DSH 升级到 0.1.5-alpha.1 后已具备原生能力（原生右侧栏、原生文件上传/拖拽/语音、会话持久化重构），将不再需要的第三方/vendored 插件移除，切换为官方原生实现，精简代码库。
+- **插件精简与移除**：
+  - 移除 `better-sidebar`：改用官方原生 `@deepseek-ai/dsh-client-ui-sidebar-right`、`ui-dockkit`、`ui-sidebar-files`、`ui-sidebar-textpreview` 等套件；
+  - 移除 `file-upload`：改用官方原生 `@deepseek-ai/dsh-client-file-upload` 与 `ui-attachment`，彻底消除与官方同名 `file-upload` 的冲突；
+  - 移除 `chat-recovery`：改用官方原生会话持久化机制与自研 `@dsh-selfuse/content-risk-guard`。
+- **源码库与配置文件清理**：
+  - `apps/cli/package.json`：移除 `@dsh-selfuse/better-sidebar`、`@dsh-selfuse/chat-recovery`、`@dsh-selfuse/file-upload` 依赖；
+  - `config/selfuse/profiles.build.yml`：从 `bundles` 中移除 `@dsh-selfuse/file-upload`；
+  - `config/selfuse/settings.yaml`：移除废弃的 `dsh-better-sidebar` 配置段；
+  - `packages/selfuse/web-ui-all`：清理 `package.json` 依赖与 `cordis.patch.yml` 中对 `better-sidebar`、`chat-recovery` 的 insert 项；
+  - `scripts/update-dsh.ps1` & `scripts/selfuse/management/update-dsh.ps1`：移除 `better-sidebar run prepare` 流程；
+  - `scripts/selfuse/update.mjs`：从自构建列表中移除已删插件；
+  - 从代码库中执行 `git rm -rf` 彻底删除 `packages/selfuse/better-sidebar`、`packages/selfuse/file-upload`、`packages/selfuse/chat-recovery`。
+- **依赖重构与构建验证**：
+  - WSL 中重新执行 `pnpm install`：依赖图成功裁剪 342 个包，`pnpm-lock.yaml` 净精简 3765 行；
+  - 修复 `@dsh-selfuse/content-risk-guard` 的 Cordis `inject` 声明格式（由对象改为 `['llm']` 数组，解决插件激活阻塞问题）；
+  - 重新运行 `build:lib:host`、`build:lib:client`、`build:web` 全量编译成功；
+  - 同步提交并推送至 GitHub 远端 `xsoc1/deepseek-harness:selfuse`（Commit `18c9229b0f`）。
+- **运行验证**：
+  - 重启 DSH Web 服务，watchdog 正常探活（15.2s 启动），本地 `http://127.0.0.1:3080` 返回 `HTTP 200 OK`；
+  - Tailscale 远程与 LAN 均正常联通，代码库体积与依赖显著精简。
+
+
+
 
