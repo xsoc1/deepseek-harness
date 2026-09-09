@@ -9,10 +9,7 @@ import {
 } from './sanitizer.js'
 
 export const name = '@dsh-selfuse/content-risk-guard'
-export const inject = {
-  required: ['llm'],
-  optional: ['tools'],
-}
+export const inject = ['llm']
 
 export interface Config {
   enabled?: boolean
