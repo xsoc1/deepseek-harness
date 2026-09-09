@@ -1448,3 +1448,44 @@
   - 在 `@dsh-selfuse/control-gui` 包中固化 `installer-src/` 与一键打包脚本 `build-installer.ps1`；
   - `package.json` 添加 `"build:installer"` 命令；
   - `DshControl-Setup.exe -SmokeTest` 自检 EXIT=0。
+
+### 2026-09-08 阻止风控解决方案工程化入库 (`@dsh-selfuse/content-risk-guard`)
+
+- **需求**：把阻止风控的解决方案完整放进代码库（纳入 selfuse 扩展库并提交推送到 Git 仓库）。
+- **新建自研通用风控守卫包 (`packages/selfuse/content-risk-guard/`)**：
+  - 包名：`@dsh-selfuse/content-risk-guard`，独立自包含、零侵入、与上游官方代码解耦；
+  - **双重防御与自愈架构**：
+    1. **工具执行层脱敏 (`tools/post-execute`)**：工具返回文本一旦命中 Clash/Mihomo `proxies`、`proxy-groups`、`vmess://`、`vless://`、`trojan://`、`ss://`、`ssr://`、`hysteria://`、`tuic://` 或订阅 Token 时，立即在会话事件层替换为安全脱敏占位符，防止敏感节点信息流入对话上下文；
+    2. **模型流瀑布拦截与自动重试 (`llm/stream`)**：覆盖所有模型和提供方（无论是官方 DeepSeek、opencode-go 还是第三方代理网关），前置过滤历史上下文；当上游返回 `Content Exists Risk` 错误（无论是异常抛出还是 finish 错误 chunk）时，自动执行历史工具结果深度脱敏截断并无感自愈重试，彻底阻止风控报错导致任务失败。
+  - **工程规范与类型定义**：
+    - 提供 `src/index.ts`、`src/sanitizer.ts`、`lib/index.js`、`lib/sanitizer.js` 及完整 `.d.ts` 类型；
+    - 配套 `README.md` 与 `README.zh.md`；
+    - 配套完整单元测试 `tests/guard.spec.ts`（7 项用例全部 PASS，涵盖配置脱敏、链接脱敏、正常代码保真、错误识别、消息脱敏、应急自愈截断）。
+- **工程化集成与配置联动**：
+  - `apps/cli/package.json`：注册依赖 `"@dsh-selfuse/content-risk-guard": "workspace:*"`；
+  - `config/selfuse/profiles.build.yml`：在 `patchPlugins` 挂载 `@dsh-selfuse/content-risk-guard`；
+  - `packages/selfuse/README.md`：更新自研包索引列表。
+- **Git 版本库提交与多端同步**：
+  - Windows 端完成代码提交（Commit `e7b58ab6c1`，整合风控包与安装包按键修复）；
+  - 推送至 GitHub 远端仓库：`git push xsoc selfuse` 成功；
+  - WSL 端同步工作树：`git pull /mnt/f/tools/deepseek-harness selfuse` 完成 Fast-forward，WSL 下 `vitest run` 7/7 项用例 100% 通过。
+
+### 2026-09-09 DSH 升级至最新版本 0.1.5-alpha.1
+
+- **需求**：升级 dsh 至最新版本。
+- **升级与合并**：
+  - 本地从 `0.1.2-alpha.5`（`selfuse` 分支）升级合并至官方最新 `0.1.5-alpha.1`（commit `5dda764ed3aa`）；
+  - 完整保留自用包及自研扩展（`@dsh-selfuse/content-risk-guard`、`@dsh-selfuse/control-gui`、`InstallerApp.cs`、`llm-deepseek` 脱敏补丁等）；
+  - 细致解决合并冲突（`.gitignore`、`apps/cli/package.json`、`tsdown.config.ts`、`spawn.ts`、`session-controller`、`persistence-jsonl`、`pnpm-lock.yaml` 等），对齐 upstream 架构重构。
+- **构建与兼容性适配**：
+  - `pnpm-workspace.yaml`：放行 `sharp: true` 脚本编译权限，切换 npmmirror 镜像源解决 npm 官方海外超时；
+  - `serialize.spec.ts`：修复 TypeScript 5 严格索引下的 TS2532 校验；
+  - `packages/selfuse/file-upload`：修复 upstream 0.1.5 官方引入同名 `id: file-upload` 导致的 Cordis `duplicate loader entry id: file-upload` 碰撞，重命名本地条目为 `dsh-file-upload`；
+  - `packages/client/connection/src/rpc-host.ts`：修复外部插件通过 `ctx.connection.rpc.handle()` 接入时未注入 `webServer` 导致的 `cannot get property "webServer" without inject` 报错，安全回退到 `owner.get('webServer')` 与按需动态注入；
+  - 在 WSL 中完成 `pnpm install`、`build:lib:host`、`build:lib:client`、`build:web` 全量编译与单元测试。
+- **验证与同步**：
+  - `@dsh-selfuse/content-risk-guard` 单元测试 7/7 PASS；
+  - `llm-deepseek` 序列化测试 55/55 PASS；
+  - 构建产物与分支同步至 Windows 工作区，并已成功推送至远端 `xsoc1/deepseek-harness:selfuse`（Commit `a6ed852b79`）；
+  - DSH Web 正常启动并监听 3080 端口，`http://127.0.0.1:3080` 返回 `HTTP 200 OK`，服务稳定运行。
+
