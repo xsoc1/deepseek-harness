@@ -7,10 +7,7 @@ import {
 } from './sanitizer.js'
 
 export const name = '@dsh-selfuse/content-risk-guard'
-export const inject = {
-  required: ['llm'],
-  optional: ['tools'],
-}
+export const inject = ['llm']
 
 export const Config = z.object({
   enabled: z.boolean().default(true).description('是否启用风控自动拦截与脱敏守卫'),
