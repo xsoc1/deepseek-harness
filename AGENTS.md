@@ -1634,3 +1634,19 @@
 - **验证与效果**：
   - 看门狗联动重启，加载全新异步保活桥接器与 10s WebSocket 心跳配置；
   - 端口 3080 监听正常，HTTP 200 OK，长连接平稳不跳连。
+
+### 2026-09-10 修复会话恢复/打开时缺失 native/system flock 扩展 (system.node)
+
+- **现象**：在 Web 界面或远程端打开/恢复历史会话时，弹出错误通知：`模型操作失败: gateway/internal: resume failed for session "...": Error: Cannot find module '/home/huangzy/tools/deepseek-harness/native/system/packages/linux-x64/bin/glibc/system.node' Require stack: - .../native/system/packages/entry/src/flock.ts`。
+- **根因分析**：
+  1. DSH 0.1.5 在 POSIX/Linux 环境下的持久化模块 `session-persistence-jsonl` 会在会话写打开与 resume 时通过 `@deepseek-ai/node-addon-system/flock` 抢占会话目录内核锁（`session.lock` 上的非阻塞 `flock(2)`）；
+  2. `native/system/packages/entry/src/flock.ts` 动态加载 `@deepseek-ai/node-addon-system-linux-x64/bin/glibc/system.node`；
+  3. 该 C 原生扩展（Node-API v8）属于源码构建产物且被 `packages/*/bin/` 规则 gitignore。在以源码模式运行的 WSL 环境中，如果未主动执行 `pnpm run build:native-system`，该二进制文件不存在，导致任何对持久化会话的写打开与恢复操作直接抛出 `Cannot find module` 异常并阻断会话加载。
+- **修复与加固**：
+  1. **构建与补齐二进制扩展**：在 WSL 中执行 `pnpm run build:native-system`，成功编译生成 `native/system/packages/linux-x64/bin/glibc/system.node`，并同步镜像至 Windows 对应路径；
+  2. **启动脚本守卫预检**：在 `run-dsh-web.ps1` 的 WSL 启动命令前置增加快速存在性检查与自动编译守卫：
+     `([ -f native/system/packages/linux-x64/bin/glibc/system.node ] || pnpm run build:native-system)`，彻底杜绝后续清理构建后漏编导致不可用的问题。
+- **验证**：
+  1. `lease.spec.ts` 19 项单元测试全数 PASS；
+  2. 在 WSL 中直接对报错的真实会话锁文件 `/home/huangzy/.dsh/sessions/--mnt-f-LaTeX-BVE~0020research--/session-1416e2c0-015d-461f-b00c-b0312260c25b/session.lock` 执行加锁测试，成功获取 POSIX flock（SUCCESS）；
+  3. DSH Web 重新加载生效，端口 3080 HTTP 200 OK，会话恢复与内核排他锁正常工作。
