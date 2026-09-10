@@ -1650,3 +1650,21 @@
   1. `lease.spec.ts` 19 项单元测试全数 PASS；
   2. 在 WSL 中直接对报错的真实会话锁文件 `/home/huangzy/.dsh/sessions/--mnt-f-LaTeX-BVE~0020research--/session-1416e2c0-015d-461f-b00c-b0312260c25b/session.lock` 执行加锁测试，成功获取 POSIX flock（SUCCESS）；
   3. DSH Web 重新加载生效，端口 3080 HTTP 200 OK，会话恢复与内核排他锁正常工作。
+
+### 2026-09-10 修复 preset 挂载时 persona 配置校验失败 ($.prefix missing required value)
+
+- **现象**：打开/恢复会话（如基于 `wsl-router-standard` 的会话）时报错：`RemoteError: agent-presets: preset "wsl-router-standard" failed to mount: failed to apply loader entry persona (@deepseek-ai/dsh-persona): invalid config: - $.prefix missing required value (at prefix) (/home/huangzy/.dsh/.agent-presets/wsl-router-standard/agent.cordis.yml)`。
+- **根因分析**：
+  1. DSH 升级到 0.1.5 后，官方 `@deepseek-ai/dsh-persona` 的 Schema 配置字段从早期的 `text` 重构为了 `prefix`（必填）与 `suffix`；
+  2. 历史与本地生成的各类预设配置文件（`wsl-router-standard`、`router-standard`、`wsl-router-spec`、`router-spec`、`liangshen` 等）中仍声明了旧格式 `config: { text: ... }`；
+  3. Cordis 在挂载 Agent 预设层装配 `persona` 时，由于缺失必填字段 `prefix` 触发 Schema 校验中断，导致预设挂载失败、会话恢复终止。
+- **双重修复方案**：
+  1. **向下兼容插件 Schema (`packages/preset/persona/src/index.ts`)**：
+     - 在 `@deepseek-ai/dsh-persona` 的 `Config` Schema 中将 `prefix` 默认值设为 `''`，并声明 `text?: string` 兼容字段；
+     - 在 `apply()` 中实现自动回退适配：若未传 `prefix` 或为空，则自动取 `text` 字段作为 persona 文本；
+     - 增加配套单元测试，确保历史预设即便使用旧语法也能 100% 正常运行不报错。
+  2. **批量更新预设配置语法**：
+     - 将 WSL 环境 `~/.dsh/.agent-presets/`、Windows 宿主 `~/.dsh/.agent-presets/` 以及工程库 `config/selfuse/agent-presets/`、`dsh-routing-suite` 中的所有 `agent.cordis.yml` 统一规范升级为 `prefix: You are a helpful software engineer assistant.`。
+- **验证**：
+  1. `packages/preset/persona/tests/persona.spec.ts` 13 项单元测试（含旧语法兼容测试）全部 PASS；
+  2. 重新加载后实测会话正常挂载与恢复。

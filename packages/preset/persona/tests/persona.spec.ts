@@ -176,4 +176,15 @@ describe('the persona row', () => {
       { name: 'policy', text: 'global policy' },
     ])
   })
+
+  it('supports legacy text config for backward compatibility with older presets', async () => {
+    const ctx = await harness('deployment identity')
+    const key: ScopeKey = { agent: 'legacy-agent' }
+    const scope = createScope(ctx, key)
+
+    await scope.ctx.plugin(Persona, { text: 'You are a helpful software engineer assistant.' } as never)
+    const assembly = await ctx.systemPrompt.assemble({ scope: key })
+    expect(assembly.sections.find(section => section.name === PERSONA_PREFIX_SECTION)?.text)
+      .toBe('You are a helpful software engineer assistant.')
+  })
 })

@@ -33,7 +33,9 @@ export interface Config {
    * complete `{{…}}` groups interpolate strictly against registered prompt
    * variables. Empty text drops the section at render, matching the registry.
    */
-  prefix: string
+  prefix?: string
+  /** Legacy alias for prefix from earlier presets. */
+  text?: string
   /**
    * Persona suffix template rendered after first-party guidance. Omitted or empty
    * text shadows the deployment suffix away; interpolation is strict.
@@ -47,7 +49,8 @@ export interface Config {
 
 /** Runtime schema for the persona row. */
 export const Config: z<Config> = z.object({
-  prefix: z.string().required(),
+  prefix: z.string().default(''),
+  text: z.string(),
   suffix: z.string().default(''),
   complete: z.boolean().default(false),
   includeRuntimeContext: z.boolean().default(true),
@@ -60,10 +63,13 @@ export const Config: z<Config> = z.object({
  * @param config - the prefix, suffix, and complete-prompt policy.
  */
 export function apply(ctx: Context, config: Config): void {
+  const prefix = (config.prefix !== undefined && config.prefix !== '')
+    ? config.prefix
+    : (config.text ?? '')
   ctx.effect(() => ctx.systemPrompt.section({
     name: PERSONA_PREFIX_SECTION,
     order: ctx.systemPrompt.getSectionOrder('DEPLOYMENT_PERSONA_PREFIX'),
-    text: config.prefix,
+    text: prefix,
     ...(config.complete ? { complete: true } : {}),
   }), 'persona.section()')
   ctx.effect(() => ctx.systemPrompt.section({
