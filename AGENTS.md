@@ -1668,3 +1668,21 @@
 - **验证**：
   1. `packages/preset/persona/tests/persona.spec.ts` 13 项单元测试（含旧语法兼容测试）全部 PASS；
   2. 重新加载后实测会话正常挂载与恢复。
+
+### 2026-09-10 控制台顶部横幅图片显示修复 (句柄异步时序竞争修复)
+
+- **现象**：用户反馈控制台（`dsh-control-gui.exe`）启动后顶部的横幅图片（`IMG_1891.PNG`）不显示，横幅区域变为空白黑框。
+- **根因分析**：
+  1. `MainForm` 构造函数在初始化界面控件时同步调用 `ApplyBannerImage()`；
+  2. `ApplyBannerImage()` 派发了后台线程池任务异步读取磁盘并解码 Bitmap，解码完成后检查 `if (!this.IsDisposed && this.IsHandleCreated)`；
+  3. 由于快速 SSD 读取耗时极短（约 10ms），当后台线程解码完成时，窗体构造函数仍在主线程执行，窗口句柄尚未创建（`IsHandleCreated == false`）；
+  4. 检查判定为 `false` 导致 `this.BeginInvoke(...)` 被直接跳过，解码后的图片被直接遗弃；
+  5. 且随后窗体句柄建立（`OnHandleCreated`）与显示就绪（`Shown`）事件中均未重新尝试加载横幅，导致横幅永远保持空值。
+- **修复措施 (`packages/selfuse/control-gui/gui-src/DshControlApp.cs`)**：
+  1. 异步解码工作项在回调前增加窗口句柄就绪等待机制（`while (!IsDisposed && !IsHandleCreated) Thread.Sleep(20)`，最多等待 5 秒）；
+  2. 重写 `OnHandleCreated` 并在 `Shown` 事件中加入横幅就绪兜底检查（`if (bannerBox.Image == null) ApplyBannerImage()`）；
+  3. 优化图片资源替换逻辑，在新位图就绪后再优雅释放旧位图，并显式调用 `bannerBox.Invalidate()` 触发即时重绘；
+  4. 重新编译 `dsh-control-gui.exe` 并联动运行 `build-installer.ps1`，将更新打包同步至 `Downloads`（`DshControl-Setup.exe` 与便携包）。
+- **验证**：
+  1. 通过 .NET 反射模拟窗体启动与加载周期，实测窗体显示后 `bannerBox.Image` 立即成功加载为 `4096 x 1934` 的完整 Bitmap，`bannerBox.Visible = True`；
+  2. `.\dsh-control-gui.exe -SmokeTest` 自检退出码 0。

@@ -835,6 +835,10 @@ namespace DshControl
 
             this.Shown += (s, e) =>
             {
+                if(bannerBox.Image == null && settings.BannerHeight > 0 && !string.IsNullOrEmpty(settings.BannerImagePath))
+                {
+                    ApplyBannerImage();
+                }
                 UpdateStatus();
                 StartStatusPoller();
                 AddLog("dsh 控制台已就绪");
@@ -864,6 +868,15 @@ namespace DshControl
             };
         }
 
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            if(bannerBox.Image == null && settings.BannerHeight > 0 && !string.IsNullOrEmpty(settings.BannerImagePath))
+            {
+                ApplyBannerImage();
+            }
+        }
+
         private void ApplyBannerSizeMode()
         {
             if (settings.BannerSizeMode == "Stretch") bannerBox.SizeMode = PictureBoxSizeMode.StretchImage;
@@ -873,41 +886,79 @@ namespace DshControl
 
         private void ApplyBannerImage()
         {
-            if (bannerBox.Image != null)
+            if(settings.BannerHeight <= 0 || string.IsNullOrEmpty(settings.BannerImagePath) || !File.Exists(settings.BannerImagePath))
             {
-                Image old = bannerBox.Image;
-                bannerBox.Image = null;
-                old.Dispose();
-            }
-
-            if (settings.BannerHeight <= 0 || string.IsNullOrEmpty(settings.BannerImagePath) || !File.Exists(settings.BannerImagePath))
-            {
+                if(bannerBox.Image != null)
+                {
+                    Image old = bannerBox.Image;
+                    bannerBox.Image = null;
+                    old.Dispose();
+                }
                 bannerBox.Visible = settings.BannerHeight > 0;
                 return;
             }
+
+            string imgPath = settings.BannerImagePath;
+            int bannerH = settings.BannerHeight;
 
             ThreadPool.QueueUserWorkItem((state) =>
             {
                 try
                 {
-                    byte[] bytes = File.ReadAllBytes(settings.BannerImagePath);
-                    using (MemoryStream ms = new MemoryStream(bytes))
+                    if(!File.Exists(imgPath))
                     {
-                        Image orig = Image.FromStream(ms);
-                        Bitmap bmp = new Bitmap(orig);
-                        orig.Dispose();
-
-                        if (!this.IsDisposed && this.IsHandleCreated)
+                        return;
+                    }
+                    byte[] bytes = File.ReadAllBytes(imgPath);
+                    Bitmap bmp;
+                    using(MemoryStream ms = new MemoryStream(bytes))
+                    {
+                        using(Image orig = Image.FromStream(ms))
                         {
-                            this.BeginInvoke(new Action(() =>
-                            {
-                                if (!bannerBox.IsDisposed)
-                                {
-                                    bannerBox.Image = bmp;
-                                    bannerBox.Visible = settings.BannerHeight > 0;
-                                }
-                            }));
+                            bmp = new Bitmap(orig);
                         }
+                    }
+
+                    // 等待窗口句柄创建就绪 (最多等待 5 秒)
+                    int waited = 0;
+                    while(!this.IsDisposed && !this.IsHandleCreated && waited < 5000)
+                    {
+                        Thread.Sleep(20);
+                        waited += 20;
+                    }
+
+                    if(!this.IsDisposed && this.IsHandleCreated)
+                    {
+                        this.BeginInvoke(new Action(() =>
+                        {
+                            try
+                            {
+                                if(!bannerBox.IsDisposed)
+                                {
+                                    if(bannerBox.Image != null)
+                                    {
+                                        Image old = bannerBox.Image;
+                                        bannerBox.Image = null;
+                                        old.Dispose();
+                                    }
+                                    bannerBox.Image = bmp;
+                                    bannerBox.Visible = bannerH > 0;
+                                    bannerBox.Invalidate();
+                                }
+                                else
+                                {
+                                    bmp.Dispose();
+                                }
+                            }
+                            catch
+                            {
+                                bmp.Dispose();
+                            }
+                        }));
+                    }
+                    else
+                    {
+                        bmp.Dispose();
                     }
                 }
                 catch { }
