@@ -6,7 +6,11 @@
  *   1. verifies the repo has the selfuse workspace packages installed,
  *   2. generates/refreshes ~/.dsh/profiles/web from config/selfuse/profiles.build.yml,
  *   3. syncs ~/.dsh/settings.yaml from config/selfuse/settings.yaml,
- *   4. installs vendored skills (real copies, never junctions) into ~/.dsh/skills.
+ *   4. syncs canonical agent presets into ~/.dsh/.agent-presets,
+ *   5. installs vendored skills (real copies, never junctions) into ~/.dsh/skills.
+ *
+ * `--presets-only` is a narrow, startup-safe repair mode. It installs missing
+ * canonical presets without touching the profile, settings, or skills.
  *
  * The dsh process itself is not restarted here; run `dsh-control.ps1 restart`
  * or the GUI "重启" button after installation when you want the new profile to
@@ -23,6 +27,7 @@ const args = process.argv.slice(2)
 const dshHome = argValue('--dsh-home', process.env.DSH_HOME || join(homedir(), '.dsh'))
 const dryRun = args.includes('--dry-run')
 const force = args.includes('--force')
+const presetsOnly = args.includes('--presets-only')
 const skipPnpmReady = args.includes('--skip-install-check')
 
 function argValue(name, fallback) {
@@ -93,29 +98,36 @@ console.log(`  repo root: ${repoRoot}`)
 console.log(`  DSH_HOME:  ${dshHome}`)
 if (dryRun) console.log('  mode: DRY RUN')
 if (force) console.log('  mode: FORCE')
+if (presetsOnly) console.log('  scope: PRESETS ONLY')
 
 // --- 0. install check -------------------------------------------------------
-step('Check selfuse workspace packages are linked into the CLI')
-const cliPkg = JSON.parse(readFileSync(join(repoRoot, 'apps/cli/package.json'), 'utf8'))
-const selfuseCount = Object.keys(cliPkg.dependencies || {}).filter((k) => k.startsWith('@dsh-selfuse/')).length
-console.log(`    apps/cli declares ${selfuseCount} @dsh-selfuse/* direct dependencies`)
-if (!skipPnpmReady && selfuseCount === 0) {
-  console.error('    @dsh-selfuse packages are not declared in apps/cli/package.json; run pnpm install first')
-  process.exit(1)
+if (!presetsOnly) {
+  step('Check selfuse workspace packages are linked into the CLI')
+  const cliPkg = JSON.parse(readFileSync(join(repoRoot, 'apps/cli/package.json'), 'utf8'))
+  const selfuseCount = Object.keys(cliPkg.dependencies || {}).filter((k) => k.startsWith('@dsh-selfuse/')).length
+  console.log(`    apps/cli declares ${selfuseCount} @dsh-selfuse/* direct dependencies`)
+  if (!skipPnpmReady && selfuseCount === 0) {
+    console.error('    @dsh-selfuse packages are not declared in apps/cli/package.json; run pnpm install first')
+    process.exit(1)
+  }
 }
 
 // --- 1. profile -------------------------------------------------------------
-step('Generate/refresh web profile')
-const genPath = join(repoRoot, 'scripts/selfuse/generate-profile.mjs')
-if (dryRun) {
-  console.log(`    dry-run: node ${genPath} --dsh-home ${dshHome}`)
-} else {
-  run(process.execPath, [genPath, '--dsh-home', dshHome])
+if (!presetsOnly) {
+  step('Generate/refresh web profile')
+  const genPath = join(repoRoot, 'scripts/selfuse/generate-profile.mjs')
+  if (dryRun) {
+    console.log(`    dry-run: node ${genPath} --dsh-home ${dshHome}`)
+  } else {
+    run(process.execPath, [genPath, '--dsh-home', dshHome])
+  }
 }
 
 // --- 2. settings ------------------------------------------------------------
-step('Sync settings.yaml')
-copyIfNew(join(repoRoot, 'config/selfuse/settings.yaml'), join(dshHome, 'settings.yaml'), true)
+if (!presetsOnly) {
+  step('Sync settings.yaml')
+  copyIfNew(join(repoRoot, 'config/selfuse/settings.yaml'), join(dshHome, 'settings.yaml'), true)
+}
 
 // --- 3. agent presets -------------------------------------------------------
 step('Sync agent presets')
@@ -132,24 +144,28 @@ if (existsSync(presetsSrc)) {
 }
 
 // --- 4. skills --------------------------------------------------------------
-step('Install vendored skills')
-const skillsSrc = join(repoRoot, 'config/selfuse/skills')
-const skillsDst = join(dshHome, 'skills')
-let installedSkills = 0
-if (existsSync(skillsSrc)) {
-  for (const group of readdirSync(skillsSrc)) {
-    const groupDir = join(skillsSrc, group)
-    if (!statSync(groupDir).isDirectory()) continue
-    const skillDirs = walkSkillRoots(join(groupDir, 'skills'))
-    for (const skillDir of skillDirs) {
-      const name = skillDir.split('/').pop()
-      const ok = copyIfNew(skillDir, join(skillsDst, name), true)
-      if (ok) installedSkills++
+if (!presetsOnly) {
+  step('Install vendored skills')
+  const skillsSrc = join(repoRoot, 'config/selfuse/skills')
+  const skillsDst = join(dshHome, 'skills')
+  let installedSkills = 0
+  if (existsSync(skillsSrc)) {
+    for (const group of readdirSync(skillsSrc)) {
+      const groupDir = join(skillsSrc, group)
+      if (!statSync(groupDir).isDirectory()) continue
+      const skillDirs = walkSkillRoots(join(groupDir, 'skills'))
+      for (const skillDir of skillDirs) {
+        const name = skillDir.split('/').pop()
+        const ok = copyIfNew(skillDir, join(skillsDst, name), true)
+        if (ok) installedSkills++
+      }
     }
+  } else {
+    console.log('    no vendored skills under config/selfuse/skills; skip')
   }
-} else {
-  console.log('    no vendored skills under config/selfuse/skills; skip')
+  console.log(`    skills considered: ${installedSkills}`)
 }
-console.log(`    skills considered: ${installedSkills}`)
 
-console.log('\nDone. Restart dsh to load the selfuse profile.')
+console.log(presetsOnly
+  ? '\nDone. Canonical agent presets are present.'
+  : '\nDone. Restart dsh to load the selfuse profile.')

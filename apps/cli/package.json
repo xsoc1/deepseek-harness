@@ -119,7 +119,6 @@
     "@dsh-selfuse/wsl-workspace": "workspace:*",
     "@dsh-selfuse/soul-md": "workspace:*",
     "@deepseek-ai/dsh-web-shell-bridge": "workspace:*",
-    "@deepseek-ai/dsh-balance": "workspace:*",
     "@deepseek-ai/dsh-file-changes": "workspace:*",
     "@deepseek-ai/dsh-client-file-changes": "workspace:*",
     "@deepseek-ai/dsh-shell-terminal": "workspace:*",

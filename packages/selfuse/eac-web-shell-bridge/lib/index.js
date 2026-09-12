@@ -1,11 +1,9 @@
 // dsh-web-shell-bridge — host half.
 //
-// 纯 web 环境（无 Electron 桌面壳）下，为 EAC 配套插件补全桌面壳能力：
+// 纯 web 环境（无 Electron 桌面壳）下，为文件管理插件补全桌面壳能力：
 // 在 webServer 上提供与 DSH Desktop IPC 等价的回环路由，使
-// dsh-balance（余额推送）、dsh-client-file-changes（一键还原 / 系统打开）
-// 不再降级。
+// dsh-client-file-changes 的一键还原 / 系统打开能力不再降级。
 //
-//   POST /api/dsh-shell/balance       DeepSeek 账户余额查询（15 分钟缓存）
 //   POST /api/dsh-shell/revert        文件还原（内容精确匹配后替换，与桌面壳一致）
 //   POST /api/dsh-shell/open-path     用系统默认程序打开会话工作区内文件
 //   POST /api/dsh-shell/open-external 用系统浏览器打开 http(s) URL
@@ -22,106 +20,8 @@ import { zstdDecompressSync } from "node:zlib";
 
 const execFileP = promisify(execFile);
 
-// ---------------------------------------------------------------------------
-// 余额查询（移植自 EAC 桌面壳 balance.js）
-// ---------------------------------------------------------------------------
-
-const DEFAULT_BASE = "https://api.deepseek.com";
-
-const DEFAULT_PRICES = {
-  "deepseek-chat": { cacheMiss: 2, cacheHit: 0.5, output: 8 },
-  "deepseek-reasoner": { cacheMiss: 4, cacheHit: 1, output: 16 },
-  "deepseek-v4-pro": { cacheMiss: 4, cacheHit: 1, output: 16 },
-};
-const FALLBACK_PRICES = { cacheMiss: 2, cacheHit: 0.5, output: 8 };
-
 function dshHome() {
   return process.env.DSH_HOME || join(homedir(), ".dsh");
-}
-
-function readApiKey() {
-  const envKey = process.env.DEEPSEEK_API_KEY;
-  if (envKey) return envKey.trim();
-  try {
-    const text = readFileSync(join(dshHome(), ".credentials.yaml"), "utf8");
-    for (const line of text.split(/\r?\n/)) {
-      const m = line.match(/^\s*DEEPSEEK_API_KEY\s*:\s*["']?([^"'\s#]+)/);
-      if (m) return m[1];
-    }
-  } catch {}
-  return "";
-}
-
-function readActiveModel() {
-  try {
-    const text = readFileSync(join(dshHome(), "settings.yaml"), "utf8");
-    const m = text.match(/^\s*model\s*:\s*(\S+)/m);
-    if (m) return m[1];
-  } catch {}
-  return "";
-}
-
-function balanceEndpoint() {
-  if (process.env.DEEPSEEK_BALANCE_URL) return process.env.DEEPSEEK_BALANCE_URL;
-  const base = (process.env.DEEPSEEK_API_BASE || DEFAULT_BASE).replace(/\/+$/, "");
-  return base + "/user/balance";
-}
-
-function fetchJson(url, apiKey, timeoutMs = 15000) {
-  return new Promise((resolvePromise, reject) => {
-    const req = fetch(url, {
-      method: "GET",
-      headers: { Authorization: "Bearer " + apiKey, "User-Agent": "DSH-Web-Shell" },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    req
-      .then(async (res) => {
-        const body = await res.text();
-        if (res.status !== 200) {
-          const hint = body.slice(0, 200).trim();
-          throw new Error("HTTP " + res.status + (hint ? "：" + hint : ""));
-        }
-        try {
-          resolvePromise(JSON.parse(body));
-        } catch {
-          reject(new Error("JSON 解析失败"));
-        }
-      })
-      .catch(reject);
-  });
-}
-
-let balanceCache = { at: 0, value: null };
-
-async function queryBalance() {
-  const key = readApiKey();
-  if (!key) return { ok: false, error: "no-key", balances: [], prices: FALLBACK_PRICES };
-  try {
-    const data = await fetchJson(balanceEndpoint(), key);
-    const balances = Array.isArray(data.balance_infos)
-      ? data.balance_infos.map((b) => ({
-          currency: String(b.currency || ""),
-          total: Number(b.total_balance) || 0,
-          granted: Number(b.granted_balance) || 0,
-          toppedUp: Number(b.topped_up_balance) || 0,
-        }))
-      : [];
-    return { ok: true, isAvailable: !!data.is_available, balances, prices: DEFAULT_PRICES };
-  } catch (err) {
-    return { ok: false, error: String((err && err.message) || err), balances: [], prices: DEFAULT_PRICES };
-  }
-}
-
-async function refreshBalance() {
-  const now = Date.now();
-  if (balanceCache.value !== null && now - balanceCache.at < 15 * 60 * 1000) return balanceCache.value;
-  const result = await queryBalance();
-  // 按当前默认模型选择价格档（与桌面壳 main.js refreshBalance 一致）。
-  const model = readActiveModel() || "deepseek-v4-pro";
-  const table = result.prices || DEFAULT_PRICES;
-  result.prices = { ...(table[model] || FALLBACK_PRICES) };
-  balanceCache = { at: Date.now(), value: result };
-  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -248,16 +148,6 @@ function requirePost(req, res) {
     return false;
   }
   return true;
-}
-
-async function handleBalanceRoute(req, res) {
-  if (!requirePost(req, res)) return;
-  try {
-    const result = await refreshBalance();
-    sendJson(res, 200, result);
-  } catch (err) {
-    sendJson(res, 500, { ok: false, error: String((err && err.message) || err), balances: [], prices: FALLBACK_PRICES });
-  }
 }
 
 // 文件还原：与桌面壳 dsh:file-revert 完全一致的语义 —— 内容精确匹配后替换。
@@ -394,7 +284,6 @@ const inject = ["webServer"];
 
 function apply(ctx) {
   const disposers = [
-    ctx.webServer.register({ kind: "exact", path: "/api/dsh-shell/balance", handler: handleBalanceRoute }),
     ctx.webServer.register({ kind: "exact", path: "/api/dsh-shell/revert", handler: handleRevertRoute }),
     ctx.webServer.register({ kind: "exact", path: "/api/dsh-shell/open-path", handler: handleOpenPathRoute }),
     ctx.webServer.register({ kind: "exact", path: "/api/dsh-shell/open-external", handler: handleOpenExternalRoute }),

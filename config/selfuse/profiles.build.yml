@@ -17,7 +17,6 @@ bundles:
   - "@dsh-selfuse/memory-panel"
 patchPlugins:
   - "@deepseek-ai/dsh-web-shell-bridge"
-  - "@deepseek-ai/dsh-balance"
   - "@deepseek-ai/dsh-file-changes"
   - "@deepseek-ai/dsh-client-file-changes"
   - "@deepseek-ai/dsh-shell-terminal"

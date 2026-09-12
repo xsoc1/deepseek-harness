@@ -159,8 +159,10 @@ if (-not (Test-TcpPort "127.0.0.1" 3080)) {
     Start-Sleep -Milliseconds 500
 }
 
-# Run dsh inside WSL (Linux filesystem) with WSL native Node/pnpm.
-$wslCommand = 'cd /home/huangzy/tools/deepseek-harness && ([ -f native/system/packages/linux-x64/bin/glibc/system.node ] || pnpm run build:native-system) && export DSH_HOME=/home/huangzy/.dsh && unset DSH_SESSION_ID DSH_SESSION_JSONL DSH_WEB_URL DSH_WSL_DISTRO && node --import tsx/esm apps/cli/src/bin.ts web ' + ($trustedArgs -join ' ')
+# Run dsh inside WSL (Linux filesystem) with WSL native Node/pnpm. The narrow
+# preset preflight restores canonical selfuse modes before historical sessions
+# are resumed, without rewriting profile/settings/skills.
+$wslCommand = 'cd /home/huangzy/tools/deepseek-harness && ([ -f native/system/packages/linux-x64/bin/glibc/system.node ] || pnpm run build:native-system) && export DSH_HOME=/home/huangzy/.dsh && node scripts/selfuse/install.mjs --presets-only --dsh-home "$DSH_HOME" && unset DSH_SESSION_ID DSH_SESSION_JSONL DSH_WEB_URL DSH_WSL_DISTRO && node --import tsx/esm apps/cli/src/bin.ts web ' + ($trustedArgs -join ' ')
 $launchToken = $null
 & wsl.exe -d Ubuntu -e bash -lc $wslCommand 2>&1 | ForEach-Object {
     Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value $_ -Encoding UTF8

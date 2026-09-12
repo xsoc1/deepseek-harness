@@ -18,23 +18,24 @@
 
 ## 工作区目录
 
-- `deepseek-harness/`：官方 dsh 源码仓库（origin 为 `deepseek-ai/deepseek-harness`），本地 commit `47f9438`，与 `origin/master` 同步，版本 `0.1.0-rc.5`。仓库自带官方 AGENTS.md，改动 `packages/` 前必须阅读。
-- `Deepseek-Harness-EAC/`：EAC Windows 桌面封装仓库（origin 为 `zouyuxuan122/Deepseek-Harness-EAC`），本地 commit `b57c672`，工作树干净。
+- `deepseek-harness/`：当前 DSH 主工作树，在 `selfuse` 分支内同时保留官方源码与集成后的 selfuse 层。`origin` 跟踪 `deepseek-ai/deepseek-harness`，`xsoc` 跟踪 `xsoc1/deepseek-harness`。截至 2026-09-12，本地/`xsoc/selfuse` 为 `ee81183fc8`，与官方 `origin/master` 的 `c291e7961a` 已分叉（selfuse 侧 74 个独有提交，官方侧 422 个独有提交），不得记为“已与官方同步”。仓库自带 AGENTS.md，改动 `packages/` 前必须阅读。
+- `dsh-local/`：`xsoc1/dsh-selfuse` 的早期管理仓库。截至 2026-09-12，本地 `main` 落后 `origin/main` 17 个提交，且存在大量未提交历史变更；当前实际运行链不从该目录启动，不得用它覆盖 `deepseek-harness/{config,packages,scripts}/selfuse` 中的集成层。
+- `Deepseek-Harness-EAC/`：已退出当前运行链的历史 Electron 桌面封装仓库。2026-09-12 实查无 EAC 进程、无计划任务、无指向 EAC 的快捷方式；当前快捷方式指向 selfuse `control-gui`。该仓库存在大量既有未提交变更，在用户明确选择永久删除或可恢复归档前不得直接清除。
 - `dsh-routing-suite/`：本地注入器与路由预设套装；`injector-release/` 为 v0.3.3 注入器，通过 link 装入 web profile；`preset/` 提供 `router-standard` 思维模式路由预设。
 - `dsh-memory-panel/`：本地插件（纯本地文件记忆，替代 Hindsight 云端记忆）。设置 → 插件 →「记忆」浏览/搜索/写入 `~/.dsh/memory/`（knowledge/ 知识页 + notes/ 记忆条目，Markdown）。零依赖、离线可用；`@vectorize-io/hindsight-coding-agents` 与旧 `dsh-hindsight-panel` 已从 web profile 移除。
 - `awesome-dsh-plugin/`：awesome-dsh-plugin 的 fork 工作副本（xsoc1），用于维护列表 PR。
 
 ## 本地部署
 
-- dsh 以源码方式运行：`pnpm dsh web`，Node `v24.17.0`，pnpm `v11.19.0`。
+- dsh 以源码方式在 WSL 工作树 `/home/huangzy/tools/deepseek-harness` 中运行，活跃 `DSH_HOME` 为 `/home/huangzy/.dsh`；Windows 工作树 `F:\\tools\\deepseek-harness` 负责启动脚本、桥接与日志。Node `v24.17.0`，pnpm `v11.19.0`。
 - Web UI：`http://127.0.0.1:3080`；`run-dsh-web.ps1` 在 WSL 网关 `172.22.112.1:3080` 已监听时跳过 netsh，否则补 portproxy，并以 `--trusted-host` 启动（当前版本不强制启动 WSL Ubuntu）。
 - watchdog：`dsh-watchdog.ps1`，v3 逻辑为 3 秒快速探测启动、10 秒常规轮询、180 秒启动超时、连续 3 次探活失败才重启，写心跳文件 `dsh-watchdog.heartbeat`；计划任务 `dsh-watchdog`（登录触发）和 `dsh-watchdog-ensure`（5 分钟周期兜底），均以 `-WindowStyle Hidden` 运行。
 - 管理脚本：`deepseek-harness/dsh-control.ps1 start|restart|stop|status|ui|logs`。
 - 图形控制台：`deepseek-harness/packages/selfuse/control-gui/dsh-control-gui.exe`（WinForms 独立原生 exe，状态/日志/操作一体化，内置设置面板与横幅调节，后台守护轮询）。
   - 轮询进程每 3 秒写 `%TEMP%\dsh-gui-status.json`；按钮命令写 `%TEMP%\dsh-gui-cmd.json`，轮询进程执行后回写 `%TEMP%\dsh-gui-result-<id>.json`，UI 线程只做轻量文件读写。
 - 日志：`deepseek-harness/dsh-web.log`、`dsh-watchdog.log`、`dsh-restart.log`。
-- 用户配置：`%USERPROFILE%\.dsh\`；web profile 位于 `profiles\web\`，补丁层为 `cordis.patch.yml`；默认 agent preset 为 `router-standard`，默认权限 `danger-full-access`，默认模型 `opencode-go / deepseek-v4-flash`。
-- web profile 关键插件：`@dsh-external/dsh-super-injector`（link 到 `injector-release`）、`@linxin666/dsh-web-ui-all`（UI 全家桶 0.2.7，含任务板/Git 图/远程 UI/统计/皮肤中心/SSH）、EAC 配套 balance/file-changes/shell-terminal/easy-setup/task-notify 等；本地识图链路已删除，全家桶内置 describe-image 保持禁用。
+- 活跃用户配置：`/home/huangzy/.dsh/`；web profile 位于 `profiles/web/`，自用标准预设位于 `.agent-presets/`。Windows `%USERPROFILE%\.dsh\` 仍有历史配置，但不是当前 Web 进程的 `DSH_HOME`。默认权限 `danger-full-access`，默认模型 `opencode-go / deepseek-v4-flash`。
+- web profile 关键插件由 `config/selfuse/profiles.build.yml` 统一生成；`dsh-balance` 已于 2026-09-12 完整退役。保留的通用 Web 配套包括 file-changes、shell-terminal、easy-setup、task-notify 等；`web-shell-bridge` 不再包含余额查询、轮询或余额 API。
 
 ## 常见问题
 
@@ -1686,3 +1687,36 @@
 - **验证**：
   1. 通过 .NET 反射模拟窗体启动与加载周期，实测窗体显示后 `bannerBox.Image` 立即成功加载为 `4096 x 1934` 的完整 Bitmap，`bannerBox.Visible = True`；
   2. `.\dsh-control-gui.exe -SmokeTest` 自检退出码 0。
+
+### 2026-09-12 修复 WSL 路由预设部署漂移导致历史会话无法恢复
+
+- **对话需求**：用户要求进入本地 DSH 目录，结合官方仓库与 `xsoc1/dsh-selfuse` 深入整理当前自用工程，并解决截图中的 `resume failed ... preset "wsl-router-standard" not found`。
+- **根因**：
+  1. 实际 Web 进程运行于 WSL 的 `/home/huangzy/tools/deepseek-harness`，使用 `/home/huangzy/.dsh`；Windows `%USERPROFILE%\.dsh` 中虽然有路由预设，但不是当前运行态。
+  2. 目标会话 `session-1416e2c0-015d-461f-b00c-b0312260c25b` 的持久化会话头明确记录 `agentPreset: wsl-router-standard`。
+  3. selfuse 源码 `config/selfuse/agent-presets` 含 `router-standard`/`router-spec`，但活动 WSL `DSH_HOME/.agent-presets` 丢失这两个源预设；`wsl-workspace` 因而只能生成官方四种 `wsl-*` 预设，无法生成 `wsl-router-standard`。
+- **修复与整理**：
+  1. 为 `scripts/selfuse/install.mjs` 增加窄作用域 `--presets-only`，只补齐缺失的标准 selfuse 预设，不触碰 profile、settings 或 skills。
+  2. 在根启动脚本与 `scripts/selfuse/management/run-dsh-web.ps1` 中加入启动前预设预检，并将两份启动脚本重新同步。
+  3. 新增 `scripts/selfuse/install.test.mjs`，覆盖“预设得到部署、其他部署状态不产生”的隔离性契约。
+  4. 在 `packages/selfuse/README.md` 明确官方层、selfuse 源码层、运行态层，以及历史会话预设必须在启动前可解析的不变式。
+- **实际修复**：向 `/home/huangzy/.dsh/.agent-presets` 补齐 `router-standard` 与 `router-spec`，由重启后的 `wsl-workspace` 自动恢复 `wsl-router-standard` 与 `wsl-router-spec`。
+- **验证**：
+  1. 先以目标会话头建立失败复现，确认部署中缺少 `wsl-router-standard`；修复后同一检查转为 PASS。
+  2. `node --test scripts/selfuse/install.test.mjs` 2/2 通过（含两份启动脚本一致性守卫）；安装器语法、PowerShell Parser、`git diff --check` 均通过；Windows/WSL 两份改动内容一致。
+  3. Web 经 watchdog 重启后 HTTP 200；活动 API 的 `agentPresets/list` 返回 `wsl-router-standard` 且健康；对原会话调用 `session/page` 返回 HTTP 200，随后日志中该会话恢复错误为 0。
+  4. 已刷新官方远端：`selfuse` 当前与 `xsoc/selfuse` 一致，但相对最新 `origin/master` 为 selfuse 侧 74 个独有提交、官方侧 422 个独有提交，不能宣称已对齐官方。本次没有擅自做高风险的大版本合并。
+- **范围保护**：`F:\tools\dsh-local` 当前落后其远端 17 个提交且存在大量既有未提交变更；本次未修改、未覆盖该目录。
+
+### 2026-09-12 退役余额显示插件并审计 EAC 桌面壳
+
+- **对话需求**：用户先要求删除显示余额的插件，随后询问已经不明用途的 EAC 桌面壳是否也可以删除。
+- **余额插件退役**：
+  1. 从 `config/selfuse/profiles.build.yml`、`apps/cli/package.json` 与 `pnpm-lock.yaml` 移除 `@deepseek-ai/dsh-balance`。
+  2. 删除 `packages/selfuse/eac-balance`；从 `eac-web-shell-bridge` 同时移除余额查询 API、DeepSeek API Key 读取、15 分钟轮询、客户端事件桥和 `refreshBalance`，保留文件还原与系统打开能力。
+  3. 重新生成活动 WSL web profile，并删除 profile 中的 balance 实体包及安装链路符号链接。
+  4. `scripts/selfuse/install.test.mjs` 新增负向清单测试，确保后续配置不会重新引入余额插件或余额 API。
+- **EAC 审计结论**：当前没有 EAC 进程、计划任务或快捷方式；DSH 快捷方式指向 `deepseek-harness/packages/selfuse/control-gui/dsh-control-gui.exe`，两个计划任务指向 `dsh-local/scripts`。`dsh-local` 既有文档也记录“EAC 不使用，不 fork”。因此 EAC 不属于当前运行依赖，可以退役。
+- **删除保护**：`F:\tools\Deepseek-Harness-EAC` 存在大量既有未提交变更，尚未获得“永久删除或可恢复归档”的明确选择；本次不删除该仓库，避免丢失未提交内容。
+- **运行态收尾**：清除活动 profile 中遮蔽新版源码的旧 `dsh-web-shell-bridge` 实体副本后，由 watchdog 重启 Web；新进程 PID `960810`，首页 HTTP 200，插件清单共 175 项且 balance 命中 0，旧 `/api/dsh-shell/balance` 返回 404，部署目录无 `dsh-balance` 残留。
+- **验证**：Windows 主副本与 WSL 运行副本均通过 `node --check`、selfuse 测试 3/3、离线 frozen lockfile 校验与 `git diff --check`；最新启动段没有 balance 记录或插件加载失败。启动日志仍有既存的 remote-web-ui API fence CRITICAL 警告，本次未扩大范围处理。

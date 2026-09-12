@@ -17,13 +17,19 @@ One-command local deployment:
 1. Checks `apps/cli` has the selfuse dependencies.
 2. Runs the profile generator.
 3. Copies `config/selfuse/settings.yaml` to `$DSH_HOME/settings.yaml`.
-4. Copies vendored skills from `config/selfuse/skills` to `$DSH_HOME/skills`
+4. Copies canonical presets from `config/selfuse/agent-presets` to
+   `$DSH_HOME/.agent-presets`.
+5. Copies vendored skills from `config/selfuse/skills` to `$DSH_HOME/skills`
    (real copies, no junctions).
 
 ```bash
 node scripts/selfuse/install.mjs --dsh-home /home/user/.dsh --force
 node scripts/selfuse/install.mjs --dsh-home /home/user/.dsh --dry-run
+node scripts/selfuse/install.mjs --dsh-home /home/user/.dsh --presets-only
 ```
+
+`--presets-only` is used by the Web startup preflight. It repairs missing
+canonical presets without changing the generated profile, settings, or skills.
 
 Restart dsh after installing to load the new profile.
 
