@@ -54,6 +54,12 @@ allowBuilds:
   # Store-index rewriting only needs msgpackr's portable JavaScript codec.
   msgpackr-extract: false
   sharp: true
+  # The selfuse remote Web bundle starts Cloudflare quick tunnels.
+  cloudflared: true
+  # ssh2 falls back to portable JavaScript when this optional native accelerator is absent.
+  cpu-features: false
+  # The selfuse SSH panel uses ssh2 for host connections.
+  ssh2: true
 
 minimumReleaseAgeExclude:
   # Fresh pi-ai releases carry the model catalog updates that are the whole
@@ -85,5 +91,6 @@ minimumReleaseAgeExclude:
   - '@openai/codex@0.153.4||0.153.4-darwin-arm64||0.153.4-darwin-x64||0.153.4-linux-arm64||0.153.4-linux-x64||0.153.4-win32-arm64||0.153.4-win32-x64'
 
 patchedDependencies:
+  '@electron/osx-sign@1.3.3': patches/@electron__osx-sign@1.3.3.patch
   '@yao-pkg/pkg@6.21.0': patches/@yao-pkg__pkg@6.21.0.patch
   node-pty@1.2.0-beta.15: patches/node-pty@1.2.0-beta.15.patch
