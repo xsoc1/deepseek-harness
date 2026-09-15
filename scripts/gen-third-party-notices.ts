@@ -53,6 +53,14 @@ export const CLAUDE_AGENT_SDK_PACKAGE = '@anthropic-ai/claude-agent-sdk'
 const CLAUDE_PLATFORM_PACKAGE_PREFIX = `${CLAUDE_AGENT_SDK_PACKAGE}-`
 const CLAUDE_PLATFORM_DECLARED_LICENSE = 'SEE LICENSE IN LICENSE.md'
 
+/** Match an SDK platform payload to this process's OS and architecture. */
+export function isHostClaudePlatformPayload(
+  name: string, platform = process.platform, arch = process.arch,
+): boolean {
+  const prefix = `${CLAUDE_PLATFORM_PACKAGE_PREFIX}${platform}-${arch}`
+  return name === prefix || platform === 'linux' && name === `${prefix}-musl`
+}
+
 /**
  * Whether a non-permissive runtime declaration has an identity-scoped owner
  * authorization. This does not reclassify its terms as permissive.
@@ -338,11 +346,10 @@ function collectClaudeDistribution(manifests: Map<string, Manifest>): ClaudeDist
     )
   }
   const distribution = claudeDistributionFromManifest(manifest)
-  let installedPayloads = 0
+  let installedHostPayloads = 0
   for (const payload of distribution.payloads) {
     const installed = installedManifest(payload.name, manifests, payload.version)
     if (installed === undefined) continue
-    installedPayloads += 1
     if (
       installed.name !== payload.name
       || installed.version !== payload.version
@@ -352,10 +359,11 @@ function collectClaudeDistribution(manifests: Map<string, Manifest>): ClaudeDist
         `gen-third-party-notices: installed ${payload.name} does not match its SDK-declared version and ${CLAUDE_PLATFORM_DECLARED_LICENSE} license field.`,
       )
     }
+    if (isHostClaudePlatformPayload(payload.name)) installedHostPayloads += 1
   }
-  if (installedPayloads === 0) {
+  if (installedHostPayloads === 0) {
     throw new Error(
-      'gen-third-party-notices: no SDK-declared Claude platform payload is installed; install optional dependencies before regenerating.',
+      'gen-third-party-notices: no SDK-declared Claude payload for this platform and architecture is installed; install optional dependencies before regenerating.',
     )
   }
   return distribution

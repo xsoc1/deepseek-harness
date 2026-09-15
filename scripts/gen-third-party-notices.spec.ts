@@ -7,6 +7,7 @@ import {
   assertRuntimeLicenses,
   claudeDistributionFromManifest,
   collectPythonDependencies,
+  isHostClaudePlatformPayload,
   isLocalSkinCenterLightningCss,
   isOwnerAuthorizedRuntime,
   isPermissive,
@@ -47,6 +48,13 @@ function workspace(entries: Record<string, Manifest>): { manifests: Map<string, 
 }
 
 describe('tierExternalDeps', () => {
+  it('does not use a Linux Claude SDK payload to satisfy the Windows host gate', () => {
+    expect(isHostClaudePlatformPayload('@anthropic-ai/claude-agent-sdk-linux-x64', 'win32', 'x64')).toBe(false)
+    expect(isHostClaudePlatformPayload('@anthropic-ai/claude-agent-sdk-win32-x64', 'win32', 'x64')).toBe(true)
+    expect(isHostClaudePlatformPayload('@anthropic-ai/claude-agent-sdk-win32-arm64', 'win32', 'x64')).toBe(false)
+    expect(isHostClaudePlatformPayload('@anthropic-ai/claude-agent-sdk-linux-x64-musl', 'linux', 'x64')).toBe(true)
+  })
+
   it('limits the private skin-center MPL exception to its sole Host consumer', () => {
     const skin = new Map<string, Manifest>([
       ['packages/selfuse/skin-center/package.json', { dependencies: { lightningcss: '^1' } }],
