@@ -73,7 +73,10 @@ it('boots the built plugin graph and renders a fixture session end to end', asyn
       + (commit === undefined ? '' : `-${commit}`)
       + (clientBuildValue('DSH_CLIENT_GIT_DIRTY') === 'true' ? '-dirty' : '')
     screen.getByText('Deepseek Harness')
-    screen.getByText(buildVersion)
+    const buildIdentifier = screen.getByText(buildVersion)
+    const identifierStyle = getComputedStyle(buildIdentifier)
+    expect(Number.parseFloat(identifierStyle.fontSize)).toBeGreaterThanOrEqual(10)
+    expect(identifierStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)')
   }
   // The compact layout dropped group session counts; the fixture workspace
   // group row renders immediately with its sessions beneath it.
