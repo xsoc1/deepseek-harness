@@ -20,5 +20,8 @@
       ]
     }
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@deepseek-ai/dsh-typert-protocol": "workspace:*"
+  }
 }

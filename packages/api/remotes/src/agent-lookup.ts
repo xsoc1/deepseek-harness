@@ -150,7 +150,7 @@ export function createApiRemoteAgentResolver(ctx: any, options: any) {
       }
     }
   }
-  ctx.inject(['typert'], (typeCtx: any) => {
+  if (options.configureTypertLookups !== false) ctx.inject(['typert'], (typeCtx: any) => {
     const resolveAgent = async (sessionId: string) => {
       const found = await agentFor(sessionId)
       if ('error' in found)

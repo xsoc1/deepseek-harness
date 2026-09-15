@@ -1770,6 +1770,7 @@ function createApiProxy(ctx, defaults) {
 	const subagentOwnershipError = (sessionId) => apiRemoteSubagentOwnershipError(sessionId);
 	const inspectServable = (sessionId) => inspectApiRemoteSession(ctx, sessionId);
 	const agentFor = createApiRemoteAgentResolver(ctx, {
+		configureTypertLookups: false,
 		agentOptions,
 		setup: async ({ meta, events }) => (await composeAgent(resolveSessionPreset({
 			header: meta,
