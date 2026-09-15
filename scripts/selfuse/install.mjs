@@ -18,7 +18,7 @@
  */
 import { existsSync, cpSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
@@ -155,7 +155,7 @@ if (!presetsOnly) {
       if (!statSync(groupDir).isDirectory()) continue
       const skillDirs = walkSkillRoots(join(groupDir, 'skills'))
       for (const skillDir of skillDirs) {
-        const name = skillDir.split('/').pop()
+        const name = basename(skillDir)
         const ok = copyIfNew(skillDir, join(skillsDst, name), true)
         if (ok) installedSkills++
       }

@@ -114,6 +114,18 @@ test('profile regeneration preserves plugins installed through the native CLI', 
   }
 })
 
+test('the full installer copies vendored skills under their final path component', async () => {
+  const dshHome = await mkdtemp(join(tmpdir(), 'dsh-selfuse-skills-'))
+  try {
+    await execFileAsync(process.execPath, [installer, '--skip-install-check', '--dsh-home', dshHome])
+    const copied = await readFile(join(dshHome, 'skills', 'obsidian-cli', 'SKILL.md'), 'utf8')
+    const source = await readFile(join(repoRoot, 'config', 'selfuse', 'skills', 'obsidian-skills', 'skills', 'obsidian-cli', 'SKILL.md'), 'utf8')
+    assert.equal(copied, source)
+  } finally {
+    await rm(dshHome, { recursive: true, force: true })
+  }
+})
+
 test('the retired balance widget is absent from the selfuse deployment', async () => {
   const manifest = await readFile(join(repoRoot, 'config', 'selfuse', 'profiles.build.yml'), 'utf8')
   const cliPackage = await readFile(join(repoRoot, 'apps', 'cli', 'package.json'), 'utf8')

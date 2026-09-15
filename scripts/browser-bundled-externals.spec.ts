@@ -95,6 +95,65 @@ describe('browser dependency discovery', () => {
     await expect(browserBundledExternals(root)).rejects.toThrow('has no browser build config')
   })
 
+  it('records imports from a shipped client that has no source build config', async () => {
+    const root = fixture()
+    library(root, 'browser-lib')
+    write(root, 'packages/client/prebuilt/package.json', JSON.stringify({
+      name: '@fixture/prebuilt',
+      dsh: { client: { platform: 'web' } },
+      exports: { './client': './lib/client.js' },
+    }))
+    write(root, 'packages/client/prebuilt/lib/client.js',
+      'window.__ModuleLoader__.load({ factory: (require) => require("browser-lib") })')
+
+    expect(await browserBundledExternals(root)).toEqual(new Set(['browser-lib']))
+  })
+
+  it('resolves a shipped Client peer supplied by the Web app', async () => {
+    const root = fixture()
+    write(root, 'apps/web/package.json', '{"name":"@fixture/web"}')
+    write(root, 'apps/web/node_modules/browser-lib/package.json', JSON.stringify({
+      name: 'browser-lib', exports: './index.js',
+    }))
+    write(root, 'apps/web/node_modules/browser-lib/index.js', 'module.exports = 1')
+    write(root, 'packages/client/prebuilt/package.json', JSON.stringify({
+      name: '@fixture/prebuilt',
+      dsh: { client: { platform: 'web' } },
+      exports: { './client': './lib/client.js' },
+    }))
+    write(root, 'packages/client/prebuilt/lib/client.js',
+      'window.__ModuleLoader__.load({ factory: (require) => require("browser-lib") })')
+
+    expect(await browserBundledExternals(root)).toEqual(new Set(['browser-lib']))
+  })
+
+  it('rejects dynamic imports in a shipped client without a source build config', async () => {
+    const root = fixture()
+    write(root, 'packages/client/prebuilt/package.json', JSON.stringify({
+      name: '@fixture/prebuilt',
+      dsh: { client: { platform: 'web' } },
+      exports: { './client': './lib/client.js' },
+    }))
+    write(root, 'packages/client/prebuilt/lib/client.js',
+      'window.__ModuleLoader__.load({ factory: (require) => require(window.packageName) })')
+
+    await expect(browserBundledExternals(root)).rejects.toThrow('static module specifier')
+  })
+
+  it('ignores runtime URL imports while retaining static package imports', async () => {
+    const root = fixture()
+    library(root, 'browser-lib')
+    write(root, 'packages/client/prebuilt/package.json', JSON.stringify({
+      name: '@fixture/prebuilt',
+      dsh: { client: { platform: 'web' } },
+      exports: { './client': './lib/client.js' },
+    }))
+    write(root, 'packages/client/prebuilt/lib/client.js',
+      'window.__ModuleLoader__.load({ factory: (require) => { require("browser-lib"); const importUrl = (url) => import(url); return importUrl("/skins/hook.mjs") } })')
+
+    expect(await browserBundledExternals(root)).toEqual(new Set(['browser-lib']))
+  })
+
   it.each([
     ['Rollup', false, false], ['Rollup', true, false], ['Rollup', true, true],
     ['Rolldown', false, false], ['Rolldown', true, false], ['Rolldown', true, true],

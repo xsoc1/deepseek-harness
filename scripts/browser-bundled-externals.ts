@@ -1,6 +1,6 @@
 /** Resolve direct third-party browser inputs through the shipping build configurations, without emitting files. */
 
-import { globSync, readFileSync, realpathSync } from 'node:fs'
+import { existsSync, globSync, readFileSync, realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -62,6 +62,74 @@ function readManifest(path: string): Manifest {
   return JSON.parse(readFileSync(path, 'utf8')) as Manifest
 }
 
+/** Audit imports in a shipped Client entry when the package has no source build config. */
+function collectPublishedClientImports(
+  root: string,
+  dir: string,
+  manifest: Manifest,
+  workspaceNames: ReadonlySet<string>,
+  seen: Set<string>,
+): void {
+  const exported = manifest.exports?.['./client']
+  const entry = typeof exported === 'string'
+    ? exported
+    : exported !== null && typeof exported === 'object'
+      ? (exported as Record<string, unknown>).default
+      : undefined
+  if (typeof entry !== 'string') throw new Error(`browser notices: ${manifest.name} has no published Client entry`)
+  const path = resolve(dir, entry)
+  if (!existsSync(path)) throw new Error(`browser notices: ${manifest.name} published Client entry is missing: ${path}`)
+  const source = ts.createSourceFile(path, readFileSync(path, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS)
+  const resolutionAnchors = [
+    createRequire(path),
+    createRequire(resolve(root, 'apps/web/package.json')),
+    createRequire(resolve(root, 'package.json')),
+  ]
+  const record = (specifier: string) => {
+    if (specifier.startsWith('node:')) return
+    if (specifier.startsWith('.') || specifier.startsWith('/') || specifier.includes('://')) {
+      throw new Error(`browser notices: ${manifest.name} published Client entry needs a source build config for ${specifier}`)
+    }
+    const parts = specifier.split('/')
+    const name = specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]
+    if (name === undefined || workspaceNames.has(name)) return
+    const resolved = resolutionAnchors.some((anchor) => {
+      try {
+        anchor.resolve(specifier)
+        return true
+      } catch {
+        return false
+      }
+    })
+    if (!resolved) {
+      throw new Error(`browser notices: cannot resolve ${specifier} from ${path}`)
+    }
+    seen.add(name)
+  }
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node)
+      && (node.expression.kind === ts.SyntaxKind.ImportKeyword
+        || ts.isIdentifier(node.expression) && node.expression.text === 'require')) {
+      const specifier = node.arguments[0]
+      if (specifier === undefined || !ts.isStringLiteralLike(specifier)) {
+        if (node.expression.kind !== ts.SyntaxKind.ImportKeyword) {
+          throw new Error(`browser notices: ${manifest.name} published Client entry needs a static module specifier`)
+        }
+        // Dynamic browser imports load runtime URLs, not bare installed packages.
+        ts.forEachChild(node, visit)
+        return
+      }
+      record(specifier.text)
+    } else if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+      if (node.moduleSpecifier !== undefined && ts.isStringLiteralLike(node.moduleSpecifier)) {
+        record(node.moduleSpecifier.text)
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+}
+
 /**
  * Source aliases shared with the repository's source-plane TypeScript programs.
  * @param root - Repository root containing tsconfig.base.json.
@@ -89,7 +157,12 @@ async function collectClientBundles(
   for (const [manifestPath, manifest] of manifests) {
     if (manifest.private === true || manifest.dsh?.client === undefined) continue
     const dir = dirname(manifestPath)
-    const loaded = await import(pathToFileURL(resolve(dir, 'tsdown.config.ts')).href) as { default: UserConfigExport }
+    const configPath = resolve(dir, 'tsdown.config.ts')
+    if (!existsSync(configPath)) {
+      collectPublishedClientImports(root, dir, manifest, workspaceNames, seen)
+      continue
+    }
+    const loaded = await import(pathToFileURL(configPath).href) as { default: UserConfigExport }
     const factory = await loaded.default
     const configured = typeof factory === 'function' ? await factory({ env: {} }, { ci: false }) : factory
     const configs = Array.isArray(configured) ? configured : [configured]

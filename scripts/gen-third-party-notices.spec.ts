@@ -7,6 +7,7 @@ import {
   assertRuntimeLicenses,
   claudeDistributionFromManifest,
   collectPythonDependencies,
+  isLocalSkinCenterLightningCss,
   isOwnerAuthorizedRuntime,
   isPermissive,
   type Manifest,
@@ -46,6 +47,18 @@ function workspace(entries: Record<string, Manifest>): { manifests: Map<string, 
 }
 
 describe('tierExternalDeps', () => {
+  it('limits the private skin-center MPL exception to its sole Host consumer', () => {
+    const skin = new Map<string, Manifest>([
+      ['packages/selfuse/skin-center/package.json', { dependencies: { lightningcss: '^1' } }],
+    ])
+    expect(isLocalSkinCenterLightningCss(skin, new Set())).toBe(true)
+    expect(isLocalSkinCenterLightningCss(skin, new Set(['lightningcss']))).toBe(false)
+    skin.set('packages/client/runtime/package.json', { dependencies: { lightningcss: '^1' } })
+    expect(isLocalSkinCenterLightningCss(skin, new Set())).toBe(false)
+    expect(() => assertRuntimeLicenses([{ name: 'lightningcss', license: 'MPL-2.0' }]))
+      .toThrow('lightningcss (MPL-2.0)')
+  })
+
   it('keeps license rejection active when a browser library is declared for development', () => {
     const { manifests, names } = workspace({
       'packages/client/ui/package.json': { devDependencies: { 'browser-lib': '^1', 'test-tool': '^1' } },
@@ -115,6 +128,17 @@ describe('tierExternalDeps', () => {
 })
 
 describe('virtualManifest', () => {
+  it('skips an empty optional-payload store entry instead of throwing ENOENT', () => {
+    const root = mkdtempSync(join(tmpdir(), 'dsh-notices-optional-empty-'))
+    try {
+      const store = join(root, 'store')
+      mkdirSync(join(store, '@scope+payload@1.0.0', 'node_modules'), { recursive: true })
+      expect(virtualManifest(store, '@scope/payload', '1.0.0')).toBeUndefined()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
   it('resolves a manifest from an ordinary prefix-matching store directory', () => {
     const root = mkdtempSync(join(tmpdir(), 'dsh-notices-prefix-'))
     try {
