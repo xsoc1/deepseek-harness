@@ -966,6 +966,7 @@ export function createApiProxy(ctx, defaults) {
     // header here would silently undo the switch on the next restart and
     // restore that history under the old tool set.
     const agentFor = createApiRemoteAgentResolver(ctx, {
+        configureTypertLookups: false,
         agentOptions,
         setup: async ({ meta, events }) => (await composeAgent(resolveSessionPreset({ header: meta, events }))).setup,
     });
