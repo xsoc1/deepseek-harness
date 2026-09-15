@@ -268,7 +268,7 @@ export class PairingService {
     }
     /**
      * Stop remote control: revoke every device session and clear the token.
-     * The phone's next gated /api request 403s; the panel falls back to
+     * The remote computer's next gated request returns 403; the panel falls back to
      * stopped until a fresh QR is issued.
      */
     stop() {
@@ -309,7 +309,7 @@ export class PairingService {
         this.notify();
         return true;
     }
-    /** Explicit presence heartbeat (the phone's client sends these). */
+    /** Explicit presence heartbeat from a paired remote computer. */
     heartbeat(deviceId) {
         return this.touchDevice(deviceId);
     }

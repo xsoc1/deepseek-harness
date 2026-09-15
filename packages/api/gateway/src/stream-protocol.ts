@@ -5,6 +5,9 @@ import type { Branded } from '@deepseek-ai/dsh-brand'
 /** Exact WebSocket route carrying every Typert Remote stream. */
 export const REMOTE_STREAM_MUX_PATH = '/api/remote.mux'
 
+/** WebSocket subprotocol advertising support for browser-visible heartbeats. */
+export const REMOTE_STREAM_APPLICATION_HEARTBEAT_PROTOCOL = 'dsh-application-heartbeat-v1'
+
 /** Gateway-internal logical stream carrying application-selected Cordis events. */
 export const REMOTE_EVENT_STREAM_ENDPOINT = '$events'
 
@@ -16,6 +19,9 @@ export const REMOTE_EVENT_STREAM_PAYLOAD = { args: {} } as const
 
 /** Discriminator for the first item proving the Host event source is ready. */
 export const REMOTE_EVENT_STREAM_READY = { type: 'ready' } as const
+
+/** Largest application-heartbeat deadline representable by browser timers. */
+export const MAX_REMOTE_STREAM_HEARTBEAT_TIMEOUT_MS = 2_147_483_647
 
 /** Opaque identity for one active Client Remote Event generation. */
 export type RemoteEventClientId = Branded<'RemoteEventClientId'>
@@ -258,6 +264,7 @@ export interface RemoteStreamFailure {
 
 /** One logical stream frame sent from the Host. */
 export type RemoteStreamServerMessage =
+  | { readonly type: 'heartbeat'; readonly timeoutMs: number }
   | { readonly type: 'item'; readonly streamId: string; readonly value?: unknown }
   | { readonly type: 'error'; readonly streamId: string; readonly error: RemoteStreamFailure }
   | { readonly type: 'end'; readonly streamId: string }
@@ -290,6 +297,13 @@ export function parseRemoteStreamClientMessage(text: string): RemoteStreamClient
  */
 export function parseRemoteStreamServerMessage(text: string): RemoteStreamServerMessage {
   return parseMessage(text, (value) => {
+    if (value.type === 'heartbeat'
+      && exactKeys(value, ['type', 'timeoutMs'])
+      && Number.isInteger(value.timeoutMs)
+      && (value.timeoutMs as number) > 0
+      && (value.timeoutMs as number) <= MAX_REMOTE_STREAM_HEARTBEAT_TIMEOUT_MS) {
+      return value as unknown as RemoteStreamServerMessage
+    }
     if (value.type === 'item'
       && (exactKeys(value, ['type', 'streamId']) || exactKeys(value, ['type', 'streamId', 'value']))
       && validId(value.streamId)) {

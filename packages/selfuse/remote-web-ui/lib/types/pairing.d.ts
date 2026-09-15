@@ -39,7 +39,7 @@ export interface TokenRecord {
     consumed: boolean;
     /** Opaque, non-secret identifier surfaced in snapshots (never the pairing secret). */
     id: string;
-    /** Workspace the QR link should land the phone in (optional). */
+    /** Workspace the QR link should open on the remote computer (optional). */
     workspaceId?: string;
     /** LAN IP literal the QR link was built from (optional; default first). */
     address?: string;
@@ -118,7 +118,7 @@ export interface PairingConfig {
     idleExpireMs?: number;
     /**
      * Path to a JSON file where paired device sessions are persisted. When
-     * set, sessions survive process restarts (the phone keeps its 365-day
+     * set, sessions survive process restarts (the browser keeps its 365-day
      * cookie), so re-pairing after a dsh web restart is not required. When
      * unset, sessions stay memory-only.
      */
@@ -244,7 +244,7 @@ export declare class PairingService {
     accept(token: string, userAgent?: string): AcceptResult;
     /**
      * Stop remote control: revoke every device session and clear the token.
-     * The phone's next gated /api request 403s; the panel falls back to
+     * The remote computer's next gated request returns 403; the panel falls back to
      * stopped until a fresh QR is issued.
      */
     stop(): void;
@@ -263,7 +263,7 @@ export declare class PairingService {
      * @returns true when the device session is live and was refreshed.
      */
     touchDevice(deviceId: string): boolean;
-    /** Explicit presence heartbeat (the phone's client sends these). */
+    /** Explicit presence heartbeat from a paired remote computer. */
     heartbeat(deviceId: string): boolean;
     /**
      * Periodic sweep: drop idle sessions, flush a dirty lastSeenAt, and

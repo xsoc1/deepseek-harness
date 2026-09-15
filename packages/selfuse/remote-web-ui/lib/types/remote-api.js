@@ -1,6 +1,6 @@
 /**
  * The remote desktop data channel: `/remote` is this plugin's own prefix, so
- * the paired-device cookie is the access control (exactly like `/m/api`).
+ * the paired-device cookie is the access control.
  * After that gate, every fenced same-origin path the browser rewrote here is
  * re-issued to 127.0.0.1 as a loopback-shaped request so sibling plugin
  * fences (and the connection plugin's `/api`) accept it — no `--trusted-host`
@@ -99,11 +99,11 @@ export function loopbackOnlyDenial(innerPath) {
  * @returns the routes to register on webServer.
  */
 export function makeRemoteApiRoutes(deps) {
-    const { service, port } = deps;
+    const { service, port, requirePairingForLan } = deps;
     const handler = (req, res) => {
-        // Cookie gate first — same order as /m/api. Do not buffer an unpaired body.
+        // Gate the cookie before buffering an unpaired request body.
         const deviceId = readCookie(req.headers.cookie, service.config.cookieName);
-        const paired = deviceId !== undefined && service.touchDevice(deviceId);
+        const paired = requirePairingForLan?.() === false || (deviceId !== undefined && service.touchDevice(deviceId));
         if (!paired) {
             req.resume();
             envelopeError(res, 403, 'invalid-request', 'unpaired', 'this device is not paired with the desktop');
@@ -157,10 +157,10 @@ export function upgradeInnerPath(reqUrl, fallbackPath) {
  * @returns the upgrade routes to register on webServer.
  */
 export function makeRemoteApiUpgradeRoutes(deps) {
-    const { service, port } = deps;
+    const { service, port, requirePairingForLan } = deps;
     const handlerFor = (fallbackPath) => (req, socket, head) => {
         const deviceId = readCookie(req.headers.cookie, service.config.cookieName);
-        if (deviceId === undefined || !service.touchDevice(deviceId)) {
+        if (requirePairingForLan?.() !== false && (deviceId === undefined || !service.touchDevice(deviceId))) {
             socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
             socket.destroy();
             return;
@@ -174,7 +174,7 @@ export function makeRemoteApiUpgradeRoutes(deps) {
         }
         proxyLoopbackUpgrade(req, socket, head, port, inner);
     };
-    return REMOTE_UPGRADE_PATHS.map((path) => ({
+    return REMOTE_UPGRADE_PATHS.map(path => ({
         path,
         handler: handlerFor(path.slice(REMOTE_PREFIX.length)),
     }));

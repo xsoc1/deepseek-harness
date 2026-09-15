@@ -8,11 +8,9 @@
  * workspace-agnostic selector: pairing without a deep-linked workspace is
  * fully supported by the host `/api/pair` routes.
  */
-import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots';
+import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots';
 /** Entry props: the footer seat's column state + the standard locale seat. */
-export type FooterRemoteEntryProps = PropsLocale<'remote'> & {
-    wide: boolean;
-};
+export type FooterRemoteEntryProps = PropsRuntime<'sidebar.footer.action'> & PropsLocale<'remote'>;
 /**
  * Render the remote-control trigger + pairing panel from the footer seat.
  * @param props - composed slot props (footer seat subset).

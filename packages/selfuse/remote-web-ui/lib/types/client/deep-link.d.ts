@@ -28,8 +28,6 @@ export interface PageSurface {
 }
 /** The browser implementation of {@link PageSurface}. */
 export declare const browserPage: PageSurface;
-/** Whether this browser looks like a phone/tablet (the simplified mobile surface). */
-export declare function isMobileSurface(): boolean;
 /**
  * Run the pair/workspace boot flow for this page load.
  * @param ctx - client root context (workspaces/sessions read at need time).

@@ -1,6 +1,6 @@
 /**
  * The remote desktop data channel: `/remote` is this plugin's own prefix, so
- * the paired-device cookie is the access control (exactly like `/m/api`).
+ * the paired-device cookie is the access control.
  * After that gate, every fenced same-origin path the browser rewrote here is
  * re-issued to 127.0.0.1 as a loopback-shaped request so sibling plugin
  * fences (and the connection plugin's `/api`) accept it — no `--trusted-host`
@@ -134,7 +134,7 @@ export function makeRemoteApiRoutes(deps: RemoteApiDeps): WebRoute[] {
   const { service, port, requirePairingForLan } = deps
 
   const handler = (req: IncomingMessage, res: ServerResponse): void => {
-    // Cookie gate first — same order as /m/api. Do not buffer an unpaired body.
+    // Gate the cookie before buffering an unpaired request body.
     const deviceId = readCookie(req.headers.cookie, service.config.cookieName)
     const paired = requirePairingForLan?.() === false || (deviceId !== undefined && service.touchDevice(deviceId))
     if (!paired) {

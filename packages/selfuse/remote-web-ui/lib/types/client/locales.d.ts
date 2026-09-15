@@ -24,8 +24,7 @@ export declare const zh: {
     'address.hint': string;
     'pair.expires': string;
     'pair.expired': string;
-    'pair.phoneLabel': string;
-    'pair.desktopLabel': string;
+    'pair.linkLabel': string;
     'pair.oneTimeHint': string;
     'pair.failed.title': string;
     'pair.failed.detail': string;
@@ -42,8 +41,6 @@ export declare const zh: {
     'action.stop': string;
     'action.refresh': string;
     'action.copy': string;
-    'action.copyPhone': string;
-    'action.copyDesktop': string;
     'action.copied': string;
     'devices.title': string;
     'devices.empty': string;
@@ -76,10 +73,9 @@ export declare const zh: {
     'settings.requirePairingForLanHint': string;
     'settings.publicBaseUrl': string;
     'settings.publicBaseUrlHint': string;
+    'settings.publicBaseUrlPlaceholder': string;
     'settings.autoTunnel': string;
     'settings.autoTunnelHint': string;
-    'settings.mobileEnterToSend': string;
-    'settings.mobileEnterToSendHint': string;
     'settings.inherit': string;
     'settings.on': string;
     'settings.off': string;
@@ -160,8 +156,7 @@ export declare const en: {
     'address.hint': string;
     'pair.expires': string;
     'pair.expired': string;
-    'pair.phoneLabel': string;
-    'pair.desktopLabel': string;
+    'pair.linkLabel': string;
     'pair.oneTimeHint': string;
     'pair.failed.title': string;
     'pair.failed.detail': string;
@@ -178,8 +173,6 @@ export declare const en: {
     'action.stop': string;
     'action.refresh': string;
     'action.copy': string;
-    'action.copyPhone': string;
-    'action.copyDesktop': string;
     'action.copied': string;
     'devices.title': string;
     'devices.empty': string;
@@ -212,10 +205,9 @@ export declare const en: {
     'settings.requirePairingForLanHint': string;
     'settings.publicBaseUrl': string;
     'settings.publicBaseUrlHint': string;
+    'settings.publicBaseUrlPlaceholder': string;
     'settings.autoTunnel': string;
     'settings.autoTunnelHint': string;
-    'settings.mobileEnterToSend': string;
-    'settings.mobileEnterToSendHint': string;
     'settings.inherit': string;
     'settings.on': string;
     'settings.off': string;

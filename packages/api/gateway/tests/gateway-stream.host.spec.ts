@@ -31,9 +31,10 @@ import TypertGatewayService, {
   type TypertRemoteEventOutcome,
 } from '@deepseek-ai/dsh-api-gateway'
 import { z } from 'zod'
-import type {
-  RemoteEventClientId,
-  RemoteEventInvocationFrame,
+import {
+  REMOTE_STREAM_APPLICATION_HEARTBEAT_PROTOCOL,
+  type RemoteEventClientId,
+  type RemoteEventInvocationFrame,
 } from '../src/stream-protocol.ts'
 
 vi.mock('node:crypto', async (importOriginal) => {
@@ -298,12 +299,16 @@ describe('Typert Remote streams', () => {
 
   it('uses the configured WebSocket heartbeat interval', { timeout: 1_000 }, async () => {
     const { ctx } = await setup(true, { websocketHeartbeatIntervalMs: 20 })
-    const socket = new WebSocket(`ws://127.0.0.1:${String(ctx.webServer.port)}/api/remote.mux`, {
-      headers: { cookie: browserCookie(ctx) },
-    })
+    const socket = new WebSocket(
+      `ws://127.0.0.1:${String(ctx.webServer.port)}/api/remote.mux`,
+      REMOTE_STREAM_APPLICATION_HEARTBEAT_PROTOCOL,
+      { headers: { cookie: browserCookie(ctx) } },
+    )
     const ping = once(socket, 'ping')
+    const message = once(socket, 'message')
     await once(socket, 'open')
     expect((await ping)[0]).toEqual(Buffer.alloc(0))
+    expect(JSON.parse(rawText((await message)[0] as RawData))).toEqual({ type: 'heartbeat', timeoutMs: 60 })
 
     socket.close()
     await once(socket, 'close')

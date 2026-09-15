@@ -29,12 +29,6 @@ export const browserPage = {
         window.location.reload();
     },
 };
-/** Whether this browser looks like a phone/tablet (the simplified mobile surface). */
-export function isMobileSurface() {
-    if (typeof navigator === 'undefined')
-        return false;
-    return /Android|iPhone|iPad|iPod|Mobile|mobile/i.test(navigator.userAgent);
-}
 /**
  * Run the pair/workspace boot flow for this page load.
  * @param ctx - client root context (workspaces/sessions read at need time).
@@ -51,7 +45,7 @@ export function runPairBootFlow(ctx, search, page = browserPage) {
         void runDeepLink(ctx, params.workspace, page);
     }
 }
-/** Accept the token, then enter the matching desktop/mobile surface. */
+/** Accept the token, then reload the full Web UI with the paired-device cookie. */
 async function runAccept(token, page) {
     let ok = false;
     try {
@@ -69,17 +63,7 @@ async function runAccept(token, page) {
     url.searchParams.delete('pair');
     page.replaceState(`${url.pathname}${url.search}${url.hash}`);
     if (ok) {
-        // Phones land on the standalone simplified surface (the full desktop UI
-        // is not built for small screens). Keep the workspace target so the
-        // mobile surface can open the intended workspace instead of losing the
-        // QR context at this navigation boundary.
-        if (isMobileSurface()) {
-            url.pathname = '/m/';
-            page.navigate(`${url.pathname}${url.search}${url.hash}`);
-        }
-        else {
-            page.reload();
-        }
+        page.reload();
     }
 }
 /**

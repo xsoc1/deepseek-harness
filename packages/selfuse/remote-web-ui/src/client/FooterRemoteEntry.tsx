@@ -8,11 +8,11 @@
  * workspace-agnostic selector: pairing without a deep-linked workspace is
  * fully supported by the host `/api/pair` routes.
  */
-import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
+import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { RemoteEntry } from './RemoteEntry.tsx'
 
 /** Entry props: the footer seat's column state + the standard locale seat. */
-export type FooterRemoteEntryProps = PropsLocale<'remote'> & { wide: boolean }
+export type FooterRemoteEntryProps = PropsRuntime<'sidebar.footer.action'> & PropsLocale<'remote'>
 
 /**
  * Render the remote-control trigger + pairing panel from the footer seat.
@@ -20,12 +20,5 @@ export type FooterRemoteEntryProps = PropsLocale<'remote'> & { wide: boolean }
  * @returns the entry element tree.
  */
 export function FooterRemoteEntry(props: FooterRemoteEntryProps) {
-  return (
-    <RemoteEntry
-      wide={props.wide}
-      useWorkspaces={() => undefined as never}
-      useSessions={() => undefined as never}
-      t={props.t}
-    />
-  )
+  return <RemoteEntry {...props} />
 }

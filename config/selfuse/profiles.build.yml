@@ -25,6 +25,22 @@ patchPlugins:
   - "@dsh-selfuse/soul-md"
   - "@dsh-selfuse/skill-router"
   - "@dsh-selfuse/content-risk-guard"
+# Browser-only rows inherited from the official Web bundle that this personal
+# profile deliberately leaves inactive. Keep this list by stable Cordis row id
+# so upstream package updates remain mergeable.
+disabledRows:
+  # The official document preview eagerly embeds PDF.js, its Worker, CMaps,
+  # fonts, and WASM into startup. It contributes ~3.25 MiB of the compressed
+  # cold boot even when no document is opened, which is unsuitable over the
+  # lossy iPad/Tailnet path. Files and the right Sidebar remain available.
+  - ui-sidebar-documentpreview
+# Configuration overrides for inherited official rows. Keep the remote mux at
+# the official ten-second cadence: its thirty-second application deadline
+# tolerates mobile Tailnet path changes without allowing an infinite half-open
+# browser stream.
+rowConfigs:
+  typert-gateway:
+    websocketHeartbeatIntervalMs: 10000
 skills:
   - math-research-dsh
   - mattpocock-skills

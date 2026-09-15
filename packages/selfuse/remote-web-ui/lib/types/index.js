@@ -1,11 +1,11 @@
 /**
- * Mobile remote control for the dsh web GUI — host half. Mounts the pairing
+ * Remote desktop access for the dsh web GUI — host half. Mounts the pairing
  * service (one-time tokens, device sessions, revocation), the /api/pair
  * route family (issue/accept/stop/heartbeat/status/events), the api/gate
  * listener that enforces pairing on every other /api request from
  * non-loopback hosts, and the presence sweep. The browser half (the
  * `./client` entry) renders the sidebar entry, the pairing panel, and the
- * phone-side pair/accept + deep-link flow.
+ * remote-device pair/accept + deep-link flow.
  */
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -17,8 +17,6 @@ import { dshHome } from "./dsh-home.js";
 import { isPairedDeviceRequest, makeGateListener } from "./gate.js";
 import { RemoteWebUiPairing } from "./pairing-access.js";
 import { isTrustedApiRequest, makeRoutes } from "./routes.js";
-import { makeMobileRoutes } from "./mobile-routes.js";
-import { makeMobileApiRoutes } from "./mobile-api.js";
 import { makeRemoteApiRoutes, makeRemoteApiUpgradeRoutes } from "./remote-api.js";
 import { claimPostureKey, postureTargets, probePosture, releasePostureKey } from "./posture.js";
 import { lanIPv4Addresses } from "./lan.js";
@@ -29,7 +27,7 @@ import { mountOnce } from "./mount-once.js";
 /** Stable cordis plugin name. */
 export const name = 'remote-web-ui';
 /** Services required before the pairing surfaces can mount. */
-export const inject = ['webServer', 'apiProxy'];
+export const inject = ['webServer'];
 /**
  * Settings namespace of the remote-control capability — the section the web
  * settings surface edits. Spelled here rather than imported: the browser
@@ -46,7 +44,6 @@ export const Config = z.object({
     publicBaseUrl: z.string(),
     devicesFile: z.string(),
     autoTunnel: z.boolean().default(false),
-    mobileEnterToSend: z.boolean().default(true),
     enabled: z.boolean().default(true),
 });
 /** Presence sweep cadence (a stale device flips to disconnected within two sweeps). */
@@ -82,7 +79,6 @@ const DEFAULTS = {
     publicBaseUrl: undefined,
     devicesFile: defaultDevicesFile(),
     autoTunnel: false,
-    mobileEnterToSend: true,
     enabled: true,
 };
 /**
@@ -102,7 +98,6 @@ function applyImpl(ctx, config) {
         publicBaseUrl: config?.publicBaseUrl,
         devicesFile: config?.devicesFile ?? DEFAULTS.devicesFile,
         autoTunnel: config?.autoTunnel ?? DEFAULTS.autoTunnel,
-        mobileEnterToSend: config?.mobileEnterToSend ?? DEFAULTS.mobileEnterToSend,
         enabled: config?.enabled ?? DEFAULTS.enabled,
     };
     // The live source the pairing service and the gate read: the settings
@@ -121,17 +116,15 @@ function applyImpl(ctx, config) {
             publicBaseUrl: value.publicBaseUrl,
             devicesFile: value.devicesFile ?? DEFAULTS.devicesFile,
             autoTunnel: value.autoTunnel ?? DEFAULTS.autoTunnel,
-            mobileEnterToSend: value.mobileEnterToSend ?? DEFAULTS.mobileEnterToSend,
             enabled: value.enabled ?? DEFAULTS.enabled,
         };
     };
     const service = new PairingService(pairingConfigOf(resolved));
     // ── auto tunnel ─────────────────────────────────────────────────────────
-    // The minted public URL becomes the QR base (and the pairing fence's
-    // trusted host). Phone /api traffic rides the plugin's own /m/api channel,
-    // which is NOT subject to the connection trust fence — so no fence
-    // mutation is needed here (a distributable plugin must not change the
-    // harness's connection plugin).
+    // The minted public URL becomes the QR base and the pairing fence's
+    // trusted host. The full desktop Web UI rides the plugin's authenticated
+    // remote channel, so this plugin does not change the harness connection
+    // plugin's trust configuration.
     const tunnel = new TunnelManager();
     let autoTunnel = resolved.autoTunnel;
     tunnel.onPhase((info) => {
@@ -160,7 +153,7 @@ function applyImpl(ctx, config) {
     // bases are frozen per process, matching the CLI's once-per-invocation
     // sampling stance. The QR can only advertise addresses the fence accepts;
     // every interface gets its own base URL so a multi-homed machine can pick
-    // the network the phone can actually reach.
+    // the network the remote device can actually reach.
     const lanBases = ctx.webServer.host === '0.0.0.0'
         ? lanIPv4Addresses().map(address => ({ address, base: `http://${address}:${String(ctx.webServer.port)}` }))
         : [];
@@ -175,12 +168,6 @@ function applyImpl(ctx, config) {
     // (now vetoing every non-loopback request) instead of opening the fence.
     let disposeRoutes;
     let disposeSweep;
-    // The phone's data channel: pairing routes + the /m page + the /m/api
-    // proxy (which needs the host ApiProxy service; the plugin injects it).
-    const apiProxy = ctx.get('apiProxy');
-    if (apiProxy === undefined) {
-        console.warn('remote-web-ui: apiProxy service unavailable — the mobile data channel is disabled');
-    }
     // ── remote update ────────────────────────────────────────────────────────
     // The dsh-web-ui self-update surface: probe the npm registry for family
     // releases and run `pnpm update --latest` in the owning profile. Resolutions
@@ -190,7 +177,7 @@ function applyImpl(ctx, config) {
     // directory on update, so a boot-time captured path would fail to read
     // after a successful update; versions are re-read from disk per check.
     const requireFromHost = createRequire(import.meta.url);
-    const resolveAnchorPath = () => resolveAnchorManifest(specifier => {
+    const resolveAnchorPath = () => resolveAnchorManifest((specifier) => {
         try {
             return requireFromHost.resolve(specifier);
         }
@@ -199,12 +186,12 @@ function applyImpl(ctx, config) {
         }
     });
     const updateRoutes = makeUpdateRoutes({
-        // Control endpoints are host-surface only: a LAN/phone origin must never
+        // Control endpoints are host-only: a remote origin must never
         // trigger a real install on this machine.
         fence: request => isTrustedApiRequest(request, []),
         check: () => checkUpdates({
             anchorManifestPath: resolveAnchorPath(),
-            resolve: specifier => {
+            resolve: (specifier) => {
                 try {
                     return requireFromHost.resolve(specifier);
                 }
@@ -234,7 +221,7 @@ function applyImpl(ctx, config) {
                 run: { profileDir: target.profileDir, packages: target.packages },
                 check: {
                     anchorManifestPath: resolveAnchorPath(),
-                    resolve: specifier => {
+                    resolve: (specifier) => {
                         try {
                             return requireFromHost.resolve(specifier);
                         }
@@ -249,16 +236,12 @@ function applyImpl(ctx, config) {
     });
     const routes = [
         ...makeRoutes({ service, lanAddresses }),
-        ...makeMobileRoutes(),
-        ...(apiProxy !== undefined
-            ? makeMobileApiRoutes({ service, apiProxy, mobileEnterToSend: () => resolve().mobileEnterToSend })
-            : []),
         // The remote desktop channel: paired-cookie-gated `/remote` prefix that
         // re-issues fenced paths to loopback (see remote-api.ts).
-        ...makeRemoteApiRoutes({ service, port: ctx.webServer.port }),
+        ...makeRemoteApiRoutes({ service, port: ctx.webServer.port, requirePairingForLan: () => resolve().requirePairingForLan }),
         ...updateRoutes,
     ];
-    const upgrades = makeRemoteApiUpgradeRoutes({ service, port: ctx.webServer.port });
+    const upgrades = makeRemoteApiUpgradeRoutes({ service, port: ctx.webServer.port, requirePairingForLan: () => resolve().requirePairingForLan });
     const gate = makeGateListener(service, () => resolve().requirePairingForLan, () => resolve().enabled);
     ctx.effect(() => ctx.on('api/gate', gate), 'remote-web-ui: api gate');
     // ── posture probe ─────────────────────────────────────────────────────────

@@ -1,11 +1,11 @@
 /**
- * Mobile remote control for the dsh web GUI — host half. Mounts the pairing
+ * Remote desktop access for the dsh web GUI — host half. Mounts the pairing
  * service (one-time tokens, device sessions, revocation), the /api/pair
  * route family (issue/accept/stop/heartbeat/status/events), the api/gate
  * listener that enforces pairing on every other /api request from
  * non-loopback hosts, and the presence sweep. The browser half (the
  * `./client` entry) renders the sidebar entry, the pairing panel, and the
- * phone-side pair/accept + deep-link flow.
+ * remote-device pair/accept + deep-link flow.
  */
 import type { IncomingMessage } from 'node:http';
 import type { Context } from '@deepseek-ai/cordis';
@@ -31,7 +31,7 @@ export declare const inject: string[];
  * settings surface edits. Spelled here rather than imported: the browser
  * half spells the same value and must not depend on a Host package.
  */
-export declare const REMOTE_WEB_UI_SETTINGS_NAMESPACE: import("@deepseek-ai/dsh-settings").SettingsNamespace;
+export declare const REMOTE_WEB_UI_SETTINGS_NAMESPACE: "remote-web-ui";
 /** Plugin config, validated by the same-named schemastery schema. */
 export interface Config {
     /** Token lifetime in ms; the QR link dies after this. */
@@ -58,8 +58,8 @@ export interface Config {
     /**
      * Public base URL of a tunnel in front of this server (e.g. a Cloudflare
      * Tunnel quick URL `https://xxx.trycloudflare.com` or a named-tunnel
-     * subdomain). When set, the QR link is built from it — a phone anywhere
-     * can pair — and its host is trusted by the phone-facing pairing fence.
+     * subdomain). When set, the QR link is built from it so a remote computer
+     * can pair from anywhere, and its host is accepted by the pairing routes.
      * Leave unset for LAN-only usage. Malformed values are ignored with a
      * warning (LAN-only behavior preserved). Ignored while `autoTunnel` is on.
      */
@@ -74,18 +74,11 @@ export interface Config {
     /**
      * When true, the plugin runs its own Cloudflare quick tunnel (the
      * cloudflared binary ships with the package — no user-side install) and
-     * feeds the minted public URL into the QR base and the phone-facing
-     * pairing fence dynamically, so phones anywhere can pair without any manual
+     * feeds the minted public URL into the QR base and pairing routes
+     * dynamically, so remote computers can pair without any manual
      * tunnel setup. The manual `publicBaseUrl` is ignored while this is on.
      */
     autoTunnel?: boolean;
-    /**
-     * Mobile composer behavior: when true (default), a plain Enter in the
-     * phone chat textarea sends the prompt and Shift+Enter inserts a newline.
-     * When false, plain Enter inserts a newline and only the send button
-     * sends (Shift+Enter keeps inserting a newline).
-     */
-    mobileEnterToSend?: boolean;
     /** Master switch for the plugin (browser half + host pairing surfaces). */
     enabled?: boolean;
 }

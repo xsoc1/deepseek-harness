@@ -44,7 +44,7 @@ export function postureTargets(publicBaseUrl, lanAddresses, port) {
     return [...new Set(targets)];
 }
 const defaultRequest = (options, onStatus) => {
-    const request = http.request(options, response => { onStatus(response.statusCode ?? 0); });
+    const request = http.request(options, (response) => { onStatus(response.statusCode ?? 0); });
     request.on('error', () => { onStatus(0); });
     return request;
 };
@@ -58,7 +58,7 @@ const defaultRequest = (options, onStatus) => {
  * @returns true when the probe got past the fence.
  */
 async function probeHost(port, hostHeader, request, timeoutMs) {
-    return await new Promise(resolve => {
+    return await new Promise((resolve) => {
         let settled = false;
         const finish = (exposed) => {
             if (settled)
@@ -75,7 +75,7 @@ async function probeHost(port, hostHeader, request, timeoutMs) {
             path: '/api/session.list',
             headers: { host: hostHeader, 'content-type': 'application/json' },
             timeout: timeoutMs,
-        }, status => { finish(status !== 403); });
+        }, (status) => { finish(status !== 403); });
         const timer = setTimeout(() => { finish(false); }, timeoutMs + 1_000);
         handle.on('error', () => { finish(false); });
         handle.end('{}');

@@ -29,8 +29,6 @@ export interface RemoteSettings {
   publicBaseUrl?: string
   /** When on, the plugin runs its own Cloudflare quick tunnel automatically. */
   autoTunnel?: boolean
-  /** Mobile composer: plain Enter sends; off means Enter inserts a newline. */
-  mobileEnterToSend?: boolean
 }
 
 /** What the remote-control card renders. */
@@ -53,8 +51,6 @@ export interface RemoteSettingsCardState extends CardShell {
   publicBaseUrl: CardFieldState
   /** Auto public tunnel switch. */
   autoTunnel: CardFieldState
-  /** Mobile composer Enter-to-send switch. */
-  mobileEnterToSend: CardFieldState
 }
 
 /** The registration-side face the card's slot entry injects. */
@@ -82,7 +78,6 @@ export class RemoteSettingsCardController {
       booleanField('requirePairingForLan'),
       textField('publicBaseUrl'),
       booleanField('autoTunnel'),
-      booleanField('mobileEnterToSend'),
     ])
     this.store = this.form.bind(() => this.projection())
   }
@@ -99,7 +94,6 @@ export class RemoteSettingsCardController {
       requirePairingForLan: this.form.field('requirePairingForLan'),
       publicBaseUrl: this.form.field('publicBaseUrl'),
       autoTunnel: this.form.field('autoTunnel'),
-      mobileEnterToSend: this.form.field('mobileEnterToSend'),
     }
   }
 
@@ -228,7 +222,7 @@ export function RemoteSettingsCard(props: RemoteSettingsCardProps) {
         id="settings-remote-public-base"
         label={t('settings.publicBaseUrl')}
         hint={t('settings.publicBaseUrlHint')}
-        placeholder="https://example.trycloudflare.com"
+        placeholder={t('settings.publicBaseUrlPlaceholder')}
         {...fieldProps}
         {...state.publicBaseUrl}
         onEdit={(text) => { props.edit('publicBaseUrl', text) }}
@@ -245,18 +239,6 @@ export function RemoteSettingsCard(props: RemoteSettingsCardProps) {
         {...state.autoTunnel}
         onEdit={(text) => { props.edit('autoTunnel', text) }}
         onReset={() => { props.resetField('autoTunnel') }}
-      />
-      <BooleanField
-        id="settings-remote-mobile-enter"
-        label={t('settings.mobileEnterToSend')}
-        hint={t('settings.mobileEnterToSendHint')}
-        inheritLabel={t('settings.inherit')}
-        onLabel={t('settings.on')}
-        offLabel={t('settings.off')}
-        {...fieldProps}
-        {...state.mobileEnterToSend}
-        onEdit={(text) => { props.edit('mobileEnterToSend', text) }}
-        onReset={() => { props.resetField('mobileEnterToSend') }}
       />
     </PluginSettingsCard>
   )

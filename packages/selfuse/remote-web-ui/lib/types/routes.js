@@ -3,7 +3,7 @@
  * under /api: the webserver matches exact paths before the connection
  * plugin's /api prefix, so these handlers own the full response lifecycle
  * and apply their own trust fence (loopback-only for control endpoints;
- * loopback-or-LAN for the phone-facing accept/heartbeat/status). The
+ * loopback-or-remote for accept/heartbeat/status). The
  * cookie set on accept is the device identity the api/gate listener checks
  * on every other /api request.
  */
@@ -16,7 +16,7 @@ import { readBoundedJson, writeJson } from "./http.js";
  * package's internal fence semantics (Host/Origin based, DNS-rebinding and
  * cross-site defense). The connection package no longer exports its trust
  * predicate — the fence for the /api prefix lives inside the connection
- * plugin — so the pairing routes, which must stay reachable from LAN phones
+ * plugin — so the pairing routes, which must stay reachable from remote computers
  * ahead of the connection prefix route (exact routes match first), carry
  * their own copy scoped to the literals the QR links advertise.
  * @param request - the node HTTP request.
@@ -37,7 +37,7 @@ export function isTrustedApiRequest(request, trustedHosts) {
         return false;
     }
     const hostname = hostUrl.hostname;
-    const trusted = isLoopbackClient(request) || trustedHosts.some(entry => {
+    const trusted = isLoopbackClient(request) || trustedHosts.some((entry) => {
         // A port-less entry matches the hostname on any port; an exact host:port
         // entry matches that authority verbatim (WHATWG normalization both sides).
         const entryUrl = new URL(`http://${entry}`);
@@ -249,7 +249,7 @@ export function makeRoutes(deps) {
         try {
             const { token, expiresAt } = service.issue(workspaceId, address);
             // The default base is the public (tunneled) URL when configured — a
-            // phone anywhere can reach it — and the first LAN interface otherwise.
+            // a remote computer can reach it — and the first LAN interface otherwise.
             // An explicit address always names a LAN literal.
             const base = address === undefined ? (service.publicBaseUrl ?? service.lanBaseUrl) : service.lanBaseUrlFor(address);
             if (base === undefined)
@@ -257,7 +257,7 @@ export function makeRoutes(deps) {
             const workspaceQuery = workspaceId === undefined ? '' : `&workspace=${encodeURIComponent(workspaceId)}`;
             writeJson(res, 200, {
                 ok: true,
-                url: `${base}/m/?pair=${token}${workspaceQuery}`,
+                url: `${base}/?pair=${token}${workspaceQuery}`,
                 token,
                 expiresAt,
                 // Every constructible base, so a multi-homed panel can switch the

@@ -1,5 +1,5 @@
 /**
- * The sidebar remote-control seat: the update trigger plus the phone-icon
+ * The sidebar remote-control seat: the update trigger plus the remote-access
  * trigger beside the settings button, and the pairing panel modal. Owns the
  * panel behavior — token minting on open, the status SSE subscription,
  * stop/refresh/copy — and renders the pure {@link RemotePanel} body. The
@@ -57,7 +57,7 @@ export function RemoteEntry({ wide, useWorkspaces, t }: RemoteEntryProps) {
   // pure), so mint decisions read this ref instead.
   const stateRef = useRef(state)
   useEffect(() => { stateRef.current = state }, [state])
-  const [copied, setCopied] = useState<'phone' | 'desktop' | undefined>(undefined)
+  const [copied, setCopied] = useState(false)
   const eventSource = useRef<EventSource | undefined>(undefined)
   // Generation counter for the open flow: closing (or re-opening) the panel
   // bumps it, so an in-flight issue() that resolves after a close does not
@@ -65,7 +65,7 @@ export function RemoteEntry({ wide, useWorkspaces, t }: RemoteEntryProps) {
   const openSeq = useRef(0)
 
   // The current workspace (the recent-workspace projection the shell's New
-  // Session flow targets) — the deep-link target for the phone.
+  // Session flow targets) — the deep-link target for the remote device.
   const workspaceId = useWorkspaces(s => s.recentWorkspaceId)
 
   const closeEventSource = useCallback(() => {
@@ -207,11 +207,11 @@ export function RemoteEntry({ wide, useWorkspaces, t }: RemoteEntryProps) {
     void mint().then(setState)
   }, [mint])
 
-  const handleCopy = useCallback((target: 'phone' | 'desktop', url: string) => {
+  const handleCopy = useCallback((url: string) => {
     void copyText(url).then((ok) => {
       if (!ok) return
-      setCopied(target)
-      window.setTimeout(() => { setCopied(undefined) }, 1500)
+      setCopied(true)
+      window.setTimeout(() => { setCopied(false) }, 1500)
     })
   }, [])
 

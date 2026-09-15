@@ -32,8 +32,8 @@ window.__ModuleLoader__.load({
 		let react_dom = require("react-dom");
 		let _deepseek_ai_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 		let react_jsx_runtime = require("react/jsx-runtime");
-		let _deepseek_ai_dsh_client_runtime_client = require("@deepseek-ai/dsh-client-runtime");
-		//#region ../../node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
+		let _deepseek_ai_dsh_client_runtime_client = require("@deepseek-ai/dsh-client-runtime/client");
+		//#region ../../../node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
 		function r(e) {
 			var t, f, n = "";
 			if ("string" == typeof e || "number" == typeof e) n += e;
@@ -48,7 +48,7 @@ window.__ModuleLoader__.load({
 			return n;
 		}
 		//#endregion
-		//#region ../../node_modules/.pnpm/qrcode.react@4.2.0_react@18.3.1/node_modules/qrcode.react/lib/esm/index.js
+		//#region ../../../node_modules/.pnpm/qrcode.react@4.2.0_react@18.3.1/node_modules/qrcode.react/lib/esm/index.js
 		var __defProp = Object.defineProperty;
 		var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 		var __hasOwnProp = Object.prototype.hasOwnProperty;
@@ -1233,7 +1233,7 @@ window.__ModuleLoader__.load({
 		/**
 		* Mint a fresh pairing token (one active token at a time — this invalidates
 		* any previous link).
-		* @param workspaceId - optional current workspace to deep-link the phone into.
+		* @param workspaceId - optional current workspace to open on the remote computer.
 		* @param address - optional LAN IP literal the QR must be built from (the
 		* default is the first interface); unknown literals refuse with
 		* 'unknown-address'.
@@ -1268,7 +1268,7 @@ window.__ModuleLoader__.load({
 			return await response.json();
 		}
 		/**
-		* Accept a pairing token (the phone's first open of the QR link). Success
+		* Accept a pairing token when a remote computer opens the QR link. Success
 		* sets the device cookie; the page then reloads to boot with it.
 		* @param token - the token from the URL.
 		* @returns the wire result.
@@ -1293,7 +1293,7 @@ window.__ModuleLoader__.load({
 				code: "forbidden"
 			};
 		}
-		/** Revoke mobile access (paired devices + the current token). */
+		/** Revoke remote access (paired devices + the current token). */
 		async function stopPair() {
 			const response = await fetch("/api/pair/stop", { method: "POST" });
 			if (!response.ok) throw new Error(`remote-web-ui: stop failed with ${String(response.status)}`);
@@ -1311,7 +1311,7 @@ window.__ModuleLoader__.load({
 			if (response.status === 404) return;
 			if (!response.ok) throw new Error(`remote-web-ui: revoke failed with ${String(response.status)}`);
 		}
-		/** Presence heartbeat from a paired phone (unpaired heartbeats 401 harmlessly). */
+		/** Presence heartbeat from a paired remote desktop (unpaired heartbeats 401 harmlessly). */
 		async function sendHeartbeat() {
 			await fetch("/api/pair/heartbeat", { method: "POST" });
 		}
@@ -1324,12 +1324,6 @@ window.__ModuleLoader__.load({
 				...pair !== null && pair !== "" ? { pair } : {},
 				...workspace !== null && workspace !== "" ? { workspace } : {}
 			};
-		}
-		/** Convert an issued `/m/` link into the desktop pairing form. */
-		function desktopPairUrl(mobileUrl) {
-			const url = new URL(mobileUrl);
-			url.pathname = "/";
-			return url.href;
 		}
 		/** Human-readable expiry clock, e.g. "10:35". */
 		function formatClock(epochMs) {
@@ -1377,8 +1371,8 @@ window.__ModuleLoader__.load({
 			return os ?? browser;
 		}
 		//#endregion
-		//#region \0dsh-css:packages/dsh-remote-web-ui/src/client/remote.module.css.mjs
-		const css$1 = ".fThDlq_overlay{z-index:1000;justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.fThDlq_mask{background:var(--dsw-alias-bg-mask-1);backdrop-filter:var(--dsw-mask-blur);position:absolute;inset:0}.fThDlq_trigger{width:36px;height:36px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;transition:background-color .12s,color .12s,box-shadow .12s;display:inline-flex;position:relative}.fThDlq_trigger[data-update-available]:after{box-sizing:border-box;border:2px solid var(--dsw-alias-bg-layer-1);background:var(--dsw-alias-brand-primary);content:\"\";pointer-events:none;border-radius:50%;width:8px;height:8px;position:absolute;top:4px;right:4px}.fThDlq_trigger[data-wide=wide]{border-radius:8px;flex:auto;justify-content:flex-start;gap:8px;width:auto;min-width:0;padding:0 10px}.fThDlq_trigger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.fThDlq_trigger:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.fThDlq_trigger:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.fThDlq_trigger:disabled{opacity:.5;cursor:default}.fThDlq_panel{z-index:1;box-sizing:border-box;background:var(--dsw-alias-bg-layer-2);width:560px;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:24px;flex-direction:column;gap:14px;padding:24px;font-size:14px;line-height:22px;display:flex;position:relative;overflow:auto}.fThDlq_header{align-items:flex-start;gap:12px;display:flex}.fThDlq_heading{flex:1;min-width:0}.fThDlq_title{margin:0;font-size:18px;font-weight:600;line-height:26px}.fThDlq_subtitle{color:var(--dsw-alias-label-secondary);margin:4px 0 0;font-size:13px}.fThDlq_close{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;transition:background-color .12s,color .12s,box-shadow .12s;display:inline-flex}.fThDlq_close:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_close:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.fThDlq_close:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.fThDlq_close:disabled{opacity:.5;cursor:default}.fThDlq_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;flex-direction:column;align-items:center;gap:12px;padding:16px;display:flex}.fThDlq_cardHeader{justify-content:space-between;align-items:center;gap:12px;width:100%;display:flex}.fThDlq_cardTitle{font-weight:500}.fThDlq_badge{white-space:nowrap;border-radius:999px;flex:none;align-items:center;gap:6px;min-width:0;padding:2px 10px;font-size:12px;line-height:18px;display:inline-flex}.fThDlq_badge:before{content:\"\";background:currentColor;border-radius:50%;width:8px;height:8px}.fThDlq_badge-waiting{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badge-connected{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badge-disconnected{color:var(--dsw-alias-state-warn-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badge-stopped{color:var(--dsw-alias-state-error-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badgePublic{color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badges{flex:none;align-items:center;gap:6px;display:inline-flex}.fThDlq_qrWrap{background:var(--dsw-alias-bg-base);border-radius:12px;justify-content:center;align-items:center;padding:12px;display:flex}.fThDlq_qr{display:block}.fThDlq_expired{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.fThDlq_expiry{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px}.fThDlq_hint{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.fThDlq_link{text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-caption);font-family:var(--dsw-font-mono,ui-monospace, monospace);margin:0;font-size:12px;display:block;overflow:hidden}.fThDlq_pairLinks{flex-direction:column;gap:8px;display:flex}.fThDlq_pairLinkRow{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:10px;align-items:center;gap:10px;min-width:0;padding:10px 12px;display:flex}.fThDlq_pairLinkText{flex:1;min-width:0}.fThDlq_pairLinkLabel{color:var(--dsw-alias-label-secondary);margin-bottom:3px;font-size:12px;display:block}.fThDlq_copyLink{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-button-elevated-fill);min-height:30px;color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;flex:none;align-items:center;gap:5px;padding:0 10px;display:inline-flex}.fThDlq_oneTimeHint{color:var(--dsw-alias-label-caption);margin:0;font-size:12px}.fThDlq_stoppedHint{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.fThDlq_tunnelNote{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.fThDlq_tunnelFailed{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.fThDlq_actions{gap:8px;display:flex}.fThDlq_action{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-button-elevated-fill);height:34px;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;border-radius:10px;justify-content:center;align-items:center;gap:6px;padding:0 14px;font-size:13px;transition:background-color .12s,border-color .12s,box-shadow .12s;display:inline-flex}.fThDlq_action:hover:not(:disabled){background:var(--dsw-alias-button-floating-hover)}.fThDlq_action:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.fThDlq_action:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.fThDlq_action:disabled{opacity:.5;cursor:default}.fThDlq_banner{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;padding:16px}.fThDlq_bannerTitle{color:var(--dsw-alias-state-warn-primary);margin:0;font-weight:500}.fThDlq_bannerHint{color:var(--dsw-alias-label-secondary);margin:6px 0 0;font-size:13px}.fThDlq_fencePage{z-index:2000;box-sizing:border-box;background:var(--dsw-alias-bg-base);text-align:center;flex-direction:column;justify-content:center;align-items:center;padding:40px 24px;display:flex;position:fixed;inset:0;overflow:auto}.fThDlq_fenceCard{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:min(520px,100%);box-shadow:var(--dsw-shadow-lv3);text-align:center;border-radius:20px;margin-inline:auto;padding:36px 40px}.fThDlq_fenceMark{background:var(--dsw-alias-state-error-secondary);width:44px;height:44px;color:var(--dsw-alias-state-error-primary);border-radius:50%;place-items:center;margin-inline:auto;font-size:24px;line-height:1;display:grid}.fThDlq_fenceEyebrow{color:var(--dsw-alias-state-error-primary);margin:22px 0 8px;font-size:13px;font-weight:600}.fThDlq_fenceTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:24px;line-height:1.35}.fThDlq_fenceDetail{color:var(--dsw-alias-label-secondary);margin:12px 0 0;font-size:14px;line-height:1.65}.fThDlq_fenceSteps{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);text-align:left;border-radius:12px;margin:24px auto 0;padding:20px 20px 20px 42px;font-size:14px;line-height:1.65}.fThDlq_fenceSteps li+li{margin-top:8px}.fThDlq_fenceRetry{border:1px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-brand-primary);color:#fff;width:100%;font:inherit;cursor:pointer;border-radius:10px;margin-top:24px;padding:11px 16px;font-weight:500}.fThDlq_fenceRetry:hover{filter:brightness(.96)}.fThDlq_fenceRetry:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:3px}.fThDlq_fenceFootnote{color:var(--dsw-alias-label-tertiary);margin:14px 0 0;font-size:12px;line-height:1.55}.fThDlq_addresses{border:none;margin:12px 0 0;padding:0}.fThDlq_addresses legend{color:var(--dsw-alias-label-secondary);padding:0;font-size:13px}.fThDlq_address{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;cursor:pointer;border-radius:6px;align-items:center;gap:8px;margin-top:6px;padding:4px 6px;font-size:13px;transition:background-color .12s;display:flex}.fThDlq_address:hover{background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_address input:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);border-radius:50%;outline:none}.fThDlq_addressValue{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);flex:1;font-size:12px;overflow:hidden}.fThDlq_addressHint{color:var(--dsw-alias-label-tertiary);margin:6px 0 0;font-size:12px}.fThDlq_devices{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;flex-direction:column;gap:8px;padding:12px 16px 14px;display:flex}.fThDlq_devicesTitle{margin:0;font-size:13px;font-weight:500;line-height:20px}.fThDlq_devicesEmpty{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.fThDlq_deviceList{flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;display:flex}.fThDlq_deviceRow{justify-content:space-between;align-items:flex-start;gap:12px;display:flex}.fThDlq_deviceMeta{flex-direction:column;gap:2px;min-width:0;display:flex}.fThDlq_deviceName{text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500;overflow:hidden}.fThDlq_devicePresence{font-size:12px;line-height:18px}.fThDlq_deviceOnline{color:var(--dsw-alias-state-success-primary)}.fThDlq_deviceOffline{color:var(--dsw-alias-label-secondary)}.fThDlq_deviceSeen{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;font-size:12px}.fThDlq_deviceRevoke{color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;flex:none;padding:6px 10px;font-size:12px;transition:background-color .12s,color .12s}.fThDlq_deviceRevoke:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.fThDlq_deviceRevoke:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}@media (prefers-reduced-motion:reduce){.fThDlq_trigger,.fThDlq_close,.fThDlq_action,.fThDlq_address,.fThDlq_deviceRevoke{transition:none}}.fThDlq_entryRow{flex:none;align-items:center;gap:6px;min-width:0;display:flex}.fThDlq_entryRow[data-rail=rail]{flex-direction:column-reverse;gap:4px}.fThDlq_updateStatus{margin:0;font-weight:600}.fThDlq_updateDetail{color:var(--dsw-alias-label-secondary);margin:6px 0 0;font-size:13px}.fThDlq_updateError{color:var(--dsw-alias-text-danger,var(--dsw-alias-label-primary));margin:0;font-weight:600}.fThDlq_updateOutput{background:var(--dsw-alias-bg-layer-1);max-height:180px;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-all;border-radius:10px;margin:10px 0 0;padding:10px 12px;font-size:12px;line-height:18px;overflow:auto}.fThDlq_updateList{flex-direction:column;gap:6px;margin:12px 0 0;padding:0;list-style:none;display:flex}.fThDlq_updateListItem{justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;display:flex}.fThDlq_updateListName{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);overflow:hidden}.fThDlq_updateListVersions{color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;flex:none}.fThDlq_updateActions{justify-content:flex-end;margin-top:16px;display:flex}.fThDlq_updateRetry{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);cursor:pointer;border:none;border-radius:10px;align-items:center;gap:6px;padding:8px 14px;font-size:13px;transition:background-color .12s,color .12s;display:inline-flex}.fThDlq_updateRetry:hover{background:var(--dsw-alias-interactive-bg-active)}@media (prefers-reduced-motion:reduce){.fThDlq_updateRetry{transition:none}}";
+		//#region \0dsh-css:/mnt/f/tools/deepseek-harness/packages/selfuse/remote-web-ui/src/client/remote.module.css.mjs
+		const css$1 = ".ChZH2q_overlay{z-index:1000;justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.ChZH2q_mask{background:var(--dsw-alias-bg-mask-1);backdrop-filter:var(--dsw-mask-blur);position:absolute;inset:0}.ChZH2q_trigger{width:36px;height:36px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;transition:background-color .12s,color .12s,box-shadow .12s;display:inline-flex;position:relative}.ChZH2q_trigger[data-update-available]:after{box-sizing:border-box;border:2px solid var(--dsw-alias-bg-layer-1);background:var(--dsw-alias-brand-primary);content:\"\";pointer-events:none;border-radius:50%;width:8px;height:8px;position:absolute;top:4px;right:4px}.ChZH2q_trigger[data-wide=wide]{border-radius:8px;flex:auto;justify-content:flex-start;gap:8px;width:auto;min-width:0;padding:0 10px}.ChZH2q_trigger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.ChZH2q_trigger:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.ChZH2q_trigger:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.ChZH2q_trigger:disabled{opacity:.5;cursor:default}.ChZH2q_panel{z-index:1;box-sizing:border-box;background:var(--dsw-alias-bg-layer-2);width:560px;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:24px;flex-direction:column;gap:14px;padding:24px;font-size:14px;line-height:22px;display:flex;position:relative;overflow:auto}.ChZH2q_header{align-items:flex-start;gap:12px;display:flex}.ChZH2q_heading{flex:1;min-width:0}.ChZH2q_title{margin:0;font-size:18px;font-weight:600;line-height:26px}.ChZH2q_subtitle{color:var(--dsw-alias-label-secondary);margin:4px 0 0;font-size:13px}.ChZH2q_close{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;transition:background-color .12s,color .12s,box-shadow .12s;display:inline-flex}.ChZH2q_close:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.ChZH2q_close:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.ChZH2q_close:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.ChZH2q_close:disabled{opacity:.5;cursor:default}.ChZH2q_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;flex-direction:column;align-items:center;gap:12px;padding:16px;display:flex}.ChZH2q_cardHeader{justify-content:space-between;align-items:center;gap:12px;width:100%;display:flex}.ChZH2q_cardTitle{font-weight:500}.ChZH2q_badge{white-space:nowrap;border-radius:999px;flex:none;align-items:center;gap:6px;min-width:0;padding:2px 10px;font-size:12px;line-height:18px;display:inline-flex}.ChZH2q_badge:before{content:\"\";background:currentColor;border-radius:50%;width:8px;height:8px}.ChZH2q_badge-waiting{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}.ChZH2q_badge-connected{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-interactive-bg-hover)}.ChZH2q_badge-disconnected{color:var(--dsw-alias-state-warn-primary);background:var(--dsw-alias-interactive-bg-hover)}.ChZH2q_badge-stopped{color:var(--dsw-alias-state-error-primary);background:var(--dsw-alias-interactive-bg-hover)}.ChZH2q_badgePublic{color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-hover)}.ChZH2q_badges{flex:none;align-items:center;gap:6px;display:inline-flex}.ChZH2q_qrWrap{background:var(--dsw-alias-bg-base);border-radius:12px;justify-content:center;align-items:center;padding:12px;display:flex}.ChZH2q_qr{display:block}.ChZH2q_expired{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.ChZH2q_expiry{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px}.ChZH2q_hint{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.ChZH2q_link{text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-caption);font-family:var(--dsw-font-mono,ui-monospace, monospace);margin:0;font-size:12px;display:block;overflow:hidden}.ChZH2q_pairLinks{flex-direction:column;gap:8px;display:flex}.ChZH2q_pairLinkRow{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:10px;align-items:center;gap:10px;min-width:0;padding:10px 12px;display:flex}.ChZH2q_pairLinkText{flex:1;min-width:0}.ChZH2q_pairLinkLabel{color:var(--dsw-alias-label-secondary);margin-bottom:3px;font-size:12px;display:block}.ChZH2q_copyLink{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-button-elevated-fill);min-height:30px;color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;flex:none;align-items:center;gap:5px;padding:0 10px;display:inline-flex}.ChZH2q_oneTimeHint{color:var(--dsw-alias-label-caption);margin:0;font-size:12px}.ChZH2q_stoppedHint{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.ChZH2q_tunnelNote{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.ChZH2q_tunnelFailed{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.ChZH2q_actions{gap:8px;display:flex}.ChZH2q_action{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-button-elevated-fill);height:34px;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;border-radius:10px;justify-content:center;align-items:center;gap:6px;padding:0 14px;font-size:13px;transition:background-color .12s,border-color .12s,box-shadow .12s;display:inline-flex}.ChZH2q_action:hover:not(:disabled){background:var(--dsw-alias-button-floating-hover)}.ChZH2q_action:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.ChZH2q_action:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.ChZH2q_action:disabled{opacity:.5;cursor:default}.ChZH2q_banner{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;padding:16px}.ChZH2q_bannerTitle{color:var(--dsw-alias-state-warn-primary);margin:0;font-weight:500}.ChZH2q_bannerHint{color:var(--dsw-alias-label-secondary);margin:6px 0 0;font-size:13px}.ChZH2q_fencePage{z-index:2000;box-sizing:border-box;background:var(--dsw-alias-bg-base);text-align:center;flex-direction:column;justify-content:center;align-items:center;padding:40px 24px;display:flex;position:fixed;inset:0;overflow:auto}.ChZH2q_fenceCard{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:min(520px,100%);box-shadow:var(--dsw-shadow-lv3);text-align:center;border-radius:20px;margin-inline:auto;padding:36px 40px}.ChZH2q_fenceMark{background:var(--dsw-alias-state-error-secondary);width:44px;height:44px;color:var(--dsw-alias-state-error-primary);border-radius:50%;place-items:center;margin-inline:auto;font-size:24px;line-height:1;display:grid}.ChZH2q_fenceEyebrow{color:var(--dsw-alias-state-error-primary);margin:22px 0 8px;font-size:13px;font-weight:600}.ChZH2q_fenceTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:24px;line-height:1.35}.ChZH2q_fenceDetail{color:var(--dsw-alias-label-secondary);margin:12px 0 0;font-size:14px;line-height:1.65}.ChZH2q_fenceSteps{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);text-align:left;border-radius:12px;margin:24px auto 0;padding:20px 20px 20px 42px;font-size:14px;line-height:1.65}.ChZH2q_fenceSteps li+li{margin-top:8px}.ChZH2q_fenceRetry{border:1px solid var(--dsw-alias-brand-primary);background:var(--dsw-alias-brand-primary);color:#fff;width:100%;font:inherit;cursor:pointer;border-radius:10px;margin-top:24px;padding:11px 16px;font-weight:500}.ChZH2q_fenceRetry:hover{filter:brightness(.96)}.ChZH2q_fenceRetry:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:3px}.ChZH2q_fenceFootnote{color:var(--dsw-alias-label-tertiary);margin:14px 0 0;font-size:12px;line-height:1.55}.ChZH2q_addresses{border:none;margin:12px 0 0;padding:0}.ChZH2q_addresses legend{color:var(--dsw-alias-label-secondary);padding:0;font-size:13px}.ChZH2q_address{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;cursor:pointer;border-radius:6px;align-items:center;gap:8px;margin-top:6px;padding:4px 6px;font-size:13px;transition:background-color .12s;display:flex}.ChZH2q_address:hover{background:var(--dsw-alias-interactive-bg-hover)}.ChZH2q_address input:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);border-radius:50%;outline:none}.ChZH2q_addressValue{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);flex:1;font-size:12px;overflow:hidden}.ChZH2q_addressHint{color:var(--dsw-alias-label-tertiary);margin:6px 0 0;font-size:12px}.ChZH2q_devices{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;flex-direction:column;gap:8px;padding:12px 16px 14px;display:flex}.ChZH2q_devicesTitle{margin:0;font-size:13px;font-weight:500;line-height:20px}.ChZH2q_devicesEmpty{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.ChZH2q_deviceList{flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;display:flex}.ChZH2q_deviceRow{justify-content:space-between;align-items:flex-start;gap:12px;display:flex}.ChZH2q_deviceMeta{flex-direction:column;gap:2px;min-width:0;display:flex}.ChZH2q_deviceName{text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500;overflow:hidden}.ChZH2q_devicePresence{font-size:12px;line-height:18px}.ChZH2q_deviceOnline{color:var(--dsw-alias-state-success-primary)}.ChZH2q_deviceOffline{color:var(--dsw-alias-label-secondary)}.ChZH2q_deviceSeen{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;font-size:12px}.ChZH2q_deviceRevoke{color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;flex:none;padding:6px 10px;font-size:12px;transition:background-color .12s,color .12s}.ChZH2q_deviceRevoke:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.ChZH2q_deviceRevoke:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}@media (prefers-reduced-motion:reduce){.ChZH2q_trigger,.ChZH2q_close,.ChZH2q_action,.ChZH2q_address,.ChZH2q_deviceRevoke{transition:none}}.ChZH2q_entryRow{flex:none;align-items:center;gap:6px;min-width:0;display:flex}.ChZH2q_entryRow[data-rail=rail]{flex-direction:column-reverse;gap:4px}.ChZH2q_updateStatus{margin:0;font-weight:600}.ChZH2q_updateDetail{color:var(--dsw-alias-label-secondary);margin:6px 0 0;font-size:13px}.ChZH2q_updateError{color:var(--dsw-alias-text-danger,var(--dsw-alias-label-primary));margin:0;font-weight:600}.ChZH2q_updateOutput{background:var(--dsw-alias-bg-layer-1);max-height:180px;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-all;border-radius:10px;margin:10px 0 0;padding:10px 12px;font-size:12px;line-height:18px;overflow:auto}.ChZH2q_updateList{flex-direction:column;gap:6px;margin:12px 0 0;padding:0;list-style:none;display:flex}.ChZH2q_updateListItem{justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;display:flex}.ChZH2q_updateListName{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);overflow:hidden}.ChZH2q_updateListVersions{color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;flex:none}.ChZH2q_updateActions{justify-content:flex-end;margin-top:16px;display:flex}.ChZH2q_updateRetry{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);cursor:pointer;border:none;border-radius:10px;align-items:center;gap:6px;padding:8px 14px;font-size:13px;transition:background-color .12s,color .12s;display:inline-flex}.ChZH2q_updateRetry:hover{background:var(--dsw-alias-interactive-bg-active)}@media (prefers-reduced-motion:reduce){.ChZH2q_updateRetry{transition:none}}";
 		const tagId$1 = "@dsh-selfuse/remote-web-ui/remote.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$1) + "]") === null) {
 			const tag = document.createElement("style");
@@ -1388,87 +1382,87 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var remote_module_css_default = {
-			"action": "fThDlq_action",
-			"actions": "fThDlq_actions",
-			"address": "fThDlq_address",
-			"addressHint": "fThDlq_addressHint",
-			"addressValue": "fThDlq_addressValue",
-			"addresses": "fThDlq_addresses",
-			"badge": "fThDlq_badge",
-			"badge-connected": "fThDlq_badge-connected",
-			"badge-disconnected": "fThDlq_badge-disconnected",
-			"badge-stopped": "fThDlq_badge-stopped",
-			"badge-waiting": "fThDlq_badge-waiting",
-			"badgePublic": "fThDlq_badgePublic",
-			"badges": "fThDlq_badges",
-			"banner": "fThDlq_banner",
-			"bannerHint": "fThDlq_bannerHint",
-			"bannerTitle": "fThDlq_bannerTitle",
-			"card": "fThDlq_card",
-			"cardHeader": "fThDlq_cardHeader",
-			"cardTitle": "fThDlq_cardTitle",
-			"close": "fThDlq_close",
-			"copyLink": "fThDlq_copyLink",
-			"deviceList": "fThDlq_deviceList",
-			"deviceMeta": "fThDlq_deviceMeta",
-			"deviceName": "fThDlq_deviceName",
-			"deviceOffline": "fThDlq_deviceOffline",
-			"deviceOnline": "fThDlq_deviceOnline",
-			"devicePresence": "fThDlq_devicePresence",
-			"deviceRevoke": "fThDlq_deviceRevoke",
-			"deviceRow": "fThDlq_deviceRow",
-			"deviceSeen": "fThDlq_deviceSeen",
-			"devices": "fThDlq_devices",
-			"devicesEmpty": "fThDlq_devicesEmpty",
-			"devicesTitle": "fThDlq_devicesTitle",
-			"entryRow": "fThDlq_entryRow",
-			"expired": "fThDlq_expired",
-			"expiry": "fThDlq_expiry",
-			"fenceCard": "fThDlq_fenceCard",
-			"fenceDetail": "fThDlq_fenceDetail",
-			"fenceEyebrow": "fThDlq_fenceEyebrow",
-			"fenceFootnote": "fThDlq_fenceFootnote",
-			"fenceMark": "fThDlq_fenceMark",
-			"fencePage": "fThDlq_fencePage",
-			"fenceRetry": "fThDlq_fenceRetry",
-			"fenceSteps": "fThDlq_fenceSteps",
-			"fenceTitle": "fThDlq_fenceTitle",
-			"header": "fThDlq_header",
-			"heading": "fThDlq_heading",
-			"hint": "fThDlq_hint",
-			"link": "fThDlq_link",
-			"mask": "fThDlq_mask",
-			"oneTimeHint": "fThDlq_oneTimeHint",
-			"overlay": "fThDlq_overlay",
-			"pairLinkLabel": "fThDlq_pairLinkLabel",
-			"pairLinkRow": "fThDlq_pairLinkRow",
-			"pairLinkText": "fThDlq_pairLinkText",
-			"pairLinks": "fThDlq_pairLinks",
-			"panel": "fThDlq_panel",
-			"qr": "fThDlq_qr",
-			"qrWrap": "fThDlq_qrWrap",
-			"stoppedHint": "fThDlq_stoppedHint",
-			"subtitle": "fThDlq_subtitle",
-			"title": "fThDlq_title",
-			"trigger": "fThDlq_trigger",
-			"tunnelFailed": "fThDlq_tunnelFailed",
-			"tunnelNote": "fThDlq_tunnelNote",
-			"updateActions": "fThDlq_updateActions",
-			"updateDetail": "fThDlq_updateDetail",
-			"updateError": "fThDlq_updateError",
-			"updateList": "fThDlq_updateList",
-			"updateListItem": "fThDlq_updateListItem",
-			"updateListName": "fThDlq_updateListName",
-			"updateListVersions": "fThDlq_updateListVersions",
-			"updateOutput": "fThDlq_updateOutput",
-			"updateRetry": "fThDlq_updateRetry",
-			"updateStatus": "fThDlq_updateStatus"
+			"action": "ChZH2q_action",
+			"actions": "ChZH2q_actions",
+			"address": "ChZH2q_address",
+			"addressHint": "ChZH2q_addressHint",
+			"addressValue": "ChZH2q_addressValue",
+			"addresses": "ChZH2q_addresses",
+			"badge": "ChZH2q_badge",
+			"badge-connected": "ChZH2q_badge-connected",
+			"badge-disconnected": "ChZH2q_badge-disconnected",
+			"badge-stopped": "ChZH2q_badge-stopped",
+			"badge-waiting": "ChZH2q_badge-waiting",
+			"badgePublic": "ChZH2q_badgePublic",
+			"badges": "ChZH2q_badges",
+			"banner": "ChZH2q_banner",
+			"bannerHint": "ChZH2q_bannerHint",
+			"bannerTitle": "ChZH2q_bannerTitle",
+			"card": "ChZH2q_card",
+			"cardHeader": "ChZH2q_cardHeader",
+			"cardTitle": "ChZH2q_cardTitle",
+			"close": "ChZH2q_close",
+			"copyLink": "ChZH2q_copyLink",
+			"deviceList": "ChZH2q_deviceList",
+			"deviceMeta": "ChZH2q_deviceMeta",
+			"deviceName": "ChZH2q_deviceName",
+			"deviceOffline": "ChZH2q_deviceOffline",
+			"deviceOnline": "ChZH2q_deviceOnline",
+			"devicePresence": "ChZH2q_devicePresence",
+			"deviceRevoke": "ChZH2q_deviceRevoke",
+			"deviceRow": "ChZH2q_deviceRow",
+			"deviceSeen": "ChZH2q_deviceSeen",
+			"devices": "ChZH2q_devices",
+			"devicesEmpty": "ChZH2q_devicesEmpty",
+			"devicesTitle": "ChZH2q_devicesTitle",
+			"entryRow": "ChZH2q_entryRow",
+			"expired": "ChZH2q_expired",
+			"expiry": "ChZH2q_expiry",
+			"fenceCard": "ChZH2q_fenceCard",
+			"fenceDetail": "ChZH2q_fenceDetail",
+			"fenceEyebrow": "ChZH2q_fenceEyebrow",
+			"fenceFootnote": "ChZH2q_fenceFootnote",
+			"fenceMark": "ChZH2q_fenceMark",
+			"fencePage": "ChZH2q_fencePage",
+			"fenceRetry": "ChZH2q_fenceRetry",
+			"fenceSteps": "ChZH2q_fenceSteps",
+			"fenceTitle": "ChZH2q_fenceTitle",
+			"header": "ChZH2q_header",
+			"heading": "ChZH2q_heading",
+			"hint": "ChZH2q_hint",
+			"link": "ChZH2q_link",
+			"mask": "ChZH2q_mask",
+			"oneTimeHint": "ChZH2q_oneTimeHint",
+			"overlay": "ChZH2q_overlay",
+			"pairLinkLabel": "ChZH2q_pairLinkLabel",
+			"pairLinkRow": "ChZH2q_pairLinkRow",
+			"pairLinkText": "ChZH2q_pairLinkText",
+			"pairLinks": "ChZH2q_pairLinks",
+			"panel": "ChZH2q_panel",
+			"qr": "ChZH2q_qr",
+			"qrWrap": "ChZH2q_qrWrap",
+			"stoppedHint": "ChZH2q_stoppedHint",
+			"subtitle": "ChZH2q_subtitle",
+			"title": "ChZH2q_title",
+			"trigger": "ChZH2q_trigger",
+			"tunnelFailed": "ChZH2q_tunnelFailed",
+			"tunnelNote": "ChZH2q_tunnelNote",
+			"updateActions": "ChZH2q_updateActions",
+			"updateDetail": "ChZH2q_updateDetail",
+			"updateError": "ChZH2q_updateError",
+			"updateList": "ChZH2q_updateList",
+			"updateListItem": "ChZH2q_updateListItem",
+			"updateListName": "ChZH2q_updateListName",
+			"updateListVersions": "ChZH2q_updateListVersions",
+			"updateOutput": "ChZH2q_updateOutput",
+			"updateRetry": "ChZH2q_updateRetry",
+			"updateStatus": "ChZH2q_updateStatus"
 		};
 		//#endregion
 		//#region src/client/RemotePanel.tsx
 		/**
-		* The mobile remote-control panel body: status card (state text + badge),
-		* the QR code, the open-on-phone hint with the link text, and the three
+		* The remote-access panel body: status card (state text + badge), the QR
+		* code, the remote-device link, and the three
 		* actions (stop / refresh / copy). Pure presentation — all state and
 		* actions arrive through props from the entry's behavior component.
 		*/
@@ -1611,15 +1605,15 @@ window.__ModuleLoader__.load({
 						className: remote_module_css_default.hint,
 						children: state.public ? t("pair.publicHint") : t("pair.hint")
 					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: remote_module_css_default.pairLinks,
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: remote_module_css_default.pairLinkRow,
 							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: remote_module_css_default.pairLinkText,
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 									className: remote_module_css_default.pairLinkLabel,
-									children: t("pair.phoneLabel")
+									children: t("pair.linkLabel")
 								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
 									className: remote_module_css_default.link,
 									title: state.url,
@@ -1628,28 +1622,10 @@ window.__ModuleLoader__.load({
 							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 								type: "button",
 								className: remote_module_css_default.copyLink,
-								onClick: () => onCopy("phone", state.url),
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconCopyOutline16, { size: 14 }), copied === "phone" ? t("action.copied") : t("action.copyPhone")]
+								onClick: () => onCopy(state.url),
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconCopyOutline16, { size: 14 }), copied ? t("action.copied") : t("action.copy")]
 							})]
-						}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: remote_module_css_default.pairLinkRow,
-							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: remote_module_css_default.pairLinkText,
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: remote_module_css_default.pairLinkLabel,
-									children: t("pair.desktopLabel")
-								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
-									className: remote_module_css_default.link,
-									title: desktopPairUrl(state.url),
-									children: desktopPairUrl(state.url)
-								})]
-							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-								type: "button",
-								className: remote_module_css_default.copyLink,
-								onClick: () => onCopy("desktop", desktopPairUrl(state.url)),
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.IconCopyOutline16, { size: 14 }), copied === "desktop" ? t("action.copied") : t("action.copyDesktop")]
-							})]
-						})]
+						})
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 						className: remote_module_css_default.oneTimeHint,
@@ -2188,7 +2164,7 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region src/client/RemoteEntry.tsx
 		/**
-		* The sidebar remote-control seat: the update trigger plus the phone-icon
+		* The sidebar remote-control seat: the update trigger plus the remote-access
 		* trigger beside the settings button, and the pairing panel modal. Owns the
 		* panel behavior — token minting on open, the status SSE subscription,
 		* stop/refresh/copy — and renders the pure {@link RemotePanel} body. The
@@ -2229,7 +2205,7 @@ window.__ModuleLoader__.load({
 			(0, react.useEffect)(() => {
 				stateRef.current = state;
 			}, [state]);
-			const [copied, setCopied] = (0, react.useState)(void 0);
+			const [copied, setCopied] = (0, react.useState)(false);
 			const eventSource = (0, react.useRef)(void 0);
 			const openSeq = (0, react.useRef)(0);
 			const workspaceId = useWorkspaces((s) => s.recentWorkspaceId);
@@ -2340,12 +2316,12 @@ window.__ModuleLoader__.load({
 			const handlePickPublic = (0, react.useCallback)(() => {
 				mint().then(setState);
 			}, [mint]);
-			const handleCopy = (0, react.useCallback)((target, url) => {
+			const handleCopy = (0, react.useCallback)((url) => {
 				copyText(url).then((ok) => {
 					if (!ok) return;
-					setCopied(target);
+					setCopied(true);
 					window.setTimeout(() => {
-						setCopied(void 0);
+						setCopied(false);
 					}, 1500);
 				});
 			}, []);
@@ -2401,17 +2377,12 @@ window.__ModuleLoader__.load({
 		* @returns the entry element tree.
 		*/
 		function FooterRemoteEntry(props) {
-			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(RemoteEntry, {
-				wide: props.wide,
-				useWorkspaces: () => void 0,
-				useSessions: () => void 0,
-				t: props.t
-			});
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(RemoteEntry, { ...props });
 		}
 		//#endregion
 		//#region src/client/PairFailedNotice.tsx
 		/**
-		* One-time failed-pairing notice: a fixed toast rendered on the phone after
+		* One-time failed-pairing notice: a fixed toast rendered after
 		* a QR accept failed (invalid/used token or a network error). Mounted by
 		* the client apply with a plain React root — no slot machinery for a
 		* transient diagnostic.
@@ -2445,8 +2416,8 @@ window.__ModuleLoader__.load({
 			});
 		}
 		//#endregion
-		//#region \0dsh-css:packages/dsh-remote-web-ui/src/client/settings-card.module.css.mjs
-		const css = ".Kwoi6G_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);border-radius:12px;list-style:none;transition:border-color .16s,background .16s}.Kwoi6G_card:hover{border-color:var(--dsw-alias-label-dimmed)}.Kwoi6G_cardOpen{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-label-dimmed)}.Kwoi6G_header{appearance:none;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;background:0 0;border:0;border-radius:12px;align-items:center;gap:12px;padding:14px 16px;display:flex}.Kwoi6G_header:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}.Kwoi6G_headerStatic{border-radius:12px;align-items:center;gap:12px;width:100%;padding:14px 16px;display:flex}.Kwoi6G_headText{flex-direction:column;flex:1;gap:4px;min-width:0;display:flex}.Kwoi6G_name{color:var(--dsw-alias-label-primary);font-size:15px;font-weight:600;line-height:1.4}.Kwoi6G_description{color:var(--dsw-alias-label-tertiary);font-size:13px;line-height:1.5}.Kwoi6G_pending{white-space:nowrap;background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:1px 8px;font-size:11px;font-weight:500;line-height:17px}.Kwoi6G_chevron{color:var(--dsw-alias-label-tertiary);flex:none;transition:transform .16s}.Kwoi6G_chevronOpen{transform:rotate(180deg)}.Kwoi6G_body{border-top:1px solid var(--dsw-alias-border-l2);margin:0 16px;padding-bottom:8px}.Kwoi6G_readOnly{color:var(--dsw-alias-label-tertiary);margin:12px 0 0;font-size:12px;line-height:1.5}.Kwoi6G_notExposed{color:var(--dsw-alias-state-warn-primary);margin:12px 0 0;font-size:12px;line-height:1.5}.Kwoi6G_footer{border-top:1px solid var(--dsw-alias-border-l2);justify-content:flex-end;align-items:center;gap:8px;padding:12px 0 4px;display:flex}.Kwoi6G_failed{min-width:0;color:var(--dsw-alias-label-error);text-overflow:ellipsis;white-space:nowrap;flex:1;margin:0;font-size:12px;line-height:1.5;overflow:hidden}.Kwoi6G_discard,.Kwoi6G_save{appearance:none;font:inherit;cursor:pointer;border:1px solid #0000;border-radius:8px;padding:5px 14px;font-size:13px;line-height:1.5}.Kwoi6G_discard{border-color:var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);background:0 0}.Kwoi6G_discard:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.Kwoi6G_save{background:var(--dsw-alias-label-primary);color:var(--dsw-alias-bg-layer-3)}.Kwoi6G_discard:disabled,.Kwoi6G_save:disabled{opacity:.4;cursor:default}.Kwoi6G_discard:focus-visible,.Kwoi6G_save:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}.Kwoi6G_field{flex-direction:column;gap:6px;padding:12px 0;display:flex}.Kwoi6G_field+.Kwoi6G_field{border-top:1px solid var(--dsw-alias-border-l2)}.Kwoi6G_head{align-items:center;gap:8px;display:flex}.Kwoi6G_label{min-width:0;color:var(--dsw-alias-label-primary);flex:1;font-size:13px;font-weight:500;line-height:1.5}.Kwoi6G_badges{align-items:center;gap:8px;display:inline-flex}.Kwoi6G_badge{white-space:nowrap;background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;padding:1px 8px;font-size:11px;font-weight:500;line-height:17px}.Kwoi6G_reset{font:inherit;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;padding:0;font-size:12px;line-height:1.5}.Kwoi6G_reset:hover:not(:disabled){color:var(--dsw-alias-label-primary)}.Kwoi6G_reset:disabled{cursor:default}.Kwoi6G_reset:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px;outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}.Kwoi6G_input,.Kwoi6G_select{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);height:34px;font:inherit;color:var(--dsw-alias-label-primary);border-radius:8px;padding:0 12px;font-size:13px;line-height:1.5}.Kwoi6G_input:focus-visible,.Kwoi6G_select:focus-visible{border-color:var(--dsw-alias-brand-primary);outline:none}.Kwoi6G_input:disabled,.Kwoi6G_select:disabled{color:var(--dsw-alias-label-tertiary);cursor:default}.Kwoi6G_inputInvalid{border:1px solid var(--dsw-alias-label-error);background:var(--dsw-alias-bg-layer-3);height:34px;font:inherit;color:var(--dsw-alias-label-primary);border-radius:8px;padding:0 12px;font-size:13px;line-height:1.5}.Kwoi6G_inputInvalid:focus-visible{outline:2px solid var(--dsw-alias-label-error);outline-offset:1px;border-color:var(--dsw-alias-label-error)}.Kwoi6G_selectWrap{position:relative}.Kwoi6G_selectButton{appearance:none;text-align:left;cursor:pointer;justify-content:space-between;align-items:center;gap:8px;width:100%;display:flex}.Kwoi6G_selectLabel{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Kwoi6G_selectChevron{color:var(--dsw-alias-label-tertiary);flex:none;transition:transform .16s}.Kwoi6G_selectChevronOpen{transform:rotate(180deg)}.Kwoi6G_selectPopup{z-index:40;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);max-height:240px;box-shadow:0 8px 24px var(--dsw-alias-bg-mask-2);opacity:0;border-radius:8px;flex-direction:column;padding:4px;transition:opacity .1s,transform .1s;display:flex;position:absolute;top:calc(100% + 4px);left:0;right:0;overflow-y:auto;transform:translateY(-4px)}.Kwoi6G_selectPopupOpen{opacity:1;transform:none}.Kwoi6G_selectPopupClose{opacity:0;pointer-events:none;transform:translateY(-4px)}.Kwoi6G_selectOption{color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;border-radius:6px;flex-shrink:0;padding:6px 10px;font-size:13px;line-height:1.5;overflow:hidden}.Kwoi6G_selectOption:hover,.Kwoi6G_selectOptionActive{background:var(--dsw-alias-interactive-bg-hover)}.Kwoi6G_selectOptionSelected{color:var(--dsw-alias-brand-primary);background:color-mix(in srgb, var(--dsw-alias-brand-primary-new-colorprimary-new-color) 10%, transparent);font-weight:500}.Kwoi6G_invalid{color:var(--dsw-alias-label-error);margin:0;font-size:12px;line-height:1.5}.Kwoi6G_hint{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px;line-height:1.5}@media (prefers-reduced-motion:reduce){.Kwoi6G_card,.Kwoi6G_header,.Kwoi6G_chevron,.Kwoi6G_chevronOpen,.Kwoi6G_discard,.Kwoi6G_save,.Kwoi6G_selectChevron,.Kwoi6G_selectChevronOpen,.Kwoi6G_selectPopup{transition:none}}";
+		//#region \0dsh-css:/mnt/f/tools/deepseek-harness/packages/selfuse/remote-web-ui/src/client/settings-card.module.css.mjs
+		const css = ".kUjVaq_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);border-radius:12px;list-style:none;transition:border-color .16s,background .16s}.kUjVaq_card:hover{border-color:var(--dsw-alias-label-dimmed)}.kUjVaq_cardOpen{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-label-dimmed)}.kUjVaq_header{appearance:none;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;background:0 0;border:0;border-radius:12px;align-items:center;gap:12px;padding:14px 16px;display:flex}.kUjVaq_header:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}.kUjVaq_headerStatic{border-radius:12px;align-items:center;gap:12px;width:100%;padding:14px 16px;display:flex}.kUjVaq_headText{flex-direction:column;flex:1;gap:4px;min-width:0;display:flex}.kUjVaq_name{color:var(--dsw-alias-label-primary);font-size:15px;font-weight:600;line-height:1.4}.kUjVaq_description{color:var(--dsw-alias-label-tertiary);font-size:13px;line-height:1.5}.kUjVaq_pending{white-space:nowrap;background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:1px 8px;font-size:11px;font-weight:500;line-height:17px}.kUjVaq_chevron{color:var(--dsw-alias-label-tertiary);flex:none;transition:transform .16s}.kUjVaq_chevronOpen{transform:rotate(180deg)}.kUjVaq_body{border-top:1px solid var(--dsw-alias-border-l2);margin:0 16px;padding-bottom:8px}.kUjVaq_readOnly{color:var(--dsw-alias-label-tertiary);margin:12px 0 0;font-size:12px;line-height:1.5}.kUjVaq_notExposed{color:var(--dsw-alias-state-warn-primary);margin:12px 0 0;font-size:12px;line-height:1.5}.kUjVaq_footer{border-top:1px solid var(--dsw-alias-border-l2);justify-content:flex-end;align-items:center;gap:8px;padding:12px 0 4px;display:flex}.kUjVaq_failed{min-width:0;color:var(--dsw-alias-label-error);text-overflow:ellipsis;white-space:nowrap;flex:1;margin:0;font-size:12px;line-height:1.5;overflow:hidden}.kUjVaq_discard,.kUjVaq_save{appearance:none;font:inherit;cursor:pointer;border:1px solid #0000;border-radius:8px;padding:5px 14px;font-size:13px;line-height:1.5}.kUjVaq_discard{border-color:var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);background:0 0}.kUjVaq_discard:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.kUjVaq_save{background:var(--dsw-alias-label-primary);color:var(--dsw-alias-bg-layer-3)}.kUjVaq_discard:disabled,.kUjVaq_save:disabled{opacity:.4;cursor:default}.kUjVaq_discard:focus-visible,.kUjVaq_save:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}.kUjVaq_field{flex-direction:column;gap:6px;padding:12px 0;display:flex}.kUjVaq_field+.kUjVaq_field{border-top:1px solid var(--dsw-alias-border-l2)}.kUjVaq_head{align-items:center;gap:8px;display:flex}.kUjVaq_label{min-width:0;color:var(--dsw-alias-label-primary);flex:1;font-size:13px;font-weight:500;line-height:1.5}.kUjVaq_badges{align-items:center;gap:8px;display:inline-flex}.kUjVaq_badge{white-space:nowrap;background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;padding:1px 8px;font-size:11px;font-weight:500;line-height:17px}.kUjVaq_reset{font:inherit;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;padding:0;font-size:12px;line-height:1.5}.kUjVaq_reset:hover:not(:disabled){color:var(--dsw-alias-label-primary)}.kUjVaq_reset:disabled{cursor:default}.kUjVaq_reset:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px;outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}.kUjVaq_input,.kUjVaq_select{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);height:34px;font:inherit;color:var(--dsw-alias-label-primary);border-radius:8px;padding:0 12px;font-size:13px;line-height:1.5}.kUjVaq_input:focus-visible,.kUjVaq_select:focus-visible{border-color:var(--dsw-alias-brand-primary);outline:none}.kUjVaq_input:disabled,.kUjVaq_select:disabled{color:var(--dsw-alias-label-tertiary);cursor:default}.kUjVaq_inputInvalid{border:1px solid var(--dsw-alias-label-error);background:var(--dsw-alias-bg-layer-3);height:34px;font:inherit;color:var(--dsw-alias-label-primary);border-radius:8px;padding:0 12px;font-size:13px;line-height:1.5}.kUjVaq_inputInvalid:focus-visible{outline:2px solid var(--dsw-alias-label-error);outline-offset:1px;border-color:var(--dsw-alias-label-error)}.kUjVaq_selectWrap{position:relative}.kUjVaq_selectButton{appearance:none;text-align:left;cursor:pointer;justify-content:space-between;align-items:center;gap:8px;width:100%;display:flex}.kUjVaq_selectLabel{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.kUjVaq_selectChevron{color:var(--dsw-alias-label-tertiary);flex:none;transition:transform .16s}.kUjVaq_selectChevronOpen{transform:rotate(180deg)}.kUjVaq_selectPopup{z-index:40;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);max-height:240px;box-shadow:0 8px 24px var(--dsw-alias-bg-mask-2);opacity:0;border-radius:8px;flex-direction:column;padding:4px;transition:opacity .1s,transform .1s;display:flex;position:absolute;top:calc(100% + 4px);left:0;right:0;overflow-y:auto;transform:translateY(-4px)}.kUjVaq_selectPopupOpen{opacity:1;transform:none}.kUjVaq_selectPopupClose{opacity:0;pointer-events:none;transform:translateY(-4px)}.kUjVaq_selectOption{color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;border-radius:6px;flex-shrink:0;padding:6px 10px;font-size:13px;line-height:1.5;overflow:hidden}.kUjVaq_selectOption:hover,.kUjVaq_selectOptionActive{background:var(--dsw-alias-interactive-bg-hover)}.kUjVaq_selectOptionSelected{color:var(--dsw-alias-brand-primary);background:color-mix(in srgb, var(--dsw-alias-brand-primary-new-colorprimary-new-color) 10%, transparent);font-weight:500}.kUjVaq_invalid{color:var(--dsw-alias-label-error);margin:0;font-size:12px;line-height:1.5}.kUjVaq_hint{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px;line-height:1.5}@media (prefers-reduced-motion:reduce){.kUjVaq_card,.kUjVaq_header,.kUjVaq_chevron,.kUjVaq_chevronOpen,.kUjVaq_discard,.kUjVaq_save,.kUjVaq_selectChevron,.kUjVaq_selectChevronOpen,.kUjVaq_selectPopup{transition:none}}";
 		const tagId = "@dsh-selfuse/remote-web-ui/settings-card.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
 			const tag = document.createElement("style");
@@ -2456,45 +2427,45 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var settings_card_module_css_default = {
-			"badge": "Kwoi6G_badge",
-			"badges": "Kwoi6G_badges",
-			"body": "Kwoi6G_body",
-			"card": "Kwoi6G_card",
-			"cardOpen": "Kwoi6G_cardOpen",
-			"chevron": "Kwoi6G_chevron",
-			"chevronOpen": "Kwoi6G_chevronOpen",
-			"description": "Kwoi6G_description",
-			"discard": "Kwoi6G_discard",
-			"failed": "Kwoi6G_failed",
-			"field": "Kwoi6G_field",
-			"footer": "Kwoi6G_footer",
-			"head": "Kwoi6G_head",
-			"headText": "Kwoi6G_headText",
-			"header": "Kwoi6G_header",
-			"headerStatic": "Kwoi6G_headerStatic",
-			"hint": "Kwoi6G_hint",
-			"input": "Kwoi6G_input",
-			"inputInvalid": "Kwoi6G_inputInvalid",
-			"invalid": "Kwoi6G_invalid",
-			"label": "Kwoi6G_label",
-			"name": "Kwoi6G_name",
-			"notExposed": "Kwoi6G_notExposed",
-			"pending": "Kwoi6G_pending",
-			"readOnly": "Kwoi6G_readOnly",
-			"reset": "Kwoi6G_reset",
-			"save": "Kwoi6G_save",
-			"select": "Kwoi6G_select",
-			"selectButton": "Kwoi6G_selectButton",
-			"selectChevron": "Kwoi6G_selectChevron",
-			"selectChevronOpen": "Kwoi6G_selectChevronOpen",
-			"selectLabel": "Kwoi6G_selectLabel",
-			"selectOption": "Kwoi6G_selectOption",
-			"selectOptionActive": "Kwoi6G_selectOptionActive",
-			"selectOptionSelected": "Kwoi6G_selectOptionSelected",
-			"selectPopup": "Kwoi6G_selectPopup",
-			"selectPopupClose": "Kwoi6G_selectPopupClose",
-			"selectPopupOpen": "Kwoi6G_selectPopupOpen",
-			"selectWrap": "Kwoi6G_selectWrap"
+			"badge": "kUjVaq_badge",
+			"badges": "kUjVaq_badges",
+			"body": "kUjVaq_body",
+			"card": "kUjVaq_card",
+			"cardOpen": "kUjVaq_cardOpen",
+			"chevron": "kUjVaq_chevron",
+			"chevronOpen": "kUjVaq_chevronOpen",
+			"description": "kUjVaq_description",
+			"discard": "kUjVaq_discard",
+			"failed": "kUjVaq_failed",
+			"field": "kUjVaq_field",
+			"footer": "kUjVaq_footer",
+			"head": "kUjVaq_head",
+			"headText": "kUjVaq_headText",
+			"header": "kUjVaq_header",
+			"headerStatic": "kUjVaq_headerStatic",
+			"hint": "kUjVaq_hint",
+			"input": "kUjVaq_input",
+			"inputInvalid": "kUjVaq_inputInvalid",
+			"invalid": "kUjVaq_invalid",
+			"label": "kUjVaq_label",
+			"name": "kUjVaq_name",
+			"notExposed": "kUjVaq_notExposed",
+			"pending": "kUjVaq_pending",
+			"readOnly": "kUjVaq_readOnly",
+			"reset": "kUjVaq_reset",
+			"save": "kUjVaq_save",
+			"select": "kUjVaq_select",
+			"selectButton": "kUjVaq_selectButton",
+			"selectChevron": "kUjVaq_selectChevron",
+			"selectChevronOpen": "kUjVaq_selectChevronOpen",
+			"selectLabel": "kUjVaq_selectLabel",
+			"selectOption": "kUjVaq_selectOption",
+			"selectOptionActive": "kUjVaq_selectOptionActive",
+			"selectOptionSelected": "kUjVaq_selectOptionSelected",
+			"selectPopup": "kUjVaq_selectPopup",
+			"selectPopupClose": "kUjVaq_selectPopupClose",
+			"selectPopupOpen": "kUjVaq_selectPopupOpen",
+			"selectWrap": "kUjVaq_selectWrap"
 		};
 		//#endregion
 		//#region src/client/PluginSettingsCard.tsx
@@ -2673,7 +2644,7 @@ window.__ModuleLoader__.load({
 				]
 			});
 		}
-		const NON_SKIN_BODY_MARKERS = /* @__PURE__ */ new Set(["dshSkinCenter", "dshSidebarCollapsed"]);
+		const NON_SKIN_BODY_MARKERS = new Set(["dshSkinCenter", "dshSidebarCollapsed"]);
 		function isSkinActive() {
 			return Object.keys(document.body.dataset).some((key) => key.startsWith("dsh") && !NON_SKIN_BODY_MARKERS.has(key));
 		}
@@ -3202,8 +3173,7 @@ window.__ModuleLoader__.load({
 					textField("cookieName"),
 					booleanField("requirePairingForLan"),
 					textField("publicBaseUrl"),
-					booleanField("autoTunnel"),
-					booleanField("mobileEnterToSend")
+					booleanField("autoTunnel")
 				]);
 				this.store = this.form.bind(() => this.projection());
 			}
@@ -3218,8 +3188,7 @@ window.__ModuleLoader__.load({
 					cookieName: this.form.field("cookieName"),
 					requirePairingForLan: this.form.field("requirePairingForLan"),
 					publicBaseUrl: this.form.field("publicBaseUrl"),
-					autoTunnel: this.form.field("autoTunnel"),
-					mobileEnterToSend: this.form.field("mobileEnterToSend")
+					autoTunnel: this.form.field("autoTunnel")
 				};
 			}
 			/**
@@ -3369,7 +3338,7 @@ window.__ModuleLoader__.load({
 						id: "settings-remote-public-base",
 						label: t("settings.publicBaseUrl"),
 						hint: t("settings.publicBaseUrlHint"),
-						placeholder: "https://example.trycloudflare.com",
+						placeholder: t("settings.publicBaseUrlPlaceholder"),
 						...fieldProps,
 						...state.publicBaseUrl,
 						onEdit: (text) => {
@@ -3394,22 +3363,6 @@ window.__ModuleLoader__.load({
 						onReset: () => {
 							props.resetField("autoTunnel");
 						}
-					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(BooleanField, {
-						id: "settings-remote-mobile-enter",
-						label: t("settings.mobileEnterToSend"),
-						hint: t("settings.mobileEnterToSendHint"),
-						inheritLabel: t("settings.inherit"),
-						onLabel: t("settings.on"),
-						offLabel: t("settings.off"),
-						...fieldProps,
-						...state.mobileEnterToSend,
-						onEdit: (text) => {
-							props.edit("mobileEnterToSend", text);
-						},
-						onReset: () => {
-							props.resetField("mobileEnterToSend");
-						}
 					})
 				]
 			});
@@ -3421,7 +3374,7 @@ window.__ModuleLoader__.load({
 		const zh = {
 			"entry.label": "远程访问",
 			"title": "远程访问",
-			"subtitle": "通过手机或另一台电脑配对，远程访问当前工作区",
+			"subtitle": "配对另一台电脑，远程访问当前工作区",
 			"card.title": "设备配对",
 			"public.badge": "公网",
 			"status.waiting": "等待设备连接",
@@ -3429,9 +3382,9 @@ window.__ModuleLoader__.load({
 			"status.disconnected": "已配对设备离线",
 			"status.stopped": "已停止远程访问",
 			"status.lanRequired": "此功能需要以 --host 0.0.0.0 启动 dsh web，或配置公网地址才能使用",
-			"status.lanRequiredHint": "当前服务仅绑定在 127.0.0.1 且未配置公网地址，手机无法访问。请用 dsh web --host 0.0.0.0 重新启动，或在设置中填写内网穿透的公网地址。",
+			"status.lanRequiredHint": "当前服务仅绑定在 127.0.0.1 且未配置公网地址，远程设备无法访问。请用 dsh web --host 0.0.0.0 重新启动，或在设置中填写内网穿透的公网地址。",
 			"status.loopbackRequired": "配对面板仅限本机使用",
-			"status.loopbackRequiredHint": "请通过 http://127.0.0.1 打开此页面后重试；手机请使用配对链接访问。",
+			"status.loopbackRequiredHint": "请通过 http://127.0.0.1 打开此页面后重试；远程设备请使用配对链接访问。",
 			"status.unreachable": "无法连接配对服务",
 			"status.unreachableHint": "请刷新页面后重试。",
 			"pair.hint": "无法扫码？可直接打开下方配对链接",
@@ -3442,16 +3395,15 @@ window.__ModuleLoader__.load({
 			"address.hint": "远程设备不在同一网络时请使用公网地址；局域网地址仅限同一网络内使用。",
 			"pair.expires": "二维码有效至 {time}",
 			"pair.expired": "二维码已过期，请刷新",
-			"pair.phoneLabel": "手机配对链接",
-			"pair.desktopLabel": "电脑配对链接",
-			"pair.oneTimeHint": "两条链接共用同一枚一次性令牌；任意设备配对成功后，另一条链接立即失效。",
+			"pair.linkLabel": "远程设备配对链接",
+			"pair.oneTimeHint": "链接包含一次性令牌；任意设备配对成功后，该链接立即失效。",
 			"pair.failed.title": "配对失败",
 			"pair.failed.detail": "链接无效或已使用，请回到电脑端刷新二维码后重新扫码。",
 			"fence.unpaired.title": "此设备未配对，无法访问工作区数据",
 			"fence.unpaired.eyebrow": "需要设备配对",
 			"fence.unpaired.hint": "为保护工作区、会话与插件数据，远程电脑必须先通过主电脑授权。",
 			"fence.unpaired.stepDesktop": "在主电脑打开 http://127.0.0.1:3080，进入“远程访问”。",
-			"fence.unpaired.stepLink": "在“设备配对”中复制电脑配对链接。",
+			"fence.unpaired.stepLink": "在“设备配对”中复制远程设备配对链接。",
 			"fence.unpaired.stepOpen": "在当前浏览器打开该链接，完成授权后即可进入。",
 			"fence.unpaired.retry": "重新检测",
 			"fence.unpaired.footnote": "请勿使用他人提供的配对链接；管理员可随时取消此设备的授权。",
@@ -3460,8 +3412,6 @@ window.__ModuleLoader__.load({
 			"action.stop": "停止",
 			"action.refresh": "刷新二维码",
 			"action.copy": "复制链接",
-			"action.copyPhone": "复制手机链接",
-			"action.copyDesktop": "复制电脑链接",
 			"action.copied": "已复制",
 			"devices.title": "已授权设备",
 			"devices.empty": "还没有已配对的设备。扫码或打开链接后会出现在这里。",
@@ -3493,11 +3443,10 @@ window.__ModuleLoader__.load({
 			"settings.requirePairingForLan": "局域网访问要求配对",
 			"settings.requirePairingForLanHint": "开启：非本机回环的桌面 Web GUI 改走门控的 /remote，必须携带有效配对 Cookie；关闭：桌面继续走普通路径（仅在该来源已被 SDK 信任时有意义），配对只管理令牌与状态。",
 			"settings.publicBaseUrl": "公网地址（可选）",
-			"settings.publicBaseUrlHint": "内网穿透的公网地址，如 Cloudflare Tunnel：https://xxx.trycloudflare.com。填写后二维码将生成公网链接，手机不在同一网络也能配对；留空则仅局域网可用。",
+			"settings.publicBaseUrlHint": "内网穿透的公网地址，如 Cloudflare Tunnel：https://xxx.trycloudflare.com。填写后二维码将生成公网链接，远程设备不在同一网络也能配对；留空则仅局域网可用。",
+			"settings.publicBaseUrlPlaceholder": "https://example.trycloudflare.com",
 			"settings.autoTunnel": "自动公网隧道",
-			"settings.autoTunnelHint": "开启后插件自动启动 Cloudflare quick tunnel（无需安装任何工具），并自动更新公网地址与信任配置，手机随时可用公网配对；关闭时使用上方手动填写的公网地址。",
-			"settings.mobileEnterToSend": "移动端回车发送",
-			"settings.mobileEnterToSendHint": "开启：移动端输入框按 Enter 直接发送，Shift+Enter 换行；关闭：Enter 换行，仅点发送按钮发送。",
+			"settings.autoTunnelHint": "开启后插件自动启动 Cloudflare quick tunnel（无需安装任何工具），并自动更新公网地址与信任配置，远程设备随时可用公网配对；关闭时使用上方手动填写的公网地址。",
 			"settings.inherit": "继承",
 			"settings.on": "开",
 			"settings.off": "关",
@@ -3553,7 +3502,7 @@ window.__ModuleLoader__.load({
 		const en = {
 			"entry.label": "Remote access",
 			"title": "Remote access",
-			"subtitle": "Pair a phone or another computer to access this workspace remotely",
+			"subtitle": "Pair another computer to access this workspace remotely",
 			"card.title": "Pair a device",
 			"public.badge": "Public",
 			"status.waiting": "Waiting for a device",
@@ -3561,9 +3510,9 @@ window.__ModuleLoader__.load({
 			"status.disconnected": "Paired devices offline",
 			"status.stopped": "Remote access stopped",
 			"status.lanRequired": "This feature needs dsh web started with --host 0.0.0.0, or a configured public address",
-			"status.lanRequiredHint": "The server is bound to 127.0.0.1 and no public address is configured, so a phone cannot reach it. Restart with dsh web --host 0.0.0.0, or set the tunneled public address in settings.",
+			"status.lanRequiredHint": "The server is bound to 127.0.0.1 and no public address is configured, so a remote device cannot reach it. Restart with dsh web --host 0.0.0.0, or set the tunneled public address in settings.",
 			"status.loopbackRequired": "The pairing panel works on this machine only",
-			"status.loopbackRequiredHint": "Open this page at http://127.0.0.1 to mint a QR code; phones use the paired link.",
+			"status.loopbackRequiredHint": "Open this page at http://127.0.0.1 to mint a QR code; remote devices use the pairing link.",
 			"status.unreachable": "Cannot reach the pairing service",
 			"status.unreachableHint": "Refresh the page and try again.",
 			"pair.hint": "Cannot scan? Open one of the pairing links below",
@@ -3574,16 +3523,15 @@ window.__ModuleLoader__.load({
 			"address.hint": "Use the public address when the remote device is on another network; LAN addresses only work on the same network.",
 			"pair.expires": "QR code valid until {time}",
 			"pair.expired": "QR code expired — refresh it",
-			"pair.phoneLabel": "Phone pairing link",
-			"pair.desktopLabel": "Computer pairing link",
-			"pair.oneTimeHint": "Both links share one single-use token. Pairing either device invalidates the other link immediately.",
+			"pair.linkLabel": "Remote device pairing link",
+			"pair.oneTimeHint": "The link contains a single-use token. Pairing any device invalidates it immediately.",
 			"pair.failed.title": "Pairing failed",
 			"pair.failed.detail": "The link is invalid or was already used. Refresh the QR code on your computer and scan again.",
 			"fence.unpaired.title": "This device is not paired and cannot reach workspace data",
 			"fence.unpaired.eyebrow": "Device pairing required",
 			"fence.unpaired.hint": "To protect workspace, session, and plugin data, a remote computer must first be authorized by the primary computer.",
 			"fence.unpaired.stepDesktop": "On the primary computer, open http://127.0.0.1:3080 and go to Remote access.",
-			"fence.unpaired.stepLink": "Copy the computer pairing link under Pair a device.",
+			"fence.unpaired.stepLink": "Copy the remote device pairing link under Pair a device.",
 			"fence.unpaired.stepOpen": "Open that link in this browser. After authorization, the workspace will become available.",
 			"fence.unpaired.retry": "Check again",
 			"fence.unpaired.footnote": "Do not use pairing links from people you do not trust. An administrator can revoke this device at any time.",
@@ -3592,8 +3540,6 @@ window.__ModuleLoader__.load({
 			"action.stop": "Stop",
 			"action.refresh": "Refresh QR",
 			"action.copy": "Copy link",
-			"action.copyPhone": "Copy phone link",
-			"action.copyDesktop": "Copy computer link",
 			"action.copied": "Copied",
 			"devices.title": "Authorized devices",
 			"devices.empty": "No paired devices yet. Scan the QR or open the link to add one.",
@@ -3625,11 +3571,10 @@ window.__ModuleLoader__.load({
 			"settings.requirePairingForLan": "Require pairing for LAN access",
 			"settings.requirePairingForLanHint": "On: a desktop Web GUI at a non-loopback origin rides the gated /remote channel and must carry a live paired-device cookie. Off: the desktop stays on its original paths (only useful when that origin is already trusted) and pairing only manages tokens/status.",
 			"settings.publicBaseUrl": "Public address (optional)",
-			"settings.publicBaseUrlHint": "The public URL of a tunnel in front of this server, e.g. a Cloudflare Tunnel: https://xxx.trycloudflare.com. When set, the QR link is built from it so a phone anywhere can pair; leave blank for LAN-only usage.",
+			"settings.publicBaseUrlHint": "The public URL of a tunnel in front of this server, e.g. a Cloudflare Tunnel: https://xxx.trycloudflare.com. When set, the QR link is built from it so a remote device anywhere can pair; leave blank for LAN-only usage.",
+			"settings.publicBaseUrlPlaceholder": "https://example.trycloudflare.com",
 			"settings.autoTunnel": "Auto public tunnel",
-			"settings.autoTunnelHint": "When on, the plugin runs its own Cloudflare quick tunnel (no tool installation needed) and keeps the public address and trust config in sync automatically, so a phone anywhere can pair at any time; when off, the manually entered public address above applies.",
-			"settings.mobileEnterToSend": "Enter to send on mobile",
-			"settings.mobileEnterToSendHint": "On: Enter in the mobile composer sends immediately and Shift+Enter inserts a newline. Off: Enter inserts a newline and only the send button sends.",
+			"settings.autoTunnelHint": "When on, the plugin runs its own Cloudflare quick tunnel (no tool installation needed) and keeps the public address and trust config in sync automatically, so a remote device anywhere can pair at any time; when off, the manually entered public address above applies.",
 			"settings.inherit": "Inherit",
 			"settings.on": "On",
 			"settings.off": "Off",
@@ -3702,11 +3647,6 @@ window.__ModuleLoader__.load({
 				window.location.reload();
 			}
 		};
-		/** Whether this browser looks like a phone/tablet (the simplified mobile surface). */
-		function isMobileSurface() {
-			if (typeof navigator === "undefined") return false;
-			return /Android|iPhone|iPad|iPod|Mobile|mobile/i.test(navigator.userAgent);
-		}
 		/**
 		* Run the pair/workspace boot flow for this page load.
 		* @param ctx - client root context (workspaces/sessions read at need time).
@@ -3721,7 +3661,7 @@ window.__ModuleLoader__.load({
 			}
 			if (params.workspace !== void 0) runDeepLink(ctx, params.workspace, page);
 		}
-		/** Accept the token, then enter the matching desktop/mobile surface. */
+		/** Accept the token, then reload the full Web UI with the paired-device cookie. */
 		async function runAccept(token, page) {
 			let ok = false;
 			try {
@@ -3733,10 +3673,7 @@ window.__ModuleLoader__.load({
 			const url = new URL(page.href);
 			url.searchParams.delete("pair");
 			page.replaceState(`${url.pathname}${url.search}${url.hash}`);
-			if (ok) if (isMobileSurface()) {
-				url.pathname = "/m/";
-				page.navigate(`${url.pathname}${url.search}${url.hash}`);
-			} else page.reload();
+			if (ok) page.reload();
 		}
 		/**
 		* Connect the deep-linked workspace and open its session. Waits for the
@@ -3806,24 +3743,13 @@ window.__ModuleLoader__.load({
 		const SIDEBAR_PREFIX = "/sidebar/";
 		const GIT_PREFIX = "/git/";
 		const PET_PREFIX = "/pet/";
-		const WS_PATHS = /* @__PURE__ */ new Set([
+		const WS_PATHS = new Set([
 			"/api/events.mux",
 			"/api/events.host",
 			"/sidebar/ws/terminal",
 			"/sidebar/ws/agent-terminals",
 			"/api/dsh-ssh/terminal"
 		]);
-		/**
-		* Browser-safe loopback classification for the page origin (the SDK client
-		* exports its own; this copy keeps the module dependency-free).
-		* @param hostname - a location hostname (IPv6 without brackets).
-		* @returns true for localhost, IPv6 loopback, or any 127/8 literal.
-		*/
-		function isLoopbackHostname(hostname) {
-			if (hostname === "localhost" || hostname === "::1") return true;
-			const parts = hostname.split(".");
-			return parts.length === 4 && parts[0] === "127" && parts.every((part) => /^\d{1,3}$/.test(part) && Number(part) <= 255);
-		}
 		/**
 		* Whether one same-origin path must ride the gated channel (fetch, EventSource,
 		* img/script/iframe src).
@@ -4055,9 +3981,9 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region src/client/index.ts
 		/**
-		* Mobile remote control — browser half. Registers the `remote` dictionaries,
-		* the sidebar-foot entry (phone trigger + pairing panel) into the
-		* ui-sidebar-declared `sidebar.remote` seat, and runs the phone-side boot
+		* Remote desktop access — browser half. Registers the `remote` dictionaries,
+		* the sidebar-foot entry (remote trigger + pairing panel) into the
+		* ui-sidebar-declared `sidebar.remote` seat, and runs the remote-device boot
 		* flow (pair accept + workspace deep-link + presence heartbeats) plus the
 		* one-time failed-pair notice. Export discipline: packages/client/AGENTS.md
 		* — the /client surface carries only what cordis loading needs plus types.
@@ -4066,7 +3992,7 @@ window.__ModuleLoader__.load({
 		const NS = "remote";
 		/** Settings namespace the remote-control card edits (the Host plugin registers it). */
 		const REMOTE_WEB_UI_NS = "remote-web-ui";
-		/** Heartbeat cadence from a paired phone (presence + revocation liveness). */
+		/** Heartbeat cadence from a paired remote desktop (presence + revocation liveness). */
 		const HEARTBEAT_INTERVAL_MS = 1e4;
 		/** Services required by this plugin. */
 		const inject = [

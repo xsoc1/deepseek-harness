@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  MAX_REMOTE_STREAM_HEARTBEAT_TIMEOUT_MS,
   parseRemoteStreamClientMessage,
   parseRemoteStreamServerMessage,
 } from '../src/stream-protocol.ts'
@@ -29,6 +30,9 @@ describe('Remote stream wire protocol', () => {
 
   it('accepts every server message variant', () => {
     expect(parseRemoteStreamServerMessage(JSON.stringify({
+      type: 'heartbeat', timeoutMs: 6_000,
+    }))).toEqual({ type: 'heartbeat', timeoutMs: 6_000 })
+    expect(parseRemoteStreamServerMessage(JSON.stringify({
       type: 'item', streamId: 'stream-1', value: null,
     }))).toEqual({ type: 'item', streamId: 'stream-1', value: null })
     expect(parseRemoteStreamServerMessage(JSON.stringify({
@@ -49,6 +53,10 @@ describe('Remote stream wire protocol', () => {
   })
 
   it.each([
+    { type: 'heartbeat', timeoutMs: 0 },
+    { type: 'heartbeat', timeoutMs: 1.5 },
+    { type: 'heartbeat', timeoutMs: MAX_REMOTE_STREAM_HEARTBEAT_TIMEOUT_MS + 1 },
+    { type: 'heartbeat', timeoutMs: 6_000, extra: true },
     { type: 'item', streamId: '', value: 'item' },
     { type: 'item', streamId: 'stream-1', extra: true },
     { type: 'end', streamId: 'stream-1', extra: true },

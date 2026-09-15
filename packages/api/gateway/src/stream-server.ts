@@ -4,6 +4,8 @@ import type { IncomingMessage } from 'node:http'
 import type { Duplex } from 'node:stream'
 import WebSocket, { WebSocketServer, type RawData } from 'ws'
 import {
+  MAX_REMOTE_STREAM_HEARTBEAT_TIMEOUT_MS,
+  REMOTE_STREAM_APPLICATION_HEARTBEAT_PROTOCOL,
   parseRemoteStreamClientMessage,
   type RemoteStreamFailure,
   type RemoteStreamServerMessage,
@@ -32,18 +34,27 @@ export class RemoteStreamMuxServer {
   })
   private readonly connections = new Set<Promise<void>>()
   private readonly missedHeartbeats = new WeakMap<WebSocket, number>()
+  private readonly applicationHeartbeatText: string
   private heartbeatTimer: NodeJS.Timeout | undefined
 
   /**
    * @param open - Gateway stream dispatcher.
    * @param failure - Gateway error-to-wire mapper.
-   * @param heartbeatIntervalMs - interval between WebSocket Ping control frames.
+   * @param heartbeatIntervalMs - interval between transport and application heartbeats.
    */
   constructor(
     private readonly open: RemoteStreamOpener,
     private readonly failure: RemoteStreamFailureMapper,
     private readonly heartbeatIntervalMs: number,
-  ) {}
+  ) {
+    this.applicationHeartbeatText = JSON.stringify({
+      type: 'heartbeat',
+      timeoutMs: Math.min(
+        MAX_REMOTE_STREAM_HEARTBEAT_TIMEOUT_MS,
+        heartbeatIntervalMs * (MAX_MISSED_HEARTBEATS + 1),
+      ),
+    } satisfies RemoteStreamServerMessage)
+  }
 
   /**
    * Upgrade one trusted request and begin serving its logical streams.
@@ -94,6 +105,9 @@ export class RemoteStreamMuxServer {
         }
         this.missedHeartbeats.set(socket, missed + 1)
         socket.ping()
+        if (socket.protocol === REMOTE_STREAM_APPLICATION_HEARTBEAT_PROTOCOL) {
+          socket.send(this.applicationHeartbeatText)
+        }
       }
     }, this.heartbeatIntervalMs)
     this.heartbeatTimer.unref()

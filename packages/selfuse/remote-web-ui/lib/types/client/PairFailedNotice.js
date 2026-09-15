@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 /**
- * One-time failed-pairing notice: a fixed toast rendered on the phone after
+ * One-time failed-pairing notice: a fixed toast rendered after
  * a QR accept failed (invalid/used token or a network error). Mounted by
  * the client apply with a plain React root — no slot machinery for a
  * transient diagnostic.

@@ -9,7 +9,7 @@ export type { UpdateEntryProps } from './UpdateEntry.tsx';
 export type { UpdatePanelProps, UpdateView } from './UpdatePanel.tsx';
 declare module '@deepseek-ai/dsh-client-ui-slots' {
     interface LocaleNamespaceMap {
-        /** Mobile remote-control surface copy. */
+        /** Remote desktop access copy. */
         remote: RemoteKey;
     }
     interface SlotMap {

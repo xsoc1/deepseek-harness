@@ -81,7 +81,7 @@ export interface DeviceFrame {
 /**
  * Mint a fresh pairing token (one active token at a time — this invalidates
  * any previous link).
- * @param workspaceId - optional current workspace to deep-link the phone into.
+ * @param workspaceId - optional current workspace to open on the remote computer.
  * @param address - optional LAN IP literal the QR must be built from (the
  * default is the first interface); unknown literals refuse with
  * 'unknown-address'.
@@ -108,7 +108,7 @@ export async function issuePair(workspaceId?: string, address?: string): Promise
 }
 
 /**
- * Accept a pairing token (the phone's first open of the QR link). Success
+ * Accept a pairing token when a remote computer opens the QR link. Success
  * sets the device cookie; the page then reloads to boot with it.
  * @param token - the token from the URL.
  * @returns the wire result.
@@ -125,7 +125,7 @@ export async function acceptPair(token: string): Promise<{ ok: true } | AcceptFa
   return { ok: false, code: 'forbidden' }
 }
 
-/** Revoke mobile access (paired devices + the current token). */
+/** Revoke remote access (paired devices + the current token). */
 export async function stopPair(): Promise<void> {
   const response = await fetch('/api/pair/stop', { method: 'POST' })
   if (!response.ok) throw new Error(`remote-web-ui: stop failed with ${String(response.status)}`)
@@ -145,7 +145,7 @@ export async function revokePair(deviceId: string): Promise<void> {
   if (!response.ok) throw new Error(`remote-web-ui: revoke failed with ${String(response.status)}`)
 }
 
-/** Presence heartbeat from a paired phone (unpaired heartbeats 401 harmlessly). */
+/** Presence heartbeat from a paired remote desktop (unpaired heartbeats 401 harmlessly). */
 export async function sendHeartbeat(): Promise<void> {
   await fetch('/api/pair/heartbeat', { method: 'POST' })
 }
@@ -170,13 +170,6 @@ export function stripParam(name: string): string {
   const url = new URL(window.location.href)
   url.searchParams.delete(name)
   return url.search
-}
-
-/** Convert an issued `/m/` link into the desktop pairing form. */
-export function desktopPairUrl(mobileUrl: string): string {
-  const url = new URL(mobileUrl)
-  url.pathname = '/'
-  return url.href
 }
 
 /** Human-readable expiry clock, e.g. "10:35". */

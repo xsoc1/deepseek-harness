@@ -3,6 +3,10 @@
 ## `generate-profile.mjs`
 Reads `config/selfuse/profiles.build.yml` and writes a profile under
 `$DSH_HOME/profiles/<name>` that references only `@dsh-selfuse/*` bundles.
+The manifest's `disabledRows` list records stable row IDs inherited from
+official bundles that this personal profile intentionally leaves inactive,
+while `rowConfigs` records selfuse-specific configuration replacements. The
+generator writes both kinds of managed override before ordinary plugin inserts.
 
 Because the selfuse packages are registered in `apps/cli/package.json`, the
 running dsh installation resolves them first; the generated profile contains

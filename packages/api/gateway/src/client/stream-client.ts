@@ -224,6 +224,7 @@ export class RemoteStreamMuxClient {
     try {
       if (typeof data !== 'string') throw new Error('api gateway: Remote stream WebSocket requires text messages')
       const frame = parseRemoteStreamServerMessage(data)
+      if (frame.type === 'heartbeat') return
       this.streams.get(frame.streamId)?.push(frame)
     } catch (error) {
       const failure = new RemoteStreamCarrierError('api gateway: invalid Remote stream frame', { cause: error })
@@ -242,6 +243,9 @@ export class RemoteStreamMuxClient {
     if (this.socket !== socket) return
     this.socket = undefined
     this.failAll(error)
+    const pending = this.keepAlive
+    if (pending === undefined) this.maintain()
+    else void pending.then(() => { this.maintain() })
   }
 
   private maintain(): void {

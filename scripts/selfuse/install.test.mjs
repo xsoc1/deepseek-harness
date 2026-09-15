@@ -47,6 +47,36 @@ test('the managed and runnable Web startup scripts stay identical', async () => 
   const runnable = await readFile(join(repoRoot, 'run-dsh-web.ps1'), 'utf8')
   const managed = await readFile(join(repoRoot, 'scripts', 'selfuse', 'management', 'run-dsh-web.ps1'), 'utf8')
   assert.equal(managed, runnable)
+  assert.match(runnable, /ProgramFiles.*Tailscale\\tailscale\.exe/su)
+  assert.match(runnable, /F:\\Tailscale\\tailscale\.exe/u)
+})
+
+test('the generated Web profile applies managed overrides to inherited rows', async () => {
+  const dshHome = await mkdtemp(join(tmpdir(), 'dsh-selfuse-profile-'))
+  try {
+    const officialWebPatch = await readFile(
+      join(repoRoot, 'packages', 'bundle', 'web-app', 'cordis.patch.yml'),
+      'utf8',
+    )
+    assert.match(officialWebPatch, /    - id: ui-sidebar-documentpreview\n/u)
+
+    await execFileAsync(process.execPath, [
+      installer,
+      '--skip-install-check',
+      '--dsh-home',
+      dshHome,
+    ])
+
+    const patch = await readFile(join(dshHome, 'profiles', 'web', 'cordis.patch.yml'), 'utf8')
+    assert.match(patch, /- id: ui-sidebar-documentpreview\n  disabled: true/u)
+    assert.match(
+      patch,
+      /- id: typert-gateway\n  config:\n    websocketHeartbeatIntervalMs: 10000/u,
+    )
+    assert.match(patch, /- id: dsh-web-shell-bridge\n      name: '@deepseek-ai\/dsh-web-shell-bridge'/u)
+  } finally {
+    await rm(dshHome, { recursive: true, force: true })
+  }
 })
 
 test('the retired balance widget is absent from the selfuse deployment', async () => {

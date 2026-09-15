@@ -1,11 +1,11 @@
 /**
- * Mobile remote control for the dsh web GUI — host half. Mounts the pairing
+ * Remote desktop access for the dsh web GUI — host half. Mounts the pairing
  * service (one-time tokens, device sessions, revocation), the /api/pair
  * route family (issue/accept/stop/heartbeat/status/events), the api/gate
  * listener that enforces pairing on every other /api request from
  * non-loopback hosts, and the presence sweep. The browser half (the
  * `./client` entry) renders the sidebar entry, the pairing panel, and the
- * phone-side pair/accept + deep-link flow.
+ * remote-device pair/accept + deep-link flow.
  */
 
 import { createRequire } from 'node:module'
@@ -21,8 +21,6 @@ import { dshHome } from './dsh-home.ts'
 import { isPairedDeviceRequest, makeGateListener } from './gate.ts'
 import { RemoteWebUiPairing } from './pairing-access.ts'
 import { isTrustedApiRequest, makeRoutes } from './routes.ts'
-import { makeMobileRoutes } from './mobile-routes.ts'
-import { makeMobileApiRoutes } from './mobile-api.ts'
 import { makeRemoteApiRoutes, makeRemoteApiUpgradeRoutes } from './remote-api.ts'
 import { anyExposed, claimPostureKey, postureTargets, probePosture, releasePostureKey } from './posture.ts'
 import { lanIPv4Addresses } from './lan.ts'
@@ -59,7 +57,7 @@ declare module '@deepseek-ai/cordis' {
 export const name = 'remote-web-ui'
 
 /** Services required before the pairing surfaces can mount. */
-export const inject = ['webServer', 'apiProxy']
+export const inject = ['webServer']
 
 /**
  * Settings namespace of the remote-control capability — the section the web
@@ -94,8 +92,8 @@ export interface Config {
   /**
    * Public base URL of a tunnel in front of this server (e.g. a Cloudflare
    * Tunnel quick URL `https://xxx.trycloudflare.com` or a named-tunnel
-   * subdomain). When set, the QR link is built from it — a phone anywhere
-   * can pair — and its host is trusted by the phone-facing pairing fence.
+   * subdomain). When set, the QR link is built from it so a remote computer
+   * can pair from anywhere, and its host is accepted by the pairing routes.
    * Leave unset for LAN-only usage. Malformed values are ignored with a
    * warning (LAN-only behavior preserved). Ignored while `autoTunnel` is on.
    */
@@ -110,18 +108,11 @@ export interface Config {
   /**
    * When true, the plugin runs its own Cloudflare quick tunnel (the
    * cloudflared binary ships with the package — no user-side install) and
-   * feeds the minted public URL into the QR base and the phone-facing
-   * pairing fence dynamically, so phones anywhere can pair without any manual
+   * feeds the minted public URL into the QR base and pairing routes
+   * dynamically, so remote computers can pair without any manual
    * tunnel setup. The manual `publicBaseUrl` is ignored while this is on.
    */
   autoTunnel?: boolean
-  /**
-   * Mobile composer behavior: when true (default), a plain Enter in the
-   * phone chat textarea sends the prompt and Shift+Enter inserts a newline.
-   * When false, plain Enter inserts a newline and only the send button
-   * sends (Shift+Enter keeps inserting a newline).
-   */
-  mobileEnterToSend?: boolean
   /** Master switch for the plugin (browser half + host pairing surfaces). */
   enabled?: boolean
 }
@@ -136,7 +127,6 @@ export const Config: z<Config> = z.object({
   publicBaseUrl: z.string(),
   devicesFile: z.string(),
   autoTunnel: z.boolean().default(false),
-  mobileEnterToSend: z.boolean().default(true),
   enabled: z.boolean().default(true),
 })
 
@@ -189,7 +179,6 @@ const DEFAULTS: ResolvedConfig = {
   publicBaseUrl: undefined,
   devicesFile: defaultDevicesFile(),
   autoTunnel: false,
-  mobileEnterToSend: true,
   enabled: true,
 }
 
@@ -211,7 +200,6 @@ function applyImpl(ctx: Context, config?: Config): void {
     publicBaseUrl: config?.publicBaseUrl,
     devicesFile: config?.devicesFile ?? DEFAULTS.devicesFile,
     autoTunnel: config?.autoTunnel ?? DEFAULTS.autoTunnel,
-    mobileEnterToSend: config?.mobileEnterToSend ?? DEFAULTS.mobileEnterToSend,
     enabled: config?.enabled ?? DEFAULTS.enabled,
   }
   // The live source the pairing service and the gate read: the settings
@@ -230,18 +218,16 @@ function applyImpl(ctx: Context, config?: Config): void {
       publicBaseUrl: value.publicBaseUrl,
       devicesFile: value.devicesFile ?? DEFAULTS.devicesFile,
       autoTunnel: value.autoTunnel ?? DEFAULTS.autoTunnel,
-      mobileEnterToSend: value.mobileEnterToSend ?? DEFAULTS.mobileEnterToSend,
       enabled: value.enabled ?? DEFAULTS.enabled,
     }
   }
   const service = new PairingService(pairingConfigOf(resolved))
 
   // ── auto tunnel ─────────────────────────────────────────────────────────
-  // The minted public URL becomes the QR base (and the pairing fence's
-  // trusted host). Phone /api traffic rides the plugin's own /m/api channel,
-  // which is NOT subject to the connection trust fence — so no fence
-  // mutation is needed here (a distributable plugin must not change the
-  // harness's connection plugin).
+  // The minted public URL becomes the QR base and the pairing fence's
+  // trusted host. The full desktop Web UI rides the plugin's authenticated
+  // remote channel, so this plugin does not change the harness connection
+  // plugin's trust configuration.
   const tunnel = new TunnelManager()
   let autoTunnel = resolved.autoTunnel
   tunnel.onPhase((info: TunnelInfo) => {
@@ -267,7 +253,7 @@ function applyImpl(ctx: Context, config?: Config): void {
   // bases are frozen per process, matching the CLI's once-per-invocation
   // sampling stance. The QR can only advertise addresses the fence accepts;
   // every interface gets its own base URL so a multi-homed machine can pick
-  // the network the phone can actually reach.
+  // the network the remote device can actually reach.
   const lanBases = ctx.webServer.host === '0.0.0.0'
     ? lanIPv4Addresses().map(address => ({ address, base: `http://${address}:${String(ctx.webServer.port)}` }))
     : []
@@ -283,12 +269,6 @@ function applyImpl(ctx: Context, config?: Config): void {
   // (now vetoing every non-loopback request) instead of opening the fence.
   let disposeRoutes: (() => void) | undefined
   let disposeSweep: (() => void) | undefined
-  // The phone's data channel: pairing routes + the /m page + the /m/api
-  // proxy (which needs the host ApiProxy service; the plugin injects it).
-  const apiProxy = ctx.get('apiProxy')
-  if (apiProxy === undefined) {
-    console.warn('remote-web-ui: apiProxy service unavailable — the mobile data channel is disabled')
-  }
   // ── remote update ────────────────────────────────────────────────────────
   // The dsh-web-ui self-update surface: probe the npm registry for family
   // releases and run `pnpm update --latest` in the owning profile. Resolutions
@@ -306,7 +286,7 @@ function applyImpl(ctx: Context, config?: Config): void {
     }
   })
   const updateRoutes = makeUpdateRoutes({
-    // Control endpoints are host-surface only: a LAN/phone origin must never
+    // Control endpoints are host-only: a remote origin must never
     // trigger a real install on this machine.
     fence: request => isTrustedApiRequest(request, []),
     check: () => checkUpdates({
@@ -354,10 +334,6 @@ function applyImpl(ctx: Context, config?: Config): void {
   })
   const routes = [
     ...makeRoutes({ service, lanAddresses }),
-    ...makeMobileRoutes(),
-    ...(apiProxy !== undefined
-      ? makeMobileApiRoutes({ service, apiProxy, mobileEnterToSend: () => resolve().mobileEnterToSend, requirePairingForLan: () => resolve().requirePairingForLan })
-      : []),
     // The remote desktop channel: paired-cookie-gated `/remote` prefix that
     // re-issues fenced paths to loopback (see remote-api.ts).
     ...makeRemoteApiRoutes({ service, port: ctx.webServer.port, requirePairingForLan: () => resolve().requirePairingForLan }),

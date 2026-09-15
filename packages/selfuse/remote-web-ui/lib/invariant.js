@@ -1,4 +1,8 @@
-//#region src/invariant.ts
+//#region lib/types/invariant.js
+/**
+* Package-owned invariant companion for `@dsh-selfuse/remote-web-ui`.
+* @module @dsh-selfuse/remote-web-ui/invariant
+*/
 const PACKAGE_NAME = "@dsh-selfuse/remote-web-ui";
 /** Cordis companion plugin name. */
 const name = "remote-web-ui-invariant";

@@ -288,7 +288,7 @@ export async function checkUpdates(deps) {
     // lives outside every profile (e.g. a repo checkout wired through
     // link-profile.mjs) is a local dev install pnpm cannot update.
     const profile = findProfile(manifestPath);
-    const profileManifest = profile === undefined ? undefined : readManifest(join(profile.dir, "package.json"));
+    const profileManifest = profile === undefined ? undefined : readManifest(join(profile.dir, 'package.json'));
     const linked = profile === undefined
         || isLinkedSpec(profileManifest?.dependencies?.[anchor])
         || hasLinkedFamilyOverride(manifest, profileManifest);
@@ -553,7 +553,7 @@ export async function runUpdateVerified(deps) {
     // evidence of movement and must not turn a no-op update into a success; a
     // package without a pre-run baseline is ignored — only the packages pnpm
     // was told to update count as evidence.
-    const moved = status.packages.some(packageStatus => {
+    const moved = status.packages.some((packageStatus) => {
         const beforeVersion = before.get(packageStatus.name);
         if (beforeVersion === undefined || packageStatus.current === VERSION_UNKNOWN)
             return false;

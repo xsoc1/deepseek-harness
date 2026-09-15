@@ -1,6 +1,6 @@
 /**
  * The remote desktop data channel: `/remote` is this plugin's own prefix, so
- * the paired-device cookie is the access control (exactly like `/m/api`).
+ * the paired-device cookie is the access control.
  * After that gate, every fenced same-origin path the browser rewrote here is
  * re-issued to 127.0.0.1 as a loopback-shaped request so sibling plugin
  * fences (and the connection plugin's `/api`) accept it — no `--trusted-host`
@@ -29,6 +29,8 @@ export interface RemoteApiDeps {
     service: PairingService;
     /** The local webServer port the loopback proxy connects to. */
     port: number;
+    /** Live LAN-pairing requirement, resolved per request. */
+    requirePairingForLan?: () => boolean;
 }
 /**
  * Map `/remote/...` to the inner path, or undefined when the outer path is

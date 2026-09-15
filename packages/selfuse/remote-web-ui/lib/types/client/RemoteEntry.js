@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 /**
- * The sidebar remote-control seat: the update trigger plus the phone-icon
+ * The sidebar remote-control seat: the update trigger plus the remote-access
  * trigger beside the settings button, and the pairing panel modal. Owns the
  * panel behavior — token minting on open, the status SSE subscription,
  * stop/refresh/copy — and renders the pure {@link RemotePanel} body. The
@@ -52,14 +52,14 @@ export function RemoteEntry({ wide, useWorkspaces, t }) {
     // pure), so mint decisions read this ref instead.
     const stateRef = useRef(state);
     useEffect(() => { stateRef.current = state; }, [state]);
-    const [copied, setCopied] = useState(undefined);
+    const [copied, setCopied] = useState(false);
     const eventSource = useRef(undefined);
     // Generation counter for the open flow: closing (or re-opening) the panel
     // bumps it, so an in-flight issue() that resolves after a close does not
     // spawn a stray EventSource.
     const openSeq = useRef(0);
     // The current workspace (the recent-workspace projection the shell's New
-    // Session flow targets) — the deep-link target for the phone.
+    // Session flow targets) — the deep-link target for the remote device.
     const workspaceId = useWorkspaces(s => s.recentWorkspaceId);
     const closeEventSource = useCallback(() => {
         eventSource.current?.close();
@@ -196,12 +196,12 @@ export function RemoteEntry({ wide, useWorkspaces, t }) {
     const handlePickPublic = useCallback(() => {
         void mint().then(setState);
     }, [mint]);
-    const handleCopy = useCallback((target, url) => {
+    const handleCopy = useCallback((url) => {
         void copyText(url).then((ok) => {
             if (!ok)
                 return;
-            setCopied(target);
-            window.setTimeout(() => { setCopied(undefined); }, 1500);
+            setCopied(true);
+            window.setTimeout(() => { setCopied(false); }, 1500);
         });
     }, []);
     return (_jsxs(_Fragment, { children: [_jsxs("div", { className: css.entryRow, "data-rail": wide ? undefined : 'rail', children: [_jsx(UpdateEntry, { wide: wide, t: t }), _jsx(TooltipAnchor, { wide: wide, label: t('entry.label'), onClick: openPanel })] }), open && createPortal((_jsxs("div", { className: css.overlay, role: "presentation", children: [_jsx("div", { className: css.mask, "aria-hidden": "true", onClick: closePanel }), _jsx(RemotePanel, { t: t, state: state, copied: copied, onClose: closePanel, onStop: handleStop, onRefresh: handleRefresh, onCopy: handleCopy, onPickAddress: handlePickAddress, onPickPublic: handlePickPublic, onRevoke: handleRevoke })] })), document.body)] }));

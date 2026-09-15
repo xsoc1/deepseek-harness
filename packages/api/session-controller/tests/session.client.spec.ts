@@ -591,13 +591,21 @@ describe('rename', () => {
 
 describe('remaining branches', () => {
   it('receives a carrier throw while prompting as the client\'s gateway/internal fold, landing op=send', async ({ mock, start }) => {
-    const session = await sessionBench(mock, start, SID)
-    mock.remote.session.prompt.mockImplementation(() => Promise.reject(new Error('prompt wire down')))
-    const prompted = await session.prompt([{ type: 'text', text: 'x' }], 'queue')
-    expect(prompted).toMatchObject({
-      ok: false, error: { code: 'gateway/internal', message: 'client api: session/prompt failed: prompt wire down' },
-    })
-    expect(session.getSnapshot().promptError).toMatchObject({ op: 'send', error: { code: 'gateway/internal' } })
+    vi.useFakeTimers()
+    try {
+      const session = await sessionBench(mock, start, SID)
+      mock.remote.session.prompt.mockImplementation(() => Promise.reject(new Error('prompt wire down')))
+      const inFlight = session.prompt([{ type: 'text', text: 'x' }], 'queue')
+      await vi.advanceTimersByTimeAsync(30_500)
+      const prompted = await inFlight
+      expect(prompted).toMatchObject({
+        ok: false, error: { code: 'gateway/internal', message: 'client api: session/prompt failed: prompt wire down' },
+      })
+      expect(mock.log.requests('session/prompt')).toHaveLength(7)
+      expect(session.getSnapshot().promptError).toMatchObject({ op: 'send', error: { code: 'gateway/internal' } })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('cancel business error also lands op=stop promptError', async ({ mock, start }) => {

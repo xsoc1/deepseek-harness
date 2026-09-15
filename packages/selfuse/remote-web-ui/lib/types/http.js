@@ -1,7 +1,7 @@
 /**
  * Shared HTTP helpers for the route families: one JSON writer and one
  * bounded JSON body reader. Previously copy-pasted across routes.ts,
- * update-routes.ts, and mobile-api.ts with drifting failure contracts.
+ * update-routes.ts with drifting failure contracts.
  */
 /** One JSON response. */
 export function writeJson(res, status, body) {

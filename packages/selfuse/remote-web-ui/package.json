@@ -1,6 +1,6 @@
 {
   "name": "@dsh-selfuse/remote-web-ui",
-  "description": "Scan-to-pair mobile and PC remote control for the dsh web GUI: QR entry beside the settings button, one-time pairing tokens, a gated /remote/api desktop channel, live device status, and revocable sessions",
+  "description": "Pairing-gated remote desktop access for the dsh web GUI: QR entry beside the settings button, one-time pairing tokens, a gated /remote/api channel, live device status, and revocable sessions",
   "version": "0.2.7",
   "type": "module",
   "engines": {
@@ -30,7 +30,6 @@
     "lib/**/*.d.ts",
     "lib/**/*.d.ts.map",
     "src",
-    "assets",
     "cordis.patch.yml"
   ],
   "license": "Apache-2.0",
@@ -68,7 +67,6 @@
     "@deepseek-ai/dsh-client-ui-settings": "workspace:*",
     "@deepseek-ai/dsh-client-ui-sidebar": "workspace:*",
     "@deepseek-ai/dsh-client-ui-slots": "workspace:*",
-    "@deepseek-ai/dsh-host-apiproxy": "workspace:*",
     "@deepseek-ai/dsh-host-webserver": "workspace:*",
     "@deepseek-ai/dsh-invariants": "workspace:*",
     "@deepseek-ai/dsh-settings": "workspace:*",

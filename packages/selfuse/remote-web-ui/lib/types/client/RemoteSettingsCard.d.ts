@@ -26,8 +26,6 @@ export interface RemoteSettings {
     publicBaseUrl?: string;
     /** When on, the plugin runs its own Cloudflare quick tunnel automatically. */
     autoTunnel?: boolean;
-    /** Mobile composer: plain Enter sends; off means Enter inserts a newline. */
-    mobileEnterToSend?: boolean;
 }
 /** What the remote-control card renders. */
 export interface RemoteSettingsCardState extends CardShell {
@@ -49,8 +47,6 @@ export interface RemoteSettingsCardState extends CardShell {
     publicBaseUrl: CardFieldState;
     /** Auto public tunnel switch. */
     autoTunnel: CardFieldState;
-    /** Mobile composer Enter-to-send switch. */
-    mobileEnterToSend: CardFieldState;
 }
 /** The registration-side face the card's slot entry injects. */
 export interface RemoteSettingsCardFace extends CardActions {

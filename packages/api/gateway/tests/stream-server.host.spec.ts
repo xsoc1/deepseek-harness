@@ -2,6 +2,7 @@ import { once } from 'node:events'
 import { createServer, type Server } from 'node:http'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import WebSocket from 'ws'
+import { REMOTE_STREAM_APPLICATION_HEARTBEAT_PROTOCOL } from '../src/stream-protocol.ts'
 import {
   RemoteStreamMuxServer,
   type RemoteStreamFailureMapper,
@@ -25,18 +26,17 @@ afterEach(async () => {
 })
 
 describe('Remote stream mux server carrier lifecycle', () => {
-  it('sends WebSocket Ping control frames without application messages', async () => {
+  it('sends transport and browser-visible application heartbeats', async () => {
     const entry = await startMux(async (_endpoint, _payload, signal) => waitForAbort(signal), 20)
-    const client = await connect(entry.url)
+    const client = await connect(entry.url, true, REMOTE_STREAM_APPLICATION_HEARTBEAT_PROTOCOL)
     const serverSocket = acceptedSocket(entry.mux)
-    const messages = vi.fn()
-    client.on('message', messages)
 
     const ping = once(client, 'ping')
     const pong = once(serverSocket, 'pong')
+    const message = once(client, 'message')
     expect((await ping)[0]).toEqual(Buffer.alloc(0))
     expect((await pong)[0]).toEqual(Buffer.alloc(0))
-    expect(messages).not.toHaveBeenCalled()
+    expect(JSON.parse(String((await message)[0]))).toEqual({ type: 'heartbeat', timeoutMs: 60 })
 
     const closingPing = vi.spyOn(serverSocket, 'ping')
     client.pause()
@@ -47,6 +47,21 @@ describe('Remote stream mux server carrier lifecycle', () => {
 
     const closed = once(client, 'close')
     client.resume()
+    await closed
+  })
+
+  it('keeps application heartbeats opt-in for clients loaded before the protocol upgrade', async () => {
+    const entry = await startMux(async (_endpoint, _payload, signal) => waitForAbort(signal), 20)
+    const client = await connect(entry.url)
+    const messages = vi.fn()
+    client.on('message', messages)
+
+    await once(client, 'ping')
+    await new Promise<void>((resolve) => { setTimeout(resolve, 5) })
+    expect(messages).not.toHaveBeenCalled()
+
+    const closed = once(client, 'close')
+    client.close()
     await closed
   })
 
@@ -252,8 +267,10 @@ async function startMux(open: RemoteStreamOpener, heartbeatIntervalMs = 2_000): 
   return entry
 }
 
-async function connect(url: string, autoPong = true): Promise<WebSocket> {
-  const socket = new WebSocket(url, { autoPong })
+async function connect(url: string, autoPong = true, protocol?: string): Promise<WebSocket> {
+  const socket = protocol === undefined
+    ? new WebSocket(url, { autoPong })
+    : new WebSocket(url, protocol, { autoPong })
   await once(socket, 'open')
   return socket
 }

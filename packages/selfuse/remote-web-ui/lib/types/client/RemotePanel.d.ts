@@ -36,11 +36,11 @@ export type PanelState = {
 export interface RemotePanelProps {
     t: TranslateNS<'remote'>;
     state: PanelState;
-    copied: 'phone' | 'desktop' | undefined;
+    copied: boolean;
     onClose(): void;
     onStop(): void;
     onRefresh(): void;
-    onCopy(target: 'phone' | 'desktop', url: string): void;
+    onCopy(url: string): void;
     /** Re-mint the QR against a different LAN address. */
     onPickAddress(address: string): void;
     /** Re-mint the QR against the configured public (tunneled) base. */

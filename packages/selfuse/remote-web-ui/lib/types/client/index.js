@@ -1,7 +1,7 @@
 /**
- * Mobile remote control — browser half. Registers the `remote` dictionaries,
- * the sidebar-foot entry (phone trigger + pairing panel) into the
- * ui-sidebar-declared `sidebar.remote` seat, and runs the phone-side boot
+ * Remote desktop access — browser half. Registers the `remote` dictionaries,
+ * the sidebar-foot entry (remote trigger + pairing panel) into the
+ * ui-sidebar-declared `sidebar.remote` seat, and runs the remote-device boot
  * flow (pair accept + workspace deep-link + presence heartbeats) plus the
  * one-time failed-pair notice. Export discipline: packages/client/AGENTS.md
  * — the /client surface carries only what cordis loading needs plus types.
@@ -15,13 +15,13 @@ import { RemoteSettingsCard, RemoteSettingsCardController } from "./RemoteSettin
 import { en, zh } from "./locales.js";
 import { PAIR_FAILED_MARKER, runPairBootFlow } from "./deep-link.js";
 import { sendHeartbeat } from "./pair-api.js";
-import { channelTransition, installRemoteChannel, isLoopbackHostname } from "./remote-channel.js";
+import { channelTransition, installRemoteChannel } from "./remote-channel.js";
 import { FenceNotice } from "./FenceNotice.js";
 /** Dictionary namespace owned by this plugin. */
 const NS = 'remote';
 /** Settings namespace the remote-control card edits (the Host plugin registers it). */
 const REMOTE_WEB_UI_NS = 'remote-web-ui';
-/** Heartbeat cadence from a paired phone (presence + revocation liveness). */
+/** Heartbeat cadence from a paired remote desktop (presence + revocation liveness). */
 const HEARTBEAT_INTERVAL_MS = 10_000;
 /** Services required by this plugin. */
 export const inject = ['slots', 'locale', 'connection', 'settingsScope', 'remote'];
@@ -101,7 +101,7 @@ export function apply(ctx) {
             unregister();
         };
     });
-    // Phone-side boot flow + heartbeats. Loopback pages (the desktop) never
+    // Remote-device boot flow + heartbeats. Loopback pages never
     // heartbeat; the server ignores unpaired heartbeats anyway. Both run only
     // while the plugin is enabled.
     let disposeRuntime;
@@ -145,16 +145,11 @@ export function apply(ctx) {
         fenceNotice = undefined;
     };
     const channelActive = () => {
-        if (isLoopbackHostname(window.location.hostname))
-            return false;
-        // A not-yet-loaded (or unavailable) settings snapshot falls back to the
-        // schema defaults — enabled and requirePairingForLan are both true, and
-        // on a remote origin the snapshot may never load (its own transport is
-        // what the channel gates), so waiting for 'ready' here would deadlock
-        // the channel off exactly where it is needed most.
-        const snapshot = settingsScope.getSnapshot();
-        const value = snapshot.status === 'ready' ? snapshot.value : undefined;
-        return (value?.enabled ?? true) && (value?.requirePairingForLan ?? true);
+        // Local maintenance: Tailscale/tailnet is trusted, and remote pairing is
+        // disabled, so the desktop Web UI must use plain /api instead of the
+        // gated /remote channel. Returning false prevents the remote channel
+        // from ever being installed on non-loopback origins.
+        return false;
     };
     const syncChannel = () => {
         const transition = channelTransition(channelActive(), disposeChannel !== undefined);

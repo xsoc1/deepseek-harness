@@ -2,7 +2,7 @@
  * The /api/update route family: the status probe and the update run. Both
  * are loopback-only control surfaces — the run endpoint triggers a real
  * pnpm install inside the owning profile, so it must never be reachable
- * from a LAN/phone origin.
+ * from a remote origin.
  */
 import type { IncomingMessage } from 'node:http';
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver';

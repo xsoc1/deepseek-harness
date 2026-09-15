@@ -15,6 +15,8 @@ import type {
   SessionAssistantStreamBaseline,
   SessionControlFrame,
   SessionProjectionBaseline,
+  SessionPromptRequest,
+  SessionPromptValue,
   SessionQueuedItem,
   SessionRequestId,
 } from '../../types.ts'
@@ -49,11 +51,31 @@ function projectionsBaseline(value: SessionProjectionBaseline): ProjectionsBasel
   }
 }
 
+function waitForPromptRetry(delayMs: number, signal: AbortSignal | undefined): Promise<boolean> {
+  if (signal?.aborted === true) return Promise.resolve(false)
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (retry: boolean): void => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', aborted)
+      resolve(retry)
+    }
+    const aborted = (): void => { finish(false) }
+    const timer = setTimeout(() => { finish(true) }, delayMs)
+    signal?.addEventListener('abort', aborted, { once: true })
+  })
+}
+
 /** Messages requested per history page. */
 export const PAGE_MESSAGES = 20
 
 /** Messages requested per page while a turn jump loops backwards (fewer, larger round trips). */
 export const JUMP_PAGE_MESSAGES = 200
+
+/** Bounded delays for idempotent prompt acknowledgement retries after an ambiguous carrier failure. */
+const PROMPT_CARRIER_RETRY_DELAYS_MS = [500, 1_000, 2_000, 4_000, 8_000, 15_000] as const
 
 /** Manager-owned observers of a Session object's local state edges. */
 export interface SessionOptions {
@@ -126,6 +148,10 @@ export class Session implements SessionFace {
     readonly onRetire?: ((retirement: PendingSubmissionRetirement) => void) | undefined
     retiring: boolean
   }>()
+  /** Direct prompt RPCs currently waiting for an acknowledgement and the subset
+   *  whose exact rpcId has already appeared in the durable stream or queue. */
+  private readonly activePromptAcknowledgements = new Set<SessionRequestId>()
+  private readonly observedPromptAcknowledgements = new Set<SessionRequestId>()
   /** Owns the addressed page/follow lifecycle while this Session is open. */
   private events: SessionEventStream | undefined
 
@@ -246,13 +272,14 @@ export class Session implements SessionFace {
     let result: RemoteResult<{ accepted: true }>
     if (this.address === undefined) {
       const clientTimeZone = resolvedClientTimeZone()
-      result = await this.remote.session.prompt({
+      const promptRequest: SessionPromptRequest = {
         requestId: requestId ?? randomUUID() as SessionRequestId,
         sessionId: this.sessionId,
         mode,
         content,
         clientTimeZone,
-      }, signal)
+      }
+      result = await this.promptWithCarrierRetry(promptRequest, signal, requestId)
     } else if (content.some(part => part.type === 'file')) {
       result = {
         ok: false,
@@ -297,6 +324,54 @@ export class Session implements SessionFace {
       this.notifier.markDirty()
     }
     return result
+  }
+
+  /**
+   * Retry an ambiguous prompt acknowledgement with the same Host-idempotency key.
+   * @param request - immutable prompt wire request reused byte-for-byte.
+   * @param signal - caller lifetime spanning every retry and backoff.
+   * @param trackedRequestId - local echo identity whose durable observation proves Host acceptance.
+   * @returns the accepted receipt, a business failure, cancellation, or the final carrier failure.
+   */
+  private async promptWithCarrierRetry(
+    request: SessionPromptRequest,
+    signal: AbortSignal | undefined,
+    trackedRequestId: SessionRequestId | undefined,
+  ): Promise<RemoteResult<SessionPromptValue>> {
+    if (trackedRequestId !== undefined) this.activePromptAcknowledgements.add(trackedRequestId)
+    try {
+      let result = await this.remote.session.prompt(request, signal)
+      for (const delayMs of PROMPT_CARRIER_RETRY_DELAYS_MS) {
+        if (result.ok || result.error.code !== 'gateway/internal') return result
+        if (trackedRequestId !== undefined && this.observedPromptAcknowledgements.has(trackedRequestId)) {
+          return { ok: true, value: { accepted: true } }
+        }
+        if (!await waitForPromptRetry(delayMs, signal)) {
+          return {
+            ok: false,
+            error: new RemoteError(
+              'gateway/cancelled',
+              'client api: session/prompt retry was aborted',
+              {},
+            ),
+          }
+        }
+        if (trackedRequestId !== undefined && this.observedPromptAcknowledgements.has(trackedRequestId)) {
+          return { ok: true, value: { accepted: true } }
+        }
+        result = await this.remote.session.prompt(request, signal)
+      }
+      if (!result.ok && trackedRequestId !== undefined
+        && this.observedPromptAcknowledgements.has(trackedRequestId)) {
+        return { ok: true, value: { accepted: true } }
+      }
+      return result
+    } finally {
+      if (trackedRequestId !== undefined) {
+        this.activePromptAcknowledgements.delete(trackedRequestId)
+        this.observedPromptAcknowledgements.delete(trackedRequestId)
+      }
+    }
   }
 
   /**
@@ -756,6 +831,9 @@ export class Session implements SessionFace {
   ): void {
     const settlement = this.submissionSettlements.get(requestId)
     if (settlement === undefined || settlement.retiring) return
+    if (this.activePromptAcknowledgements.has(requestId)) {
+      this.observedPromptAcknowledgements.add(requestId)
+    }
     settlement.retiring = true
     scheduleFrame(() => { this.finishSubmission(requestId, { reason: 'observed', attachments }) })
   }

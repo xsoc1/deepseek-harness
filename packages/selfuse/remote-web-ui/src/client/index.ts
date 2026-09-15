@@ -1,7 +1,7 @@
 /**
- * Mobile remote control — browser half. Registers the `remote` dictionaries,
- * the sidebar-foot entry (phone trigger + pairing panel) into the
- * ui-sidebar-declared `sidebar.remote` seat, and runs the phone-side boot
+ * Remote desktop access — browser half. Registers the `remote` dictionaries,
+ * the sidebar-foot entry (remote trigger + pairing panel) into the
+ * ui-sidebar-declared `sidebar.remote` seat, and runs the remote-device boot
  * flow (pair accept + workspace deep-link + presence heartbeats) plus the
  * one-time failed-pair notice. Export discipline: packages/client/AGENTS.md
  * — the /client surface carries only what cordis loading needs plus types.
@@ -37,7 +37,7 @@ export type { UpdatePanelProps, UpdateView } from './UpdatePanel.tsx'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    /** Mobile remote-control surface copy. */
+    /** Remote desktop access copy. */
     remote: RemoteKey
   }
 
@@ -88,7 +88,7 @@ const NS = 'remote'
 /** Settings namespace the remote-control card edits (the Host plugin registers it). */
 const REMOTE_WEB_UI_NS = 'remote-web-ui'
 
-/** Heartbeat cadence from a paired phone (presence + revocation liveness). */
+/** Heartbeat cadence from a paired remote desktop (presence + revocation liveness). */
 const HEARTBEAT_INTERVAL_MS = 10_000
 
 /** Services required by this plugin. */
@@ -173,7 +173,7 @@ export function apply(ctx: ClientContext): void {
     }
   })
 
-  // Phone-side boot flow + heartbeats. Loopback pages (the desktop) never
+  // Remote-device boot flow + heartbeats. Loopback pages never
   // heartbeat; the server ignores unpaired heartbeats anyway. Both run only
   // while the plugin is enabled.
   let disposeRuntime: (() => void) | undefined

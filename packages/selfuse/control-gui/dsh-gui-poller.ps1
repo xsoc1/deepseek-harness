@@ -48,6 +48,17 @@ function Get-PortOpen([int]$Port) {
     }
 }
 
+function Resolve-TailscaleExe {
+    $candidates = @()
+    if ($env:ProgramFiles) {
+        $candidates += (Join-Path $env:ProgramFiles 'Tailscale\tailscale.exe')
+    }
+    $candidates += 'F:\Tailscale\tailscale.exe'
+    $command = Get-Command tailscale.exe -ErrorAction SilentlyContinue
+    if ($command -and $command.Source) { $candidates += $command.Source }
+    return $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+}
+
 function Get-PortPid([int]$Port) {
     try {
         $lines = @(netstat -ano -p tcp | Where-Object { $_ -match "TCP\s+.*:$Port\s+.*LISTENING" })
@@ -248,8 +259,8 @@ function Get-TailscaleInfo([switch]$Force) {
         return $script:cachedTsInfo
     }
     $script:lastTsCheckAt = Get-Date
-    $ts = 'F:\Tailscale\tailscale.exe'
-    if (-not (Test-Path $ts)) {
+    $ts = Resolve-TailscaleExe
+    if (-not $ts) {
         $script:cachedTsInfo = @{ status = '未安装'; ip = ''; serve = '未安装' }
         return $script:cachedTsInfo
     }
@@ -269,8 +280,8 @@ function Get-TailscaleInfo([switch]$Force) {
 }
 
 function Repair-TailscaleAction {
-    $ts = 'F:\Tailscale\tailscale.exe'
-    if (-not (Test-Path $ts)) {
+    $ts = Resolve-TailscaleExe
+    if (-not $ts) {
         Write-Activity 'Tailscale 未安装'
         return 'Tailscale not installed'
     }

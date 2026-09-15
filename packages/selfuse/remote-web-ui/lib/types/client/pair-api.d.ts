@@ -76,7 +76,7 @@ export interface DeviceFrame {
 /**
  * Mint a fresh pairing token (one active token at a time — this invalidates
  * any previous link).
- * @param workspaceId - optional current workspace to deep-link the phone into.
+ * @param workspaceId - optional current workspace to open on the remote computer.
  * @param address - optional LAN IP literal the QR must be built from (the
  * default is the first interface); unknown literals refuse with
  * 'unknown-address'.
@@ -86,7 +86,7 @@ export interface DeviceFrame {
  */
 export declare function issuePair(workspaceId?: string, address?: string): Promise<IssueResponse>;
 /**
- * Accept a pairing token (the phone's first open of the QR link). Success
+ * Accept a pairing token when a remote computer opens the QR link. Success
  * sets the device cookie; the page then reloads to boot with it.
  * @param token - the token from the URL.
  * @returns the wire result.
@@ -94,14 +94,14 @@ export declare function issuePair(workspaceId?: string, address?: string): Promi
 export declare function acceptPair(token: string): Promise<{
     ok: true;
 } | AcceptFailure>;
-/** Revoke mobile access (paired devices + the current token). */
+/** Revoke remote access (paired devices + the current token). */
 export declare function stopPair(): Promise<void>;
 /**
  * Revoke one paired device from the loopback panel.
  * @param deviceId - the session id of the row to drop.
  */
 export declare function revokePair(deviceId: string): Promise<void>;
-/** Presence heartbeat from a paired phone (unpaired heartbeats 401 harmlessly). */
+/** Presence heartbeat from a paired remote desktop (unpaired heartbeats 401 harmlessly). */
 export declare function sendHeartbeat(): Promise<void>;
 /** Whether the current page URL carries a pairing token / workspace target. */
 export declare function readPairParams(search: string): {
@@ -114,8 +114,6 @@ export declare function readPairParams(search: string): {
  * @returns the new search string ('' when empty).
  */
 export declare function stripParam(name: string): string;
-/** Convert an issued `/m/` link into the desktop pairing form. */
-export declare function desktopPairUrl(mobileUrl: string): string;
 /** Human-readable expiry clock, e.g. "10:35". */
 export declare function formatClock(epochMs: number): string;
 /** Calendar + clock for last-seen timestamps, e.g. "2026-08-19 10:35". */

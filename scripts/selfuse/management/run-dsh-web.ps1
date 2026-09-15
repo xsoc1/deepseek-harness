@@ -51,6 +51,17 @@ function Test-TcpPort([string]$HostName, [int]$Port) {
     }
 }
 
+function Resolve-TailscaleExe {
+    $candidates = @()
+    if ($env:ProgramFiles) {
+        $candidates += (Join-Path $env:ProgramFiles 'Tailscale\tailscale.exe')
+    }
+    $candidates += 'F:\Tailscale\tailscale.exe'
+    $command = Get-Command tailscale.exe -ErrorAction SilentlyContinue
+    if ($command -and $command.Source) { $candidates += $command.Source }
+    return $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+}
+
 $wslDistro = "Ubuntu"
 $wslStartTimeoutSec = 20
 $wslGatewayTimeoutSec = 30
@@ -123,9 +134,9 @@ else {
 }
 
 # Tailscale 私有远程：通过 Tailscale Serve 暴露 https://<machine>.<tailnet>.ts.net -> 127.0.0.1:3080
-$tailscaleExe = "F:\Tailscale\tailscale.exe"
+$tailscaleExe = Resolve-TailscaleExe
 $tailscaleHost = $null
-if (Test-Path $tailscaleExe) {
+if ($tailscaleExe) {
     try {
         $tsSelf = & $tailscaleExe status --json 2>$null | ConvertFrom-Json | Select-Object -ExpandProperty Self
         if ($tsSelf) { $tailscaleHost = ($tsSelf.DNSName -replace '\.$', '') }

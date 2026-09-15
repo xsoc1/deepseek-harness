@@ -2,7 +2,7 @@
  * The /api/update route family: the status probe and the update run. Both
  * are loopback-only control surfaces — the run endpoint triggers a real
  * pnpm install inside the owning profile, so it must never be reachable
- * from a LAN/phone origin.
+ * from a remote origin.
  */
 import { writeJson } from "./http.js";
 /** Route paths (exact matches under /api). */
@@ -23,7 +23,7 @@ export function makeUpdateRoutes(deps) {
             return;
         }
         if (!deps.fence(req)) {
-            writeJson(res, 403, { ok: false, code: "forbidden" });
+            writeJson(res, 403, { ok: false, code: 'forbidden' });
             return;
         }
         writeJson(res, 200, await deps.check());
@@ -35,7 +35,7 @@ export function makeUpdateRoutes(deps) {
             return;
         }
         if (!deps.fence(req)) {
-            writeJson(res, 403, { ok: false, code: "forbidden" });
+            writeJson(res, 403, { ok: false, code: 'forbidden' });
             return;
         }
         writeJson(res, 200, await deps.run());

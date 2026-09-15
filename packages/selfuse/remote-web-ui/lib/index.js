@@ -1,20 +1,38 @@
 import { createRequire } from "node:module";
 import { dirname, isAbsolute, join } from "node:path";
-import { setInterval as setInterval$1, setTimeout as setTimeout$1 } from "node:timers";
+import { setInterval, setTimeout as setTimeout$1 } from "node:timers";
 import { Service } from "@deepseek-ai/cordis";
 import z from "schemastery";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir, networkInterfaces } from "node:os";
 import { z as z$1 } from "zod";
-import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import { RpcId } from "@deepseek-ai/dsh-host-apiproxy/api/rpc";
 import http, { request } from "node:http";
 import { connect } from "node:net";
 import { Tunnel, bin, install } from "cloudflared";
 import { spawn } from "node:child_process";
-//#region ../../node_modules/.pnpm/@deepseek-ai+dsh-settings@0.1.1-rc.1_@deepseek-ai+cordis@4.0.1_@deepseek-ai+dsh-brand@0_8fb97b2935e1a5982886bc1738874e4d/node_modules/@deepseek-ai/dsh-settings/lib/index.js
+//#region ../../util/values/lib/index.js
+/**
+* Compare JSON-compatible values structurally.
+* @param a - one JSON-compatible value.
+* @param b - the other JSON-compatible value.
+* @returns whether both values contain the same JSON data.
+*/
+function deepEqualJson(a, b) {
+	if (a === b) return true;
+	if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+	if (Array.isArray(a) || Array.isArray(b)) {
+		if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+		return a.every((entry, index) => deepEqualJson(entry, b[index]));
+	}
+	const left = a;
+	const right = b;
+	const keys = Object.keys(left);
+	if (keys.length !== Object.keys(right).length) return false;
+	return keys.every((key) => key in right && deepEqualJson(left[key], right[key]));
+}
+//#endregion
+//#region ../../settings/settings/lib/index.js
 /**
 * Structural secret redaction for settings values. `role('secret')` fields are
 * removed from a value before it crosses a wire boundary; a sidecar records
@@ -65,44 +83,6 @@ function walk(node, value, path, secrets) {
 			return value.map((entry, index) => walk(node.inner, entry, [...path, String(index)], secrets));
 		default: return value;
 	}
-}
-/**
-* Service Definition for the user-settings capability seam (`ctx.settings`). Providers store one raw document of
-* per-namespace sections; plugins register a namespace schema and read the
-* resolved value, which layers schema defaults, the registrant's composition
-* `base`, and the user document section, in that order.
-* @module @deepseek-ai/dsh-settings
-*/
-const NAMESPACE_PATTERN = /^[a-z][a-z0-9-]*$/;
-/**
-* Brand a raw string as a {@link SettingsNamespace}.
-* @param value - candidate namespace; lowercase kebab-case, as in plugin short names.
-* @returns the branded namespace.
-*/
-function settingsNamespace(value) {
-	if (!NAMESPACE_PATTERN.test(value)) throw new TypeError(`settings namespace "${value}" must match ${String(NAMESPACE_PATTERN)}`);
-	return value;
-}
-/**
-* Deep equality over JSON-compatible data (objects, arrays, primitives) — the
-* Service Definition's single change-detection predicate, exported so the invariant
-* companion checks exactly the implementation's relation.
-* @param a - one JSON-compatible value.
-* @param b - the other JSON-compatible value.
-* @returns whether the two values are structurally equal.
-*/
-function deepEqualJson(a, b) {
-	if (a === b) return true;
-	if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
-	if (Array.isArray(a) || Array.isArray(b)) {
-		if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
-		return a.every((entry, index) => deepEqualJson(entry, b[index]));
-	}
-	const left = a;
-	const right = b;
-	const keys = Object.keys(left);
-	if (keys.length !== Object.keys(right).length) return false;
-	return keys.every((key) => key in right && deepEqualJson(left[key], right[key]));
 }
 /** Whether a value is a plain data object (not an array, null, or class instance). */
 function isPlainObject(value) {
@@ -159,59 +139,25 @@ function mergeLayers(under, over) {
 	for (const [key, value] of Object.entries(over)) merged[key] = key in merged ? mergeLayers(merged[key], value) : value;
 	return merged;
 }
-/** Recursively freeze one resolved value so handed-out snapshots stay immutable. */
-function deepFreeze(value) {
-	if (typeof value !== "object" || value === null || Object.isFrozen(value)) return value;
-	for (const entry of Object.values(value)) deepFreeze(entry);
-	return Object.freeze(value);
-}
 Service.init;
 /**
-* Value mirror of the `FiberState` members {@link isUnloading} compares
-* against: a const enum has no runtime object to import, and the value is
-* needed at runtime (same rationale as the CLI boot driver's mirror).
+* Backwards compatibility helper for plugins targeting earlier DSH releases.
+* Resolves the given namespace as a valid SettingsNamespace.
 */
-const FIBER_DISPOSED = 4;
-const FIBER_UNLOADING = 5;
-/** Whether the consumer's own fiber is tearing down (not just losing the settings service). */
-function isUnloading(ctx) {
-	const state = ctx.fiber.state;
-	return state === FIBER_UNLOADING || state === FIBER_DISPOSED;
+function settingsNamespace(ns) {
+	return ns;
 }
 /**
-* Install the canonical optional-settings consumer wiring: while a settings
-* service exists, register `ns` with the consumer's composition entry as the
-* `base` layer and point the source thunk at the resolved scope; when the
-* service goes away (disposal, provider reload), fall back to the entry so
-* the consumer keeps working exactly as composed. The registration rides the
-* scoped fiber, so no settings service ever mounted means none of this runs.
-* @param ctx - consumer plugin context owning the wiring.
-* @param ns - the consumer-owned settings namespace.
-* @param schema - schema resolving the namespace (typically the plugin Config).
-* @param entry - the consumer's composition entry config, used as `base`.
-* @param hooks - source sink and change notification.
+* Backwards compatibility helper for plugins calling `installSettingsSection(ctx, ...)`.
+* Injects the `settings` service and delegates to `settingsCtx.settings.installSection(...)`.
 */
-function installSettingsSection(ctx, ns, schema, entry, hooks) {
-	ctx.inject(["settings"], (sctx) => {
-		const scope = sctx.settings.register(ns, schema, {
-			base: entry,
-			...hooks.validate === void 0 ? {} : { validate: hooks.validate }
-		});
-		hooks.setSource(() => scope.get());
-		sctx.effect(() => () => {
-			if (isUnloading(ctx)) return;
-			hooks.setSource(() => entry);
-			hooks.onChange();
-		});
-		hooks.onChange();
-		scope.watch(() => {
-			if (isUnloading(ctx)) return;
-			hooks.onChange();
-		});
+function installSettingsSection(owner, ns, schema, entry, hooks) {
+	owner.inject(["settings"], (settingsCtx) => {
+		settingsCtx.settings.installSection(owner, ns, schema, entry, hooks);
 	});
 }
 //#endregion
-//#region src/pairing.ts
+//#region lib/types/pairing.js
 /**
 * Pairing state machine: one active one-time token, a device-session table,
 * and presence tracking. Pure TypeScript with injected clock/randomness so
@@ -464,7 +410,7 @@ var PairingService = class {
 	}
 	/**
 	* Stop remote control: revoke every device session and clear the token.
-	* The phone's next gated /api request 403s; the panel falls back to
+	* The remote computer's next gated request returns 403; the panel falls back to
 	* stopped until a fresh QR is issued.
 	*/
 	stop() {
@@ -502,7 +448,7 @@ var PairingService = class {
 		this.notify();
 		return true;
 	}
-	/** Explicit presence heartbeat (the phone's client sends these). */
+	/** Explicit presence heartbeat from a paired remote computer. */
 	heartbeat(deviceId) {
 		return this.touchDevice(deviceId);
 	}
@@ -634,7 +580,7 @@ function sanitizeUserAgent(raw) {
 	return cleaned.length <= MAX_USER_AGENT_CHARS ? cleaned : cleaned.slice(0, MAX_USER_AGENT_CHARS);
 }
 //#endregion
-//#region src/dsh-home.ts
+//#region lib/types/dsh-home.js
 /**
 * DSH_HOME resolution shared by the plugin family's Host halves: the
 * environment override wins, the platform home fallback follows. Mirrors
@@ -665,7 +611,18 @@ function dshHome() {
 	return resolveDshHome();
 }
 //#endregion
-//#region src/loopback.ts
+//#region lib/types/loopback.js
+/**
+* Loopback trust fence shared by the host route families: socket address,
+* Host header, and browser same-origin markers. Packages receive this file as
+* a generated copy via scripts/sync-shared.mjs; edit the shared source and
+* re-run the sync instead of editing a copy.
+*
+* Semantics: RFC 5735 IPv4 127/8, ::1, IPv4-mapped ::ffff:127/8 (matching the
+* remote-web-ui gate), localhost hostnames, plus the browser same-origin
+* markers (sec-fetch-site and Origin) for the request-level fence.
+* @module dsh-web-ui-shared/host/loopback
+*/
 /** IPv4 127/8 predicate (four decimal octets, first == 127). */
 function isIPv4Loopback(v4) {
 	const parts = v4.split(".");
@@ -683,11 +640,23 @@ function isLoopbackAddress(address) {
 }
 /** Whether a normalized URL hostname names the loopback authority (localhost, [::1], 127/8). */
 function isLoopbackHostname(hostname) {
-	if (hostname === "localhost" || hostname === "[::1]" || (typeof hostname === "string" && hostname.endsWith(".ts.net")) || hostname === "172.22.112.1" || hostname.startsWith("172.22.") || hostname.startsWith("172.")) return true;
+	if (hostname === "localhost" || hostname === "[::1]" || typeof hostname === "string" && hostname.endsWith(".ts.net") || hostname === "172.22.112.1" || hostname.startsWith("172.22.") || hostname.startsWith("172.")) return true;
 	return isIPv4Loopback(hostname);
 }
 //#endregion
-//#region src/gate.ts
+//#region lib/types/gate.js
+/**
+* The `api/gate` listener: application-level access control layered on top
+* of the transport fence (the fence is Host/Origin based and explicitly not
+* an authentication layer — packages/client/connection documents this
+* event as the sanctioned seam for pairing/revocation).
+*
+* Policy: loopback requests (the desktop) pass without a device identity;
+* every non-loopback /api request must carry a live, non-revoked device
+* cookie. This makes the QR the only way into a LAN-exposed dsh web and
+* gives "停止" real teeth: revoked devices 403 on their next request,
+* including the mux/SSE stream (which then dies on reconnect).
+*/
 /**
 * Loopback classification for the desktop client. The predicates now live in
 * the shared synced copy (shared/host/loopback.ts, mirrored to ./loopback.ts
@@ -767,7 +736,7 @@ function isPairedDeviceRequest(service, request) {
 	return service.touchDevice(deviceId);
 }
 //#endregion
-//#region src/pairing-access.ts
+//#region lib/types/pairing-access.js
 /** Named lookup key sibling plugins pass to ctx.get. */
 const REMOTE_WEB_UI_PAIRING = "remoteWebUiPairing";
 /**
@@ -794,7 +763,12 @@ var RemoteWebUiPairing = class extends Service {
 	}
 };
 //#endregion
-//#region src/http.ts
+//#region lib/types/http.js
+/**
+* Shared HTTP helpers for the route families: one JSON writer and one
+* bounded JSON body reader. Previously copy-pasted across routes.ts,
+* update-routes.ts with drifting failure contracts.
+*/
 /** One JSON response. */
 function writeJson(res, status, body) {
 	const payload = JSON.stringify(body);
@@ -820,13 +794,22 @@ async function readBoundedJson(req, maxBytes) {
 	return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 //#endregion
-//#region src/routes.ts
+//#region lib/types/routes.js
+/**
+* The /api/pair route family + the desktop status stream. Exact routes
+* under /api: the webserver matches exact paths before the connection
+* plugin's /api prefix, so these handlers own the full response lifecycle
+* and apply their own trust fence (loopback-only for control endpoints;
+* loopback-or-remote for accept/heartbeat/status). The
+* cookie set on accept is the device identity the api/gate listener checks
+* on every other /api request.
+*/
 /**
 * Browser-trust fence for the /api/pair routes, mirroring the connection
 * package's internal fence semantics (Host/Origin based, DNS-rebinding and
 * cross-site defense). The connection package no longer exports its trust
 * predicate — the fence for the /api prefix lives inside the connection
-* plugin — so the pairing routes, which must stay reachable from LAN phones
+* plugin — so the pairing routes, which must stay reachable from remote computers
 * ahead of the connection prefix route (exact routes match first), carry
 * their own copy scoped to the literals the QR links advertise.
 * @param request - the node HTTP request.
@@ -914,7 +897,7 @@ function parsePairPayload(schema, body) {
 	return result.success ? result.data : void 0;
 }
 /** Read a request body up to MAX_BODY_BYTES and parse it as JSON (undefined on failure). */
-async function readJsonBody$1(req) {
+async function readJsonBody(req) {
 	try {
 		const parsed = await readBoundedJson(req, MAX_BODY_BYTES);
 		return typeof parsed === "object" && parsed !== null ? parsed : void 0;
@@ -1024,8 +1007,7 @@ function makeRoutes(deps) {
 			});
 			return;
 		}
-		const body = await readJsonBody$1(req);
-		const payload = parsePairPayload(issuePayloadSchema, body);
+		const payload = parsePairPayload(issuePayloadSchema, await readJsonBody(req));
 		if (payload === void 0) {
 			writeJson(res, 400, {
 				ok: false,
@@ -1040,7 +1022,7 @@ function makeRoutes(deps) {
 			if (base === void 0) throw new Error("remote-web-ui: base unavailable");
 			writeJson(res, 200, {
 				ok: true,
-				url: `${base}/m/?pair=${token}${workspaceId === void 0 ? "" : `&workspace=${encodeURIComponent(workspaceId)}`}`,
+				url: `${base}/?pair=${token}${workspaceId === void 0 ? "" : `&workspace=${encodeURIComponent(workspaceId)}`}`,
 				token,
 				expiresAt,
 				lanAddresses: service.lanAddresses,
@@ -1070,8 +1052,7 @@ function makeRoutes(deps) {
 			});
 			return;
 		}
-		const body = await readJsonBody$1(req);
-		const payload = parsePairPayload(acceptPayloadSchema, body);
+		const payload = parsePairPayload(acceptPayloadSchema, await readJsonBody(req));
 		if (payload === void 0) {
 			writeJson(res, 400, {
 				ok: false,
@@ -1106,8 +1087,7 @@ function makeRoutes(deps) {
 			});
 			return;
 		}
-		const body = await readJsonBody$1(req);
-		if (parsePairPayload(pairActionPayloadSchema, body) === void 0) {
+		if (parsePairPayload(pairActionPayloadSchema, await readJsonBody(req)) === void 0) {
 			writeJson(res, 400, {
 				ok: false,
 				code: "bad-payload"
@@ -1126,8 +1106,7 @@ function makeRoutes(deps) {
 			});
 			return;
 		}
-		const body = await readJsonBody$1(req);
-		const payload = parsePairPayload(revokePayloadSchema, body);
+		const payload = parsePairPayload(revokePayloadSchema, await readJsonBody(req));
 		if (payload === void 0) {
 			writeJson(res, 400, {
 				ok: false,
@@ -1153,8 +1132,7 @@ function makeRoutes(deps) {
 			});
 			return;
 		}
-		const body = await readJsonBody$1(req);
-		if (parsePairPayload(pairActionPayloadSchema, body) === void 0) {
+		if (parsePairPayload(pairActionPayloadSchema, await readJsonBody(req)) === void 0) {
 			writeJson(res, 400, {
 				ok: false,
 				code: "bad-payload"
@@ -1245,541 +1223,15 @@ function makeRoutes(deps) {
 	];
 }
 //#endregion
-//#region src/mobile-routes.ts
+//#region lib/types/loopback-proxy.js
 /**
-* The mobile surface's page routes: /m canonicalizes to /m/, which serves the
-* standalone phone UI. The page and worker live in the /m/ scope so the PWA
-* can cache only its static shell; the paired-device data channel remains at
-* /m/api and is never handled by the worker.
+* Loopback-shaped reverse proxy used by the remote desktop channel: after
+* the pairing cookie gate, traffic is re-issued to 127.0.0.1 so sibling
+* plugin fences (socket + Host loopback) accept it. Origin, cookies, and
+* caller-controlled Sec-Fetch markers are dropped. HTTP requests receive a
+* synthetic same-origin marker after the pairing gate so sibling loopback
+* routes that require a browser tripwire accept the authenticated proxy.
 */
-const MOBILE_ROOT = "/m/";
-const MOBILE_BUNDLE_URL = "/m/mobile.js";
-const MOBILE_MANIFEST_URL = "/m/manifest.webmanifest";
-const MOBILE_WORKER_URL = "/m/service-worker.js";
-const MOBILE_OFFLINE_URL = "/m/offline.html";
-/** The standalone mobile bundle (built artifact, next to this file's own lib output). */
-function mobileBundlePath() {
-	return fileURLToPath(new URL("../lib/mobile.js", import.meta.url));
-}
-/** A package asset available to the host after a registry or git install. */
-function mobileAssetPath(name) {
-	return fileURLToPath(new URL("../assets/" + name, import.meta.url));
-}
-/** The mobile page shell: self-contained, with no document-level user data. */
-function pageHtml(bundleUrl) {
-	return [
-		"<!doctype html>",
-		"<html lang=\"zh-CN\">",
-		"<head>",
-		"<meta charset=\"utf-8\">",
-		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover\">",
-		"<meta name=\"theme-color\" content=\"#f3f5f9\">",
-		"<meta name=\"referrer\" content=\"no-referrer\">",
-		"<meta name=\"mobile-web-app-capable\" content=\"yes\">",
-		"<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">",
-		"<meta name=\"apple-mobile-web-app-title\" content=\"DSH Remote\">",
-		"<link rel=\"manifest\" href=\"/m/manifest.webmanifest\">",
-		"<link rel=\"apple-touch-icon\" href=\"/m/apple-touch-icon.png\">",
-		"<title>远程访问</title>",
-		"</head>",
-		"<body>",
-		"<div id=\"root\"></div>",
-		"<script type=\"module\" src=\"" + bundleUrl + "?v=" + Date.now().toString(36) + "\"><\/script>",
-		"</body>",
-		"</html>"
-	].join("");
-}
-/** The installable app identity and icon declarations for the /m scope. */
-function manifestJson() {
-	return JSON.stringify({
-		id: MOBILE_ROOT,
-		name: "DSH Remote",
-		short_name: "DSH Remote",
-		start_url: MOBILE_ROOT,
-		scope: MOBILE_ROOT,
-		display: "standalone",
-		background_color: "#151424",
-		theme_color: "#f3f5f9",
-		icons: [{
-			src: "/m/icon-192.png",
-			sizes: "192x192",
-			type: "image/png",
-			purpose: "any"
-		}, {
-			src: "/m/icon-512.png",
-			sizes: "512x512",
-			type: "image/png",
-			purpose: "any maskable"
-		}]
-	}, null, 2);
-}
-/** A static fallback that contains no paired-device, session, or workspace data. */
-function offlineHtml() {
-	return [
-		"<!doctype html>",
-		"<html lang=\"zh-CN\">",
-		"<head>",
-		"<meta charset=\"utf-8\">",
-		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">",
-		"<meta name=\"theme-color\" content=\"#151424\">",
-		"<title>DSH Remote</title>",
-		"<style>body{margin:0;background:#151424;color:#f3f5f9;font:16px system-ui,sans-serif}main{box-sizing:border-box;display:grid;min-height:100vh;place-content:center;padding:32px;text-align:center}h1{margin:0 0 12px;font-size:24px}p{margin:0;color:#c4c7d8;line-height:1.5}</style>",
-		"</head>",
-		"<body><main><h1>DSH Remote</h1><p>Cannot reach the running DSH host. Restore the connection and reopen the app.</p></main></body>",
-		"</html>"
-	].join("");
-}
-/** Send a small static UTF-8 body with revalidation headers. */
-function writeStatic(res, status, type, body) {
-	res.writeHead(status, {
-		"content-type": type + "; charset=utf-8",
-		"cache-control": "no-cache",
-		"referrer-policy": "no-referrer"
-	});
-	res.end(body);
-}
-/** Send the worker with the same scope it registers for, without HTTP caching. */
-function writeServiceWorker(res, body) {
-	res.writeHead(200, {
-		"content-type": "text/javascript; charset=utf-8",
-		"cache-control": "no-cache",
-		"referrer-policy": "no-referrer",
-		"service-worker-allowed": MOBILE_ROOT
-	});
-	res.end(body);
-}
-/** Send a PNG body without decoding it to UTF-8. */
-function writePng(res, status, body) {
-	res.writeHead(status, {
-		"content-type": "image/png",
-		"cache-control": "public, max-age=31536000, immutable",
-		"referrer-policy": "no-referrer"
-	});
-	res.end(body);
-}
-/** Canonicalize the old /m route while retaining pair and workspace query parameters. */
-function redirectToMobileRoot(req, res) {
-	const url = new URL(req.url ?? "/m", "http://x");
-	res.writeHead(308, {
-		location: MOBILE_ROOT + url.search,
-		"cache-control": "no-store",
-		"referrer-policy": "no-referrer"
-	});
-	res.end();
-}
-/**
-* Build the mobile page routes.
-* @returns Exact routes for the canonical page, static shell, and PWA assets.
-*/
-function makeMobileRoutes() {
-	const handlePage = (_req, res) => {
-		writeStatic(res, 200, "text/html", pageHtml(MOBILE_BUNDLE_URL));
-	};
-	const handleManifest = (_req, res) => {
-		writeStatic(res, 200, "application/manifest+json", manifestJson());
-	};
-	const handleOffline = (_req, res) => {
-		writeStatic(res, 200, "text/html", offlineHtml());
-	};
-	let bundleBody;
-	const handleBundle = async (_req, res) => {
-		if (bundleBody === void 0) {
-			const path = mobileBundlePath();
-			if (!existsSync(path)) {
-				writeStatic(res, 503, "text/plain", "mobile bundle not built: run pnpm --filter @dsh-selfuse/remote-web-ui build");
-				return;
-			}
-			try {
-				bundleBody = await readFile(path, "utf8");
-			} catch {
-				writeStatic(res, 500, "text/plain", "failed to read the mobile bundle");
-				return;
-			}
-		}
-		writeStatic(res, 200, "text/javascript", bundleBody);
-	};
-	let workerBody;
-	const handleWorker = async (_req, res) => {
-		if (workerBody === void 0) {
-			const path = mobileAssetPath("mobile-service-worker.js");
-			if (!existsSync(path)) {
-				writeStatic(res, 503, "text/plain", "mobile service worker not found");
-				return;
-			}
-			try {
-				workerBody = await readFile(path, "utf8");
-			} catch {
-				writeStatic(res, 500, "text/plain", "failed to read the mobile service worker");
-				return;
-			}
-		}
-		writeServiceWorker(res, workerBody);
-	};
-	const makeIconHandler = (asset) => async (_req, res) => {
-		const path = mobileAssetPath(asset);
-		if (!existsSync(path)) {
-			writeStatic(res, 404, "text/plain", asset + " not found");
-			return;
-		}
-		try {
-			writePng(res, 200, await readFile(path));
-		} catch {
-			writeStatic(res, 500, "text/plain", "failed to read " + asset);
-		}
-	};
-	return [
-		{
-			kind: "exact",
-			path: "/m",
-			handler: redirectToMobileRoot
-		},
-		{
-			kind: "exact",
-			path: MOBILE_ROOT,
-			handler: handlePage
-		},
-		{
-			kind: "exact",
-			path: MOBILE_BUNDLE_URL,
-			handler: handleBundle
-		},
-		{
-			kind: "exact",
-			path: MOBILE_MANIFEST_URL,
-			handler: handleManifest
-		},
-		{
-			kind: "exact",
-			path: MOBILE_WORKER_URL,
-			handler: handleWorker
-		},
-		{
-			kind: "exact",
-			path: MOBILE_OFFLINE_URL,
-			handler: handleOffline
-		},
-		{
-			kind: "exact",
-			path: "/m/apple-touch-icon.png",
-			handler: makeIconHandler("apple-touch-icon.png")
-		},
-		{
-			kind: "exact",
-			path: "/m/icon-192.png",
-			handler: makeIconHandler("mobile-icon-192.png")
-		},
-		{
-			kind: "exact",
-			path: "/m/icon-512.png",
-			handler: makeIconHandler("mobile-icon-512.png")
-		}
-	];
-}
-//#endregion
-//#region src/mobile-api.ts
-/**
-* Methods the phone surface may call. Everything else is refused HERE — but
-* note the paired-device cookie also passes the global api/gate for the full
-* ApiProxy surface (gate.ts), so a paired phone is a full-control credential:
-* the allowlist only constrains this /m/api proxy, not the cookie's reach.
-* stop() revokes every device; the loopback panel can also revoke one
-* device at a time.
-*/
-const MOBILE_ALLOWLIST = /* @__PURE__ */ new Set([
-	"workspace.list",
-	"agentPreset.list",
-	"session.create",
-	"session.list",
-	"session.history",
-	"session.search",
-	"session.prompt",
-	"session.models",
-	"session.selectModel",
-	"session.rename"
-]);
-/**
-* Locally answered display-preference method (the phone's read-only
-* surface preferences; never proxied to the host ApiProxy and never a
-* settings-domain write).
-*/
-const MOBILE_PREFERENCES_METHOD = "mobile.preferences";
-/** One session.list page (thin phones load incrementally). */
-const SESSION_PAGE_SIZE = 20;
-/** SSE keep-alive ping cadence for the live mux stream (single connection). */
-const DEFAULT_EVENTS_HEARTBEAT_MS = 5e3;
-/** Encode one list position as an opaque continuation cursor. */
-function sessionListCursor(updatedAt, sessionId) {
-	return `${updatedAt}:${sessionId}`;
-}
-/** Parse a cursor; malformed cursors mean "start over" (safe failure mode). */
-function parseSessionListCursor(cursor) {
-	const separator = cursor.indexOf(":");
-	if (separator < 0) return void 0;
-	const updatedAt = Number(cursor.slice(0, separator));
-	if (!Number.isFinite(updatedAt)) return void 0;
-	return {
-		updatedAt,
-		sessionId: cursor.slice(separator + 1)
-	};
-}
-/** Whether a row comes strictly after the cursor position. */
-function afterCursor(row, position) {
-	return row.updatedAt < position.updatedAt || row.updatedAt === position.updatedAt && row.sessionId > position.sessionId;
-}
-/** Mobile API route paths. */
-const MOBILE_API_PATHS = { events: "/m/api/events.mux" };
-/** The mobile-api prefix (every other path under it is a method name). */
-const MOBILE_API_PREFIX = "/m/api";
-/** Method extraction: the prefix plus one slash. */
-const MOBILE_API_METHOD_PREFIX = `${MOBILE_API_PREFIX}/`;
-/**
-* Build the mobile data-channel routes.
-* @param deps - pairing service + apiProxy.
-* @returns the routes to register on webServer.
-*/
-function makeMobileApiRoutes(deps) {
-	const { service, apiProxy, mobileEnterToSend, requirePairingForLan } = deps;
-	const eventsHeartbeatMs = deps.eventsHeartbeatMs ?? DEFAULT_EVENTS_HEARTBEAT_MS;
-	/**
-	* Refresh the paired device's presence and report whether it is live.
-	* The mobile surface (unlike the desktop Web UI) has no `/api/pair/heartbeat`
-	* sender, so any activity on the mobile channel — a gated RPC, or the live
-	* SSE stream staying open — must count as presence. Without this, an
-	* idle-but-connected phone ages past `offlineAfterMs` and the desktop panel
-	* wrongly reports it as disconnected.
-	*/
-	const touchDeviceFor = (req) => {
-		const deviceId = readCookie(req.headers.cookie, service.config.cookieName);
-		if (deviceId === void 0) return false;
-		return service.touchDevice(deviceId);
-	};
-	/** The phone gate: a live paired-device cookie, or nothing else proceeds. */
-	const gateOk = (req) => {
-		if (requirePairingForLan?.() === false) return true;
-		return touchDeviceFor(req);
-	};
-	const handleMethod = async (req, res) => {
-		if (req.method !== "POST") {
-			res.writeHead(405);
-			res.end();
-			return;
-		}
-		if (!gateOk(req)) {
-			writeJson(res, 403, {
-				ok: false,
-				error: {
-					code: "unpaired",
-					message: "mobile session is not paired"
-				}
-			});
-			return;
-		}
-		const pathname = new URL(req.url ?? "/", "http://x").pathname;
-		if (!pathname.startsWith(MOBILE_API_METHOD_PREFIX)) {
-			writeJson(res, 404, {
-				ok: false,
-				error: {
-					code: "not-found",
-					message: "unknown mobile api path"
-				}
-			});
-			return;
-		}
-		const method = pathname.slice(MOBILE_API_METHOD_PREFIX.length);
-		const local = method === MOBILE_PREFERENCES_METHOD;
-		if (!MOBILE_ALLOWLIST.has(method) && !local) {
-			writeJson(res, 403, {
-				ok: false,
-				error: {
-					code: "forbidden",
-					message: `method ${method} is not exposed to the mobile surface`
-				}
-			});
-			return;
-		}
-		let envelope;
-		try {
-			envelope = await readJsonBody(req);
-		} catch {
-			writeJson(res, 400, {
-				ok: false,
-				error: {
-					code: "bad-request",
-					message: "invalid json body"
-				}
-			});
-			return;
-		}
-		const parsed = envelope;
-		const rpcId = typeof parsed?.rpcId === "string" ? parsed.rpcId : "";
-		if (rpcId === "") {
-			writeJson(res, 400, {
-				ok: false,
-				error: {
-					code: "bad-request",
-					message: "missing rpcId"
-				}
-			});
-			return;
-		}
-		if (local) {
-			writeJson(res, 200, {
-				type: "server-response",
-				rpcId,
-				result: {
-					ok: true,
-					value: { mobileEnterToSend: mobileEnterToSend() }
-				}
-			});
-			return;
-		}
-		try {
-			const abort = new AbortController();
-			res.on("close", () => {
-				if (!res.writableEnded) abort.abort();
-			});
-			writeJson(res, 200, await dispatch(apiProxy, method, parsed?.payload, rpcId, abort.signal));
-		} catch (error) {
-			writeJson(res, 200, {
-				type: "server-response",
-				rpcId,
-				result: {
-					ok: false,
-					error: {
-						code: "internal",
-						message: error instanceof Error ? error.message : String(error)
-					}
-				}
-			});
-		}
-	};
-	/** Bridge the host mux stream over SSE: one `data:` frame per mux frame. */
-	const handleEvents = async (req, res) => {
-		if (req.method !== "GET") {
-			res.writeHead(405);
-			res.end();
-			return;
-		}
-		if (!gateOk(req)) {
-			res.writeHead(403);
-			res.end("forbidden");
-			return;
-		}
-		res.writeHead(200, {
-			"content-type": "text/event-stream; charset=utf-8",
-			"cache-control": "no-cache",
-			connection: "keep-alive"
-		});
-		const controller = new AbortController();
-		let closed = false;
-		const heartbeat = setInterval(() => {
-			if (closed) return;
-			touchDeviceFor(req);
-			try {
-				res.write(": ping\n\n");
-			} catch {}
-		}, eventsHeartbeatMs);
-		const onClose = () => {
-			if (closed) return;
-			closed = true;
-			controller.abort();
-			clearInterval(heartbeat);
-		};
-		res.on("close", onClose);
-		req.on("close", onClose);
-		try {
-			const frames = apiProxy.events.mux({
-				rpcId: RpcId(`mobile-mux-${Date.now().toString(36)}`),
-				payload: {}
-			}, controller.signal);
-			for await (const frame of frames) {
-				if (closed) break;
-				res.write(`data: ${JSON.stringify(frame)}\n\n`);
-			}
-		} catch {} finally {
-			controller.abort();
-			clearInterval(heartbeat);
-		}
-		if (!closed) res.end();
-	};
-	return [{
-		kind: "prefix",
-		path: MOBILE_API_PREFIX,
-		handler: handleMethod
-	}, {
-		kind: "exact",
-		path: MOBILE_API_PATHS.events,
-		handler: handleEvents
-	}];
-}
-/** Read a request body as JSON (bounded). */
-async function readJsonBody(req) {
-	return readBoundedJson(req, 64 * 1024);
-}
-/** Dispatch one allowlisted method through the host ApiProxy. */
-async function dispatch(apiProxy, method, payload, rpcId, signal) {
-	const request = {
-		rpcId: RpcId(rpcId),
-		payload
-	};
-	if (method === "session.list") {
-		const full = await apiProxy.sessions.list(request);
-		if (!full.result.ok) return {
-			type: "server-response",
-			rpcId,
-			result: full.result
-		};
-		let items = full.result.value.items;
-		const targetWsId = payload?.workspaceId ?? payload?.workspace;
-		if (targetWsId !== void 0 && targetWsId !== "") {
-			const wsRes = await apiProxy.workspace.list(request);
-			if (wsRes.result.ok) {
-				const ws = wsRes.result.value.items.find((w) => w.workspaceId === targetWsId);
-				if (ws !== void 0) {
-					const owned = new Set(ws.sessionIds || []);
-					items = items.filter((row) => owned.has(row.sessionId) || (row.cwd !== void 0 && row.cwd === ws.path));
-				}
-			}
-		}
-		const cursor = payload?.cursor;
-		items.sort((a, b) => b.updatedAt - a.updatedAt || (a.sessionId < b.sessionId ? -1 : a.sessionId > b.sessionId ? 1 : 0));
-		const position = cursor === void 0 ? void 0 : parseSessionListCursor(cursor);
-		const from = position === void 0 ? 0 : items.findIndex((row) => afterCursor(row, position));
-		const start = from < 0 ? items.length : from;
-		const page = items.slice(start, start + SESSION_PAGE_SIZE);
-		const last = page[page.length - 1];
-		const nextCursor = last !== void 0 && start + page.length < items.length ? sessionListCursor(last.updatedAt, last.sessionId) : void 0;
-		return {
-			type: "server-response",
-			rpcId,
-			result: {
-				ok: true,
-				value: {
-					items: page,
-					hasMore: nextCursor !== void 0,
-					...nextCursor !== void 0 ? { nextCursor } : {}
-				}
-			}
-		};
-	}
-	const wrap = (response) => ({
-		type: "server-response",
-		rpcId,
-		result: response.result
-	});
-	if (method === "workspace.list") return wrap(await apiProxy.workspace.list(request));
-	if (method === "agentPreset.list") return wrap(await apiProxy.agentPresets.list(request));
-	if (method === "session.create") return wrap(await apiProxy.sessions.create(request));
-	if (method === "session.history") return wrap(await apiProxy.sessions.history(request));
-	if (method === "session.search") return wrap(await apiProxy.sessions.search(request, signal ?? new AbortController().signal));
-	if (method === "session.prompt") return wrap(await apiProxy.sessions.prompt(request));
-	if (method === "session.models") return wrap(await apiProxy.sessions.models(request));
-	if (method === "session.selectModel") return wrap(await apiProxy.sessions.selectModel(request));
-	if (method === "session.rename") return wrap(await apiProxy.sessions.rename(request));
-	throw new Error(`unhandled allowlisted method ${method}`);
-}
-//#endregion
-//#region src/loopback-proxy.ts
 /** WebSocket handshake headers forwarded to the loopback upstream. */
 const WS_FORWARD_HEADERS = [
 	"sec-websocket-key",
@@ -1886,7 +1338,7 @@ function proxyLoopbackUpgrade(req, socket, head, port, upstreamPath) {
 	});
 }
 //#endregion
-//#region src/remote-methods.ts
+//#region lib/types/remote-methods.js
 /**
 * Remote desktop channel constants — SDK-independent so tests and the
 * client half can pin them without importing the host SDK graph.
@@ -1918,7 +1370,7 @@ const REMOTE_UPGRADE_PATHS = [
 * unreachable from a paired remote desktop, matching the SDK's own stance
 * that the configuration plane is loopback-same-origin only.
 */
-const LOOPBACK_ONLY_METHODS = /* @__PURE__ */ new Set([
+const LOOPBACK_ONLY_METHODS = new Set([
 	"agentPreset.read",
 	"agentPreset.copy",
 	"agentPreset.openDocument",
@@ -1936,8 +1388,29 @@ const LOOPBACK_ONLY_METHODS = /* @__PURE__ */ new Set([
 	"llm.discoverModels"
 ]);
 //#endregion
-//#region src/remote-api.ts
-const ALLOWED_METHODS = /* @__PURE__ */ new Set([
+//#region lib/types/remote-api.js
+/**
+* The remote desktop data channel: `/remote` is this plugin's own prefix, so
+* the paired-device cookie is the access control.
+* After that gate, every fenced same-origin path the browser rewrote here is
+* re-issued to 127.0.0.1 as a loopback-shaped request so sibling plugin
+* fences (and the connection plugin's `/api`) accept it — no `--trusted-host`
+* and no per-plugin pairing consult.
+*
+* Security model:
+* - Every request must carry a live paired-device cookie, enforced before
+*   any bytes are forwarded and before any host call.
+* - The SDK's loopback-only privileged methods (native dialogs, the settings
+*   plane, credentials — the `PRIVILEGED_METHODS` set of client-connection)
+*   are denied here. The set is pinned by tests/remote-contract.spec.ts.
+* - `/api/pair/*`, `/api/update/*`, `/api/plugin-manager/*`,
+*   `/api/dsh-desktop-launcher/*` and `/api/dsh-web-ui-settings/*` stay physically local.
+* - Everything else is HTTP- or WebSocket-proxied to the local port with
+*   Host rewritten, Origin and cookies dropped, and a synthetic same-origin
+*   browser marker added after authentication. Plugin loopback fences then
+*   pass. The pairing cookie never leaves this process.
+*/
+const ALLOWED_METHODS = new Set([
 	"GET",
 	"HEAD",
 	"POST",
@@ -2007,7 +1480,7 @@ function makeRemoteApiRoutes(deps) {
 	const { service, port, requirePairingForLan } = deps;
 	const handler = (req, res) => {
 		const deviceId = readCookie(req.headers.cookie, service.config.cookieName);
-		if (requirePairingForLan?.() !== false && !(deviceId !== void 0 && service.touchDevice(deviceId))) {
+		if (!(requirePairingForLan?.() === false || deviceId !== void 0 && service.touchDevice(deviceId))) {
 			req.resume();
 			envelopeError(res, 403, "invalid-request", "unpaired", "this device is not paired with the desktop");
 			return;
@@ -2083,7 +1556,21 @@ function makeRemoteApiUpgradeRoutes(deps) {
 	}));
 }
 //#endregion
-//#region src/posture.ts
+//#region lib/types/posture.js
+/**
+* Deployment posture probe: verify that the connection plugin's `/api` fence
+* actually refuses non-loopback requests for every origin this deployment
+* advertises (the public tunnel host, the LAN bases). The fence is the SDK's
+* own Host check — the one seam a plugin cannot mount a gate into — so this
+* probe is the guardrail that makes a re-opened `/api` (for example a
+* re-added `--trusted-host`, or the SDK's LAN-literal auto-trust under
+* `--host 0.0.0.0`) visible instead of silent.
+*
+* The probe issues loopback requests with a forged Host header — the exact
+* shape a tunnel or LAN client produces — and treats anything other than a
+* 403 as exposed: the fence is documented to refuse with 403, so any other
+* status means the request reached the RPC bridge.
+*/
 /**
 * Build the forged Host values to probe: the public base authority (host or
 * host:port as written in the URL) plus every LAN base literal.
@@ -2194,7 +1681,7 @@ function releasePostureKey(current, attempted) {
 	return current === attempted ? void 0 : current;
 }
 //#endregion
-//#region src/lan.ts
+//#region lib/types/lan.js
 /**
 * LAN address derivation for the pairing URLs. Mirrors the dsh CLI's
 * boot-time sampling (apps/cli/src/app-cli-entry.ts `resolveLanTrust`): the
@@ -2214,7 +1701,7 @@ function lanIPv4Addresses() {
 	}).map((iface) => iface.address);
 }
 //#endregion
-//#region src/tunnel.ts
+//#region lib/types/tunnel.js
 /**
 * Auto-tunnel manager: spawns a Cloudflare quick tunnel (`cloudflared
 * tunnel --url <local>`) through the `cloudflared` npm package — its
@@ -2550,7 +2037,7 @@ function resolveUpdateTarget(deps) {
 	const profile = findProfile(manifestPath);
 	if (profile === void 0) return { error: "link" };
 	const profileManifest = readManifest(join(profile.dir, "package.json"));
-	const spec = (profileManifest?.dependencies)?.[anchor];
+	const spec = profileManifest?.dependencies?.[anchor];
 	if (isLinkedSpec(spec) || hasLinkedFamilyOverride(manifest, profileManifest)) return { error: "link" };
 	return {
 		profileName: profile.name,
@@ -2568,7 +2055,7 @@ function familyChildren(anchorManifest) {
 }
 /** Registry-managed family packages covered by one update operation. */
 function familyUpdatePackages(anchor, anchorManifest, profileManifest) {
-	const names = /* @__PURE__ */ new Set([anchor, ...familyChildren(anchorManifest)]);
+	const names = new Set([anchor, ...familyChildren(anchorManifest)]);
 	const dependencies = profileManifest?.dependencies;
 	if (typeof dependencies !== "object" || dependencies === null) return [...names];
 	for (const [name, spec] of Object.entries(dependencies)) if (name.startsWith("@dsh-selfuse/") && typeof spec === "string" && !isLinkedSpec(spec)) names.add(name);
@@ -2646,7 +2133,7 @@ async function checkUpdates(deps) {
 	};
 	const profile = findProfile(manifestPath);
 	const profileManifest = profile === void 0 ? void 0 : readManifest(join(profile.dir, "package.json"));
-	const linked = profile === void 0 || isLinkedSpec((profileManifest?.dependencies)?.[anchor]) || hasLinkedFamilyOverride(manifest, profileManifest);
+	const linked = profile === void 0 || isLinkedSpec(profileManifest?.dependencies?.[anchor]) || hasLinkedFamilyOverride(manifest, profileManifest);
 	if (profile === void 0) return {
 		mode: "link",
 		packages: [],
@@ -2907,7 +2394,13 @@ async function runUpdateVerified(deps) {
 	return result;
 }
 //#endregion
-//#region src/update-routes.ts
+//#region lib/types/update-routes.js
+/**
+* The /api/update route family: the status probe and the update run. Both
+* are loopback-only control surfaces — the run endpoint triggers a real
+* pnpm install inside the owning profile, so it must never be reachable
+* from a remote origin.
+*/
 /** Route paths (exact matches under /api). */
 const UPDATE_PATHS = {
 	status: "/api/update/status",
@@ -2960,7 +2453,7 @@ function makeUpdateRoutes(deps) {
 	}];
 }
 //#endregion
-//#region src/mount-once.ts
+//#region lib/types/mount-once.js
 /**
 * Host single-instance guard shared by the plugin family. The family bundle
 * (dsh-web-ui-all / dsh-skins) namespaces every child row id (web-ui-*), so
@@ -3001,20 +2494,20 @@ function mountOnce(packageName, fn) {
 	});
 }
 //#endregion
-//#region src/index.ts
+//#region lib/types/index.js
 /**
-* Mobile remote control for the dsh web GUI — host half. Mounts the pairing
+* Remote desktop access for the dsh web GUI — host half. Mounts the pairing
 * service (one-time tokens, device sessions, revocation), the /api/pair
 * route family (issue/accept/stop/heartbeat/status/events), the api/gate
 * listener that enforces pairing on every other /api request from
 * non-loopback hosts, and the presence sweep. The browser half (the
 * `./client` entry) renders the sidebar entry, the pairing panel, and the
-* phone-side pair/accept + deep-link flow.
+* remote-device pair/accept + deep-link flow.
 */
 /** Stable cordis plugin name. */
 const name = "remote-web-ui";
 /** Services required before the pairing surfaces can mount. */
-const inject = ["webServer", "apiProxy"];
+const inject = ["webServer"];
 /**
 * Settings namespace of the remote-control capability — the section the web
 * settings surface edits. Spelled here rather than imported: the browser
@@ -3031,7 +2524,6 @@ const Config = z.object({
 	publicBaseUrl: z.string(),
 	devicesFile: z.string(),
 	autoTunnel: z.boolean().default(false),
-	mobileEnterToSend: z.boolean().default(true),
 	enabled: z.boolean().default(true)
 });
 /** Presence sweep cadence (a stale device flips to disconnected within two sweeps). */
@@ -3067,7 +2559,6 @@ const DEFAULTS = {
 	publicBaseUrl: void 0,
 	devicesFile: defaultDevicesFile(),
 	autoTunnel: false,
-	mobileEnterToSend: true,
 	enabled: true
 };
 /**
@@ -3087,7 +2578,6 @@ function applyImpl(ctx, config) {
 		publicBaseUrl: config?.publicBaseUrl,
 		devicesFile: config?.devicesFile ?? DEFAULTS.devicesFile,
 		autoTunnel: config?.autoTunnel ?? DEFAULTS.autoTunnel,
-		mobileEnterToSend: config?.mobileEnterToSend ?? DEFAULTS.mobileEnterToSend,
 		enabled: config?.enabled ?? DEFAULTS.enabled
 	};
 	let current = () => config ?? {};
@@ -3103,7 +2593,6 @@ function applyImpl(ctx, config) {
 			publicBaseUrl: value.publicBaseUrl,
 			devicesFile: value.devicesFile ?? DEFAULTS.devicesFile,
 			autoTunnel: value.autoTunnel ?? DEFAULTS.autoTunnel,
-			mobileEnterToSend: value.mobileEnterToSend ?? DEFAULTS.mobileEnterToSend,
 			enabled: value.enabled ?? DEFAULTS.enabled
 		};
 	};
@@ -3141,8 +2630,6 @@ function applyImpl(ctx, config) {
 	const lanAddresses = lanBases.map((entry) => entry.address);
 	let disposeRoutes;
 	let disposeSweep;
-	const apiProxy = ctx.get("apiProxy");
-	if (apiProxy === void 0) console.warn("remote-web-ui: apiProxy service unavailable — the mobile data channel is disabled");
 	const requireFromHost = createRequire(import.meta.url);
 	const resolveAnchorPath = () => resolveAnchorManifest((specifier) => {
 		try {
@@ -3200,13 +2687,6 @@ function applyImpl(ctx, config) {
 			service,
 			lanAddresses
 		}),
-		...makeMobileRoutes(),
-		...apiProxy !== void 0 ? makeMobileApiRoutes({
-			service,
-			apiProxy,
-			mobileEnterToSend: () => resolve().mobileEnterToSend,
-			requirePairingForLan: () => resolve().requirePairingForLan
-		}) : [],
 		...makeRemoteApiRoutes({
 			service,
 			port: ctx.webServer.port,
@@ -3287,7 +2767,7 @@ function applyImpl(ctx, config) {
 			disposeRoutes = void 0;
 		}
 		if (disposeSweep === void 0 && enabled) disposeSweep = ctx.effect(() => {
-			const timer = setInterval$1(() => {
+			const timer = setInterval(() => {
 				service.sweep();
 			}, SWEEP_INTERVAL_MS);
 			timer.unref();

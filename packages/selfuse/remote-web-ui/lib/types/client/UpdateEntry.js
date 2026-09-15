@@ -7,12 +7,12 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-run
  * translated failure on error).
  * Component-local state per the client stack rules.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { IconDownloadOutline16 } from '@deepseek-ai/dsh-client-ui-primitives';
 import { fetchUpdateStatus, runUpdate, UpdateStatusError } from "./update-api.js";
 import { UpdatePanel } from "./UpdatePanel.js";
-import css from "./remote.module.css";
+import css from './remote.module.css';
 /**
  * Render the update trigger and panel.
  * @param props - column state and locale seat.
@@ -20,7 +20,7 @@ import css from "./remote.module.css";
  */
 export function UpdateEntry({ wide, t }) {
     const [open, setOpen] = useState(false);
-    const [view, setView] = useState({ kind: "checking" });
+    const [view, setView] = useState({ kind: 'checking' });
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const runToken = useRef(0);
     const availabilityToken = useRef(0);
@@ -30,7 +30,7 @@ export function UpdateEntry({ wide, t }) {
         try {
             const status = await fetchUpdateStatus();
             if (token === availabilityToken.current) {
-                setUpdateAvailable(status.mode === "npm" && status.outdated);
+                setUpdateAvailable(status.mode === 'npm' && status.outdated);
             }
         }
         catch {
@@ -40,7 +40,7 @@ export function UpdateEntry({ wide, t }) {
     }, []);
     const check = useCallback(async () => {
         const availabilityCheck = ++availabilityToken.current;
-        setView({ kind: "checking" });
+        setView({ kind: 'checking' });
         let status;
         try {
             status = await fetchUpdateStatus();
@@ -53,27 +53,27 @@ export function UpdateEntry({ wide, t }) {
             // web loads the new plugin; a plain network failure gets the generic
             // offline copy instead of a misleading "cannot reach update source".
             if (error instanceof UpdateStatusError && error.status === 404) {
-                setView({ kind: "error", message: t("update.unmounted"), detail: t("update.unmountedDetail") });
+                setView({ kind: 'error', message: t('update.unmounted'), detail: t('update.unmountedDetail') });
                 return;
             }
-            setView({ kind: "error", message: t("update.offline"), detail: t("update.offlineDetail") });
+            setView({ kind: 'error', message: t('update.offline'), detail: t('update.offlineDetail') });
             return;
         }
         if (availabilityCheck === availabilityToken.current) {
-            setUpdateAvailable(status.mode === "npm" && status.outdated);
+            setUpdateAvailable(status.mode === 'npm' && status.outdated);
         }
-        if (status.error === "registry-unreachable") {
-            setView({ kind: "result", status });
+        if (status.error === 'registry-unreachable') {
+            setView({ kind: 'result', status });
             return;
         }
         // Checking never starts an update by itself (#507): the result view
         // carries the confirmation button that calls startUpdate.
-        setView({ kind: "result", status });
+        setView({ kind: 'result', status });
     }, [t]);
     const startUpdate = useCallback(async (status) => {
-        if (status.mode !== "npm" || !status.outdated)
+        if (status.mode !== 'npm' || !status.outdated)
             return;
-        setView({ kind: "updating", status });
+        setView({ kind: 'updating', status });
         const token = ++runToken.current;
         try {
             const result = await runUpdate();
@@ -81,12 +81,12 @@ export function UpdateEntry({ wide, t }) {
                 setUpdateAvailable(false);
             if (token !== runToken.current)
                 return;
-            setView({ kind: "done", result });
+            setView({ kind: 'done', result });
         }
         catch {
             if (token !== runToken.current)
                 return;
-            setView({ kind: "error", message: t("update.error"), detail: t("update.offlineDetail") });
+            setView({ kind: 'error', message: t('update.error'), detail: t('update.offlineDetail') });
         }
     }, [t]);
     const openPanel = useCallback(() => {
@@ -107,6 +107,6 @@ export function UpdateEntry({ wide, t }) {
             availabilityToken.current++;
         };
     }, [probeAvailability]);
-    const updateLabel = updateAvailable ? t("update.availableLabel") : t("update.label");
-    return (_jsxs(_Fragment, { children: [_jsx("button", { type: "button", className: css.trigger, "data-wide": wide ? undefined : "rail", "data-update-available": updateAvailable ? "true" : undefined, "aria-label": updateLabel, title: updateLabel, onClick: openPanel, children: _jsx(IconDownloadOutline16, { size: wide ? 16 : 18 }) }), open && createPortal((_jsxs("div", { className: css.overlay, role: "presentation", children: [_jsx("div", { className: css.mask, "aria-hidden": "true", onClick: closePanel }), _jsx(UpdatePanel, { t: t, view: view, onClose: closePanel, onRecheck: () => { void check(); }, onStartUpdate: (status) => { void startUpdate(status); } })] })), document.body)] }));
+    const updateLabel = updateAvailable ? t('update.availableLabel') : t('update.label');
+    return (_jsxs(_Fragment, { children: [_jsx("button", { type: "button", className: css.trigger, "data-wide": wide ? undefined : 'rail', "data-update-available": updateAvailable ? 'true' : undefined, "aria-label": updateLabel, title: updateLabel, onClick: openPanel, children: _jsx(IconDownloadOutline16, { size: wide ? 16 : 18 }) }), open && createPortal((_jsxs("div", { className: css.overlay, role: "presentation", children: [_jsx("div", { className: css.mask, "aria-hidden": "true", onClick: closePanel }), _jsx(UpdatePanel, { t: t, view: view, onClose: closePanel, onRecheck: () => { void check(); }, onStartUpdate: (status) => { void startUpdate(status); } })] })), document.body)] }));
 }

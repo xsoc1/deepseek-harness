@@ -3,7 +3,7 @@
  * under /api: the webserver matches exact paths before the connection
  * plugin's /api prefix, so these handlers own the full response lifecycle
  * and apply their own trust fence (loopback-only for control endpoints;
- * loopback-or-LAN for the phone-facing accept/heartbeat/status). The
+ * loopback-or-remote for accept/heartbeat/status). The
  * cookie set on accept is the device identity the api/gate listener checks
  * on every other /api request.
  */
@@ -16,7 +16,7 @@ import { type PairingService, type PairingSnapshot } from './pairing.ts';
  * package's internal fence semantics (Host/Origin based, DNS-rebinding and
  * cross-site defense). The connection package no longer exports its trust
  * predicate — the fence for the /api prefix lives inside the connection
- * plugin — so the pairing routes, which must stay reachable from LAN phones
+ * plugin — so the pairing routes, which must stay reachable from remote computers
  * ahead of the connection prefix route (exact routes match first), carry
  * their own copy scoped to the literals the QR links advertise.
  * @param request - the node HTTP request.
