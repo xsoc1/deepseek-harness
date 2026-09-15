@@ -94,13 +94,15 @@ async function main() {
   for (const d of contribution.descriptors) {
     const key = `${d.namespace}/${d.method}`;
     try {
-      d.result.schema.parse(samples[key]);
+      d.result.create().parse(samples[key]);
       ok(true, `${key} 结果 schema 解析样例通过`);
     } catch (err) {
       ok(false, `${key} 结果 schema 解析失败: ${String(err)}`);
     }
   }
-  ok(contribution.descriptors.every((d) => d.parameters.every((p) => p.codec.mode === 'strict' && p.codec.schema)), '参数全部 strict codec（客户端挂载校验要求）');
+  ok(contribution.descriptors.every((d) => d.result.mode === 'strict' && typeof d.result.create === 'function'
+    && d.parameters.every((p) => p.codec.mode === 'strict' && typeof p.codec.create === 'function')),
+  '所有结果与参数都有 strict create() factory（新版客户端挂载校验要求）');
 
   console.log('4) 标签页注册与 SSR 渲染');
   if (scopedCallback === null) { ok(false, 'remote.backupPanel 作用域未激活'); }

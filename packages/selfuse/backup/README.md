@@ -49,6 +49,8 @@ Downloads stream from the loopback-only route `GET /backup-download/<name>`.
 The tab talks to the host through the `backupPanel` Typert Remote namespace
 (`/api` RPC); the browser bundle ships prebuilt in `lib/client.js` — no build
 step at install time.
+Client Remote strict codecs provide `create()` schema factories; rebuild
+`lib/client.js` after changing their descriptors.
 
 ## How restore works
 

@@ -43,6 +43,8 @@ credential 文件（不进进程参数）。推送为 `HEAD:main --force-with-le
 `GET /backup-download/<归档名>` 路由。面板经 `backupPanel` Typert Remote
 命名空间（`/api` RPC）与宿主通信；浏览器 bundle 预构建在 `lib/client.js`，
 安装时无需构建。
+客户端 Remote 的 strict codec 使用 `create()` schema 工厂；改动描述符后需
+重新构建 `lib/client.js`。
 
 ## 恢复的工作方式
 

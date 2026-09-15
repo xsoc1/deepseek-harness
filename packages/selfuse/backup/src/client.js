@@ -97,11 +97,11 @@ const setGithubRepoSchema = z.object({
   summary: z.string(),
 });
 
-const keepParam = { name: 'keep', wire: 'keep', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#keep', schema: z.number().int().positive().optional() }, acceptsUndefined: true };
-const selectorParam = { name: 'selector', wire: 'selector', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#selector', schema: z.string().optional() }, acceptsUndefined: true };
-const dryRunParam = { name: 'dryRun', wire: 'dryRun', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#dryRun', schema: z.boolean().optional() }, acceptsUndefined: true };
-const hoursParam = { name: 'hours', wire: 'hours', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#hours', schema: z.number().int().min(0).max(720) }, acceptsUndefined: true };
-const repoParam = { name: 'repo', wire: 'repo', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#repo', schema: z.string().optional() }, acceptsUndefined: true };
+const keepParam = { name: 'keep', wire: 'keep', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#keep', create: () => z.number().int().positive().optional() }, acceptsUndefined: true };
+const selectorParam = { name: 'selector', wire: 'selector', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#selector', create: () => z.string().optional() }, acceptsUndefined: true };
+const dryRunParam = { name: 'dryRun', wire: 'dryRun', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#dryRun', create: () => z.boolean().optional() }, acceptsUndefined: true };
+const hoursParam = { name: 'hours', wire: 'hours', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#hours', create: () => z.number().int().min(0).max(720) }, acceptsUndefined: true };
+const repoParam = { name: 'repo', wire: 'repo', source: 'json', codec: { mode: 'strict', typeSymbol: '@dsh-selfuse/backup/types#repo', create: () => z.string().optional() }, acceptsUndefined: true };
 
 function strictDescriptor(method, parameters, schema, cancellation) {
   return Object.freeze({
@@ -112,14 +112,14 @@ function strictDescriptor(method, parameters, schema, cancellation) {
     invocation: Object.freeze({ kind: 'direct' }),
     parameters: Object.freeze(parameters.map((p) => Object.freeze({ ...p, codec: Object.freeze(p.codec) }))),
     ...(cancellation ? { cancellation: Object.freeze({ parameter: 'signal' }) } : {}),
-    result: Object.freeze({ mode: 'strict', typeSymbol: `@dsh-selfuse/backup/types#${method}Result`, schema }),
+    result: Object.freeze({ mode: 'strict', typeSymbol: `@dsh-selfuse/backup/types#${method}Result`, create: () => schema }),
   });
 }
 
 /**
  * `backupPanel` 的客户端 Remote 贡献：与宿主半边（lib/index.js 的
  * PANEL_INVOCATIONS）共享同一组端点；此处携带 strict zod codec（客户端
- * 挂载校验强制 strict），宿主为 src-json——两端按同一 wire 契约工作。
+ * 挂载校验强制 strict create() 工厂），宿主为 src-json——两端按同一 wire 契约工作。
  */
 export const BACKUP_REMOTE = Object.freeze({
   package: '@dsh-selfuse/backup',
