@@ -34,6 +34,15 @@ disabledRows:
 rowConfigs:
   typert-gateway:
     websocketHeartbeatIntervalMs: 10000
+  furongjun1999-dsh-memory:
+    python: /usr/bin/python3
+    roleplayWebEnabled: false
+    mdcg:
+      enabled: true
+      root: /home/huangzy/.dsh/lingshu/mdcg
+      actor: dsh-memory
+      tenant: default
+      clearance: internal
 skills:
   - math-research-dsh
   - mattpocock-skills
