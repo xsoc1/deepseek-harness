@@ -188,9 +188,6 @@ importers:
       '@deepseek-ai/dsh-base':
         specifier: workspace:^
         version: link:../../packages/bundle/base
-      '@deepseek-ai/dsh-client-file-changes':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/eac-client-file-changes
       '@deepseek-ai/dsh-client-runtime':
         specifier: workspace:*
         version: link:../../packages/client/runtime
@@ -218,12 +215,6 @@ importers:
       '@deepseek-ai/dsh-cordis-client-runner':
         specifier: workspace:^
         version: link:../../packages/extensions/cordis-client-runner
-      '@deepseek-ai/dsh-easy-setup':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/eac-easy-setup
-      '@deepseek-ai/dsh-file-changes':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/eac-file-changes
       '@deepseek-ai/dsh-fs-local':
         specifier: workspace:^
         version: link:../../packages/fs/fs-local
@@ -290,9 +281,6 @@ importers:
       '@deepseek-ai/dsh-session-reference':
         specifier: workspace:^
         version: link:../../packages/context/session-reference
-      '@deepseek-ai/dsh-shell-terminal':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/eac-shell-terminal
       '@deepseek-ai/dsh-skill':
         specifier: workspace:^
         version: link:../../packages/skill/skill
@@ -377,9 +365,6 @@ importers:
       '@deepseek-ai/dsh-web-app':
         specifier: workspace:^
         version: link:../../packages/bundle/web-app
-      '@deepseek-ai/dsh-web-shell-bridge':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/eac-web-shell-bridge
       '@deepseek-ai/dsh-webhook':
         specifier: workspace:^
         version: link:../../packages/webhook/webhook
@@ -401,9 +386,6 @@ importers:
       '@dsh-selfuse/git-workflow':
         specifier: workspace:*
         version: link:../../packages/selfuse/git-workflow
-      '@dsh-selfuse/market':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/market
       '@dsh-selfuse/memory-panel':
         specifier: workspace:*
         version: link:../../packages/selfuse/memory-panel
@@ -413,39 +395,21 @@ importers:
       '@dsh-selfuse/remote-web-ui':
         specifier: workspace:*
         version: link:../../packages/selfuse/remote-web-ui
-      '@dsh-selfuse/skill-router':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/skill-router
       '@dsh-selfuse/skin-center':
         specifier: workspace:*
         version: link:../../packages/selfuse/skin-center
-      '@dsh-selfuse/skins':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/skins
       '@dsh-selfuse/soul-md':
         specifier: workspace:*
         version: link:../../packages/selfuse/soul-md
-      '@dsh-selfuse/ssh':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/ssh
       '@dsh-selfuse/undo':
         specifier: workspace:*
         version: link:../../packages/selfuse/undo
       '@dsh-selfuse/web-ui-all':
         specifier: workspace:*
         version: link:../../packages/selfuse/web-ui-all
-      '@dsh-selfuse/web-ui-community-plugins':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/web-ui-community-plugins
       '@dsh-selfuse/web-ui-git-graph':
         specifier: workspace:*
         version: link:../../packages/selfuse/web-ui-git-graph
-      '@dsh-selfuse/web-ui-settings':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/web-ui-settings
-      '@dsh-selfuse/web-ui-task-board':
-        specifier: workspace:*
-        version: link:../../packages/selfuse/web-ui-task-board
       '@dsh-selfuse/wsl-workspace':
         specifier: workspace:*
         version: link:../../packages/selfuse/wsl-workspace
@@ -9315,24 +9279,9 @@ importers:
       '@dsh-selfuse/skin-center':
         specifier: workspace:*
         version: link:../skin-center
-      '@dsh-selfuse/skins':
-        specifier: workspace:*
-        version: link:../skins
-      '@dsh-selfuse/ssh':
-        specifier: workspace:*
-        version: link:../ssh
-      '@dsh-selfuse/web-ui-community-plugins':
-        specifier: workspace:*
-        version: link:../web-ui-community-plugins
       '@dsh-selfuse/web-ui-git-graph':
         specifier: workspace:*
         version: link:../web-ui-git-graph
-      '@dsh-selfuse/web-ui-settings':
-        specifier: workspace:*
-        version: link:../web-ui-settings
-      '@dsh-selfuse/web-ui-task-board':
-        specifier: workspace:*
-        version: link:../web-ui-task-board
 
   packages/selfuse/web-ui-community-plugins:
     dependencies:

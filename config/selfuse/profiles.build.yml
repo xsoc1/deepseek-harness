@@ -10,20 +10,13 @@ bundles:
   - "@deepseek-ai/dsh-base"
   - "@deepseek-ai/dsh-web-app"
   - "@dsh-selfuse/web-ui-all"
-  - "@dsh-selfuse/market"
   - "@dsh-selfuse/backup"
   - "@dsh-selfuse/git-workflow"
   - "@dsh-selfuse/wsl-workspace"
   - "@dsh-selfuse/memory-panel"
 patchPlugins:
-  - "@deepseek-ai/dsh-web-shell-bridge"
-  - "@deepseek-ai/dsh-file-changes"
-  - "@deepseek-ai/dsh-client-file-changes"
-  - "@deepseek-ai/dsh-shell-terminal"
-  - "@deepseek-ai/dsh-easy-setup"
   - "@deepseek-ai/dsh-task-notify"
   - "@dsh-selfuse/soul-md"
-  - "@dsh-selfuse/skill-router"
   - "@dsh-selfuse/content-risk-guard"
 # Browser-only rows inherited from the official Web bundle that this personal
 # profile deliberately leaves inactive. Keep this list by stable Cordis row id

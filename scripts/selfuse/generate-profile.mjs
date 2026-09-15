@@ -2,11 +2,9 @@
 /**
  * Generate a dsh web profile that uses only @dsh-selfuse workspace bundles.
  *
- * The generated profile deliberately has no out-of-tree dependencies: every
- * bundle is resolved from the dsh installation (the source monorepo) before
- * the profile directory. This works because the selfuse packages are added to
- * apps/cli and healProfilesModuleFallback links their closure into
- * $DSH_HOME/profiles/node_modules.
+ * Managed bundles resolve from the source monorepo; dependencies explicitly
+ * installed with `dsh plugin` are retained in the profile so the native CLI
+ * remains usable across regeneration.
  */
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -39,6 +37,14 @@ const patchPlugins = manifest.patchPlugins || []
 const disabledRows = manifest.disabledRows || []
 const rowConfigs = manifest.rowConfigs || {}
 const profileDir = join(dshHome, 'profiles', name)
+const packagePath = join(profileDir, 'package.json')
+const existingPackage = existsSync(packagePath) ? JSON.parse(readFileSync(packagePath, 'utf8')) : {}
+const existingDependencies = existingPackage.dependencies ?? {}
+if (typeof existingDependencies !== 'object' || Array.isArray(existingDependencies)) {
+  throw new Error(`profile dependencies must be an object: ${packagePath}`)
+}
+const cliBundles = (existingPackage.dsh?.profile?.bundles ?? [])
+  .filter(pkg => Object.hasOwn(existingDependencies, pkg) && !bundleList.includes(pkg))
 
 function writeIfChanged(path, content) {
   if (existsSync(path) && readFileSync(path, 'utf8') === content) return false
@@ -49,10 +55,10 @@ function writeIfChanged(path, content) {
 const packageJson = {
   name: `dsh-profile-${name}`,
   private: true,
-  dependencies: {},
+  dependencies: existingDependencies,
   dsh: {
     profile: {
-      bundles: bundleList,
+      bundles: [...bundleList, ...cliBundles],
     },
   },
 }
@@ -103,7 +109,7 @@ if (dryRun) {
 
 mkdirSync(profileDir, { recursive: true })
 const changed = [
-  writeIfChanged(join(profileDir, 'package.json'), JSON.stringify(packageJson, null, 2) + '\n'),
+  writeIfChanged(packagePath, JSON.stringify(packageJson, null, 2) + '\n'),
   writeIfChanged(join(profileDir, 'cordis.patch.yml'), patchContent),
   writeIfChanged(join(profileDir, 'pnpm-workspace.yaml'), workspaceContent),
 ]

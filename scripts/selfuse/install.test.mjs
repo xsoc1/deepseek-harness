@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -10,6 +10,7 @@ import test from 'node:test'
 const execFileAsync = promisify(execFile)
 const repoRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))))
 const installer = join(repoRoot, 'scripts', 'selfuse', 'install.mjs')
+const generator = join(repoRoot, 'scripts', 'selfuse', 'generate-profile.mjs')
 const sourceRoot = join(repoRoot, 'config', 'selfuse', 'agent-presets')
 
 test('presets-only repairs canonical presets without touching other deployment state', async () => {
@@ -60,12 +61,7 @@ test('the generated Web profile applies managed overrides to inherited rows', as
     )
     assert.match(officialWebPatch, /    - id: ui-sidebar-documentpreview\n/u)
 
-    await execFileAsync(process.execPath, [
-      installer,
-      '--skip-install-check',
-      '--dsh-home',
-      dshHome,
-    ])
+    await execFileAsync(process.execPath, [generator, '--dsh-home', dshHome])
 
     const patch = await readFile(join(dshHome, 'profiles', 'web', 'cordis.patch.yml'), 'utf8')
     assert.match(patch, /- id: ui-sidebar-documentpreview\n  disabled: true/u)
@@ -73,7 +69,46 @@ test('the generated Web profile applies managed overrides to inherited rows', as
       patch,
       /- id: typert-gateway\n  config:\n    websocketHeartbeatIntervalMs: 10000/u,
     )
-    assert.match(patch, /- id: dsh-web-shell-bridge\n      name: '@deepseek-ai\/dsh-web-shell-bridge'/u)
+    for (const retired of [
+      '@deepseek-ai/dsh-web-shell-bridge',
+      '@deepseek-ai/dsh-file-changes',
+      '@deepseek-ai/dsh-client-file-changes',
+      '@deepseek-ai/dsh-shell-terminal',
+      '@deepseek-ai/dsh-easy-setup',
+      '@dsh-selfuse/skill-router',
+    ]) {
+      assert.equal(patch.includes(retired), false)
+    }
+    const profilePackage = await readFile(join(dshHome, 'profiles', 'web', 'package.json'), 'utf8')
+    assert.equal(profilePackage.includes('@dsh-selfuse/market'), false)
+    for (const nativeRow of [
+      'workspace-files',
+      'ui-sidebar-terminal',
+      'ui-sidebar-files',
+      'ui-settings-plugin-inventory',
+    ]) {
+      assert.equal(officialWebPatch.includes(`- id: ${nativeRow}`), true)
+    }
+  } finally {
+    await rm(dshHome, { recursive: true, force: true })
+  }
+})
+
+test('profile regeneration preserves plugins installed through the native CLI', async () => {
+  const dshHome = await mkdtemp(join(tmpdir(), 'dsh-selfuse-cli-plugin-'))
+  try {
+    await execFileAsync(process.execPath, [generator, '--dsh-home', dshHome])
+    const packagePath = join(dshHome, 'profiles', 'web', 'package.json')
+    const profile = JSON.parse(await readFile(packagePath, 'utf8'))
+    profile.dependencies['@example/local-plugin'] = '1.0.0'
+    profile.dsh.profile.bundles.push('@example/local-plugin')
+    await writeFile(packagePath, JSON.stringify(profile, null, 2) + '\n')
+
+    await execFileAsync(process.execPath, [generator, '--dsh-home', dshHome])
+    const regenerated = JSON.parse(await readFile(packagePath, 'utf8'))
+    assert.equal(regenerated.dependencies['@example/local-plugin'], '1.0.0')
+    assert.equal(regenerated.dsh.profile.bundles.at(-1), '@example/local-plugin')
+    assert.equal(regenerated.dsh.profile.bundles.includes('@dsh-selfuse/market'), false)
   } finally {
     await rm(dshHome, { recursive: true, force: true })
   }
