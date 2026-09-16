@@ -48,6 +48,10 @@ function Get-PortOpen([int]$Port) {
     }
 }
 
+function Test-WebReady([bool]$PortOpen, [string]$HttpStatus) {
+    return ($PortOpen -and $HttpStatus -eq 'HTTP 200')
+}
+
 function Resolve-TailscaleExe {
     $candidates = @()
     if ($env:ProgramFiles) {
@@ -57,6 +61,33 @@ function Resolve-TailscaleExe {
     $command = Get-Command tailscale.exe -ErrorAction SilentlyContinue
     if ($command -and $command.Source) { $candidates += $command.Source }
     return $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+}
+
+function Invoke-TailscaleCommand([string]$Path, [string[]]$CommandArgs) {
+    $process = $null
+    try {
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = $Path
+        $psi.Arguments = ($CommandArgs -join ' ')
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError = $true
+        $process = [System.Diagnostics.Process]::Start($psi)
+        $outputTask = $process.StandardOutput.ReadToEndAsync()
+        $errorTask = $process.StandardError.ReadToEndAsync()
+        if (-not $process.WaitForExit(2500)) {
+            try { $process.Kill() } catch {}
+            return @{ ok = $false; output = '' }
+        }
+        $output = $outputTask.Result
+        $null = $errorTask.Result
+        return @{ ok = ($process.ExitCode -eq 0); output = $output }
+    } catch {
+        return @{ ok = $false; output = '' }
+    } finally {
+        if ($process) { $process.Dispose() }
+    }
 }
 
 function Get-PortPid([int]$Port) {
@@ -255,26 +286,46 @@ function Stop-DshAllAction {
 }
 
 function Get-TailscaleInfo([switch]$Force) {
-    if (-not $Force -and $script:cachedTsInfo -and ((Get-Date) - $script:lastTsCheckAt).TotalSeconds -lt 25) {
-        return $script:cachedTsInfo
-    }
-    $script:lastTsCheckAt = Get-Date
     $ts = Resolve-TailscaleExe
     if (-not $ts) {
         $script:cachedTsInfo = @{ status = '未安装'; ip = ''; serve = '未安装' }
         return $script:cachedTsInfo
     }
-    $statusText = & $ts status 2>&1 | Out-String
-    if ($statusText -match 'Logged out|Log in at') {
+    $service = Get-Service -Name Tailscale -ErrorAction SilentlyContinue
+    if (-not $service -or $service.Status -ne 'Running') {
+        $script:cachedTsInfo = @{ status = '未运行'; ip = ''; serve = '未启用' }
+        return $script:cachedTsInfo
+    }
+    if (-not $Force -and $script:cachedTsInfo -and ((Get-Date) - $script:lastTsCheckAt).TotalSeconds -lt 6) {
+        return $script:cachedTsInfo
+    }
+    $script:lastTsCheckAt = Get-Date
+    $result = Invoke-TailscaleCommand $ts @('status', '--json')
+    if (-not $result.ok) {
+        $script:cachedTsInfo = @{ status = '状态不可用'; ip = ''; serve = '未知' }
+        return $script:cachedTsInfo
+    }
+    try {
+        $state = $result.output | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        $script:cachedTsInfo = @{ status = '状态不可用'; ip = ''; serve = '未知' }
+        return $script:cachedTsInfo
+    }
+    if ($state.BackendState -match '^(NeedsLogin|NeedsMachineAuth|NeedsAuth)$') {
         $script:cachedTsInfo = @{ status = '未登录'; ip = ''; serve = '未启用' }
         return $script:cachedTsInfo
     }
-    $ip = (& $ts ip -4 2>$null | Select-Object -First 1)
-    if ($ip) { $ip = $ip.Trim() } else { $ip = '' }
-    $serveText = & $ts serve status 2>&1 | Out-String
-    $serveUrl = ''
-    if ($serveText -match 'https://([^\s]+)') { $serveUrl = $matches[1] }
-    if (-not $serveUrl) { $serveUrl = '未启用' }
+    if ($state.BackendState -ne 'Running') {
+        $script:cachedTsInfo = @{ status = '未连接'; ip = ''; serve = '未启用' }
+        return $script:cachedTsInfo
+    }
+    $ip = @($state.Self.TailscaleIPs) | Where-Object { $_ -match '^\d{1,3}(\.\d{1,3}){3}$' } | Select-Object -First 1
+    if (-not $ip) {
+        $script:cachedTsInfo = @{ status = '连接中'; ip = ''; serve = '未知' }
+        return $script:cachedTsInfo
+    }
+    $serveResult = Invoke-TailscaleCommand $ts @('serve', 'status')
+    $serveUrl = if ($serveResult.ok -and $serveResult.output -match 'https://([^\s]+)') { $matches[1] } elseif ($serveResult.ok) { '未启用' } else { '未知' }
     $script:cachedTsInfo = @{ status = "已连接 $ip"; ip = $ip; serve = $serveUrl }
     return $script:cachedTsInfo
 }
@@ -383,13 +434,14 @@ while ($true) {
             Move-Item -LiteralPath $tmpResult -Destination $resultFile -Force
         }
     }
-    $webUp = Get-PortOpen $WebPort
+    $webPortOpen = Get-PortOpen $WebPort
     $webPid = $null
     $http = ''
-    if ($webUp) {
+    if ($webPortOpen) {
         $webPid = Get-PortPid $WebPort
         $http = Get-HttpStatus
     }
+    $webUp = Test-WebReady $webPortOpen $http
     $watchdogPids = Get-WatchdogPids
     $wsl = Get-WslState $webUp -Force:$isForced
     $webTail = @(Get-Content -LiteralPath $WebLog -Tail 12 -Encoding UTF8 -ErrorAction SilentlyContinue | ForEach-Object { [string]$_ })
@@ -414,7 +466,7 @@ while ($true) {
     if ($script:activeAction) {
         $elapsed = [int]((Get-Date) - $script:activeStartedAt).TotalSeconds
         if ($script:activeAction -eq 'stop') {
-            if (-not $webUp) {
+            if (-not $webPortOpen) {
                 Write-Activity "停止完成: 端口 $WebPort 已释放 (${elapsed}s)"
                 $script:activeAction = $null
             } elseif ($elapsed -ge 60) {
@@ -441,6 +493,7 @@ while ($true) {
     $snap = [ordered]@{
         time = Get-Date -Format 'HH:mm:ss'
         webUp = $webUp
+        webPortOpen = $webPortOpen
         http = $http
         webPid = $webPid
         watchdogPids = ($watchdogPids -join ',')

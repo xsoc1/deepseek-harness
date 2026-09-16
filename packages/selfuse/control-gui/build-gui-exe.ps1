@@ -47,9 +47,9 @@ if (Test-Path $icon) {
     $cmdArgs += "/win32icon:`"$icon`""
 }
 
-& $csc $cmdArgs
-if ($LASTEXITCODE -ne 0) {
-    throw "Compilation failed with exit code $LASTEXITCODE"
+$compiler = Start-Process -FilePath $csc -ArgumentList $cmdArgs -Wait -PassThru -NoNewWindow
+if ($compiler.ExitCode -ne 0) {
+    throw "Compilation failed with exit code $($compiler.ExitCode)"
 }
 
 if (-not (Test-Path $OutputPath)) {

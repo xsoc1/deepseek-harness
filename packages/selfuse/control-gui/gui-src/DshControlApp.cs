@@ -586,6 +586,7 @@ namespace DshControl
         private Process pollerProcess = null;
         private string lastStatusRaw = "";
         private bool logTailReady = false;
+        private const int StatusMaxAgeSeconds = 15;
 
         private string TempDir { get { return Path.GetTempPath(); } }
         private string StatusFile { get { return Path.Combine(TempDir, "dsh-gui-status.json"); } }
@@ -998,22 +999,49 @@ namespace DshControl
             }
         }
 
+        private void ShowStatusUnavailable(string reason)
+        {
+            SetStatusText("web", "状态未知 (" + reason + ")", Color.DarkOrange);
+            SetStatusText("watchdog", "状态未知", Color.DarkOrange);
+            SetStatusText("WSL", "Unknown (虚拟 linux)", Color.DarkOrange);
+            SetStatusText("Tailscale", "状态未知", Color.DarkOrange);
+            refreshLabel.Text = "状态未更新: " + reason;
+            lastStatusRaw = "";
+        }
+
         private void UpdateStatus()
         {
             try
             {
                 if (!File.Exists(StatusFile))
                 {
+                    ShowStatusUnavailable("等待轮询");
+                    return;
+                }
+
+                TimeSpan age = DateTime.UtcNow - File.GetLastWriteTimeUtc(StatusFile);
+                if (age.TotalSeconds > StatusMaxAgeSeconds || age.TotalSeconds < -5)
+                {
+                    ShowStatusUnavailable("轮询数据过期");
                     return;
                 }
 
                 string raw = File.ReadAllText(StatusFile, Encoding.UTF8);
-                if (string.IsNullOrEmpty(raw) || raw == lastStatusRaw) return;
+                if (string.IsNullOrEmpty(raw))
+                {
+                    ShowStatusUnavailable("轮询数据为空");
+                    return;
+                }
+                if (raw == lastStatusRaw) return;
                 lastStatusRaw = raw;
 
                 JavaScriptSerializer js = new JavaScriptSerializer();
                 Dictionary<string, object> snap = js.Deserialize<Dictionary<string, object>>(raw);
-                if (snap == null) return;
+                if (snap == null)
+                {
+                    ShowStatusUnavailable("轮询数据无效");
+                    return;
+                }
 
                 // 活动日志
                 if (snap.ContainsKey("activityLogTail") && snap["activityLogTail"] is System.Collections.IEnumerable)
@@ -1050,11 +1078,17 @@ namespace DshControl
                 // web
                 bool webUp = snap.ContainsKey("webUp") && Convert.ToBoolean(snap["webUp"]);
                 string http = snap.ContainsKey("http") ? snap["http"].ToString() : "";
+                bool webPortOpen = snap.ContainsKey("webPortOpen") ? Convert.ToBoolean(snap["webPortOpen"]) : webUp;
                 string webPid = snap.ContainsKey("webPid") && snap["webPid"] != null ? snap["webPid"].ToString() : "";
-                if (webUp)
+                if (webUp && http == "HTTP 200")
                 {
-                    string txt = "运行中 (" + http + (string.IsNullOrEmpty(webPid) ? "" : ", PID " + webPid) + ")";
+                    string txt = "运行中 (" + http + (string.IsNullOrEmpty(webPid) ? "" : ", 端口 PID " + webPid) + ")";
                     SetStatusText("web", txt, Color.ForestGreen);
+                }
+                else if (webPortOpen)
+                {
+                    string txt = "未就绪 (" + (string.IsNullOrEmpty(http) ? "端口有监听" : http) + ")";
+                    SetStatusText("web", txt, Color.DarkOrange);
                 }
                 else
                 {
@@ -1096,15 +1130,17 @@ namespace DshControl
 
                 // Tailscale
                 string ts = snap.ContainsKey("tailscale") && snap["tailscale"] != null ? snap["tailscale"].ToString() : "";
+                string tsIp = snap.ContainsKey("tailscaleIp") && snap["tailscaleIp"] != null ? snap["tailscaleIp"].ToString() : "";
                 string tsServe = snap.ContainsKey("tailscaleServe") && snap["tailscaleServe"] != null ? snap["tailscaleServe"].ToString() : "";
                 if (!string.IsNullOrEmpty(ts))
                 {
-                    if (ts.StartsWith("已连接"))
+                    if (ts.StartsWith("已连接") && !string.IsNullOrWhiteSpace(tsIp))
                     {
                         string txt = ts;
-                        if (!string.IsNullOrEmpty(tsServe) && tsServe != "未启用") txt += " | " + tsServe;
+                        if (tsServe.StartsWith("https://")) txt += " | " + tsServe;
                         SetStatusText("Tailscale", txt, Color.ForestGreen);
                     }
+                    else if (ts.StartsWith("已连接")) SetStatusText("Tailscale", "状态不可用 (无 IP)", Color.DarkOrange);
                     else if (ts == "未登录") SetStatusText("Tailscale", "未登录", Color.DarkOrange);
                     else if (ts == "未安装") SetStatusText("Tailscale", "未安装", Color.Firebrick);
                     else SetStatusText("Tailscale", ts, Color.DarkOrange);
@@ -1115,6 +1151,7 @@ namespace DshControl
             }
             catch (Exception ex)
             {
+                ShowStatusUnavailable("读取异常");
                 refreshLabel.Text = "状态读取异常: " + ex.Message;
             }
         }
