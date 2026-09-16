@@ -10,7 +10,7 @@ Status: implemented
 
 ## Decision
 
-可见入口仅保留本机 DSH 启动、停止、重启、打开 Web、查看最近日志、刷新、打开活跃配置目录、复制诊断和设置。轮询进程只接受三种 DSH 生命周期动作，不再分派修改 Tailscale Serve、关闭 WSL 或更新源码的命令。Tailscale 保留只读状态。重复的远程重启、清空日志、profile 目录入口、横幅菜单项和 Windows 镜像版本行均移除。旧默认设置 `%USERPROFILE%\.dsh` 会映射到活跃 WSL 路径 `\\wsl.localhost\Ubuntu\home\huangzy\.dsh`；自定义路径仍保留。
+可见入口保留本机 DSH 启动、停止、重启、打开 Web、查看最近日志、刷新、打开活跃配置目录、复制诊断、按需远程体检、更新预检和设置。轮询进程只接受三种会改变状态的 DSH 生命周期动作与两种只读检查；不再分派修改 Tailscale Serve、关闭 WSL 或更新源码的命令。Tailscale 保留只读状态。重复的远程重启、清空日志、profile 目录入口、横幅菜单项和 Windows 镜像版本行均移除。旧默认设置 `%USERPROFILE%\.dsh` 会映射到活跃 WSL 路径 `\\wsl.localhost\Ubuntu\home\huangzy\.dsh`；自定义路径仍保留。
 
 ## Alternatives considered
 

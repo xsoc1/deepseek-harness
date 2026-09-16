@@ -10,7 +10,7 @@ The self-use control GUI mixed local DSH start/stop actions with duplicate remot
 
 ## Decision
 
-The visible controls are local DSH start, stop, restart, Web opening, recent logs, refresh, active configuration directory, diagnostic copy, and settings. The poller accepts only the three DSH lifecycle actions; it no longer dispatches Tailscale Serve changes, WSL shutdown, or update commands. Tailscale remains read-only status. The duplicate remote-restart button, duplicate log-clearing button, redundant profile-directory button, duplicate banner-menu links, and Windows-mirror version row are absent. A legacy default `%USERPROFILE%\.dsh` setting maps to the active WSL `\\wsl.localhost\Ubuntu\home\huangzy\.dsh` path; custom paths stay intact.
+The visible controls are local DSH start, stop, restart, Web opening, recent logs, refresh, active configuration directory, diagnostic copy, on-demand remote health, update preflight, and settings. The poller accepts only three state-changing DSH lifecycle actions and two read-only checks; it does not dispatch Tailscale Serve changes, WSL shutdown, or source updates. Tailscale remains read-only status. The duplicate remote-restart button, duplicate log-clearing button, redundant profile-directory button, duplicate banner-menu links, and Windows-mirror version row are absent. A legacy default `%USERPROFILE%\.dsh` setting maps to the active WSL `\\wsl.localhost\Ubuntu\home\huangzy\.dsh` path; custom paths stay intact.
 
 ## Alternatives considered
 

@@ -741,6 +741,8 @@ namespace DshControl
             addButton("刷新", 72, (s, e) => { ForceRefresh(); AddLog("状态已刷新 (F5)"); }, "刷新状态 (F5)", Color.Empty);
             addButton("配置目录", 84, (s, e) => OpenFolder(settings.DshHome), "打开 " + settings.DshHome, Color.Empty);
             addButton("复制诊断", 84, (s, e) => CopyDiagnostics(), "复制当前状态与关键路径，便于反馈问题", Color.Empty);
+            addButton("远程体检", 88, (s, e) => SendAction("remote-health", "远程健康检查"), "只读检查本机 Web、Tailscale、Serve 和 Tailnet HTTPS；不验证移动端会话", Color.Empty);
+            addButton("更新预检", 88, (s, e) => SendAction("update-preflight", "更新预检"), "只读检查活跃 WSL 工作树、远端 HEAD 和代码回退锚点；不执行更新", Color.Empty);
             addButton("⚙ 设置", 84, (s, e) => OpenSettingsDialog(), "打开控制台设置：自定义背景图、尺寸、自动搜索功能目录等", Color.FromArgb(70, 130, 90));
 
             // 4. 日志面板

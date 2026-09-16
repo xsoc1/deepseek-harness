@@ -11,6 +11,8 @@
     "gui-src",
     "installer-src",
     "dsh-gui-poller.ps1",
+    "dsh-gui-probes.ps1",
+    "dsh-update-preflight.sh",
     "build-gui-exe.ps1",
     "build-installer.ps1",
     "install.ps1",

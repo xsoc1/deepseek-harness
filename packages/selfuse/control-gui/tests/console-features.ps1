@@ -21,7 +21,7 @@ try {
     $Flags = [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::NonPublic
     $Buttons = $Form.GetType().GetField('btnPanel', $Flags).GetValue($Form).Controls
     $Labels = @($Buttons | ForEach-Object { $_.Text })
-    foreach ($Label in @('启动', '停止', '重启', '打开 Web UI', '查看日志', '刷新', '配置目录', '复制诊断', '⚙ 设置')) {
+    foreach ($Label in @('启动', '停止', '重启', '打开 Web UI', '查看日志', '刷新', '配置目录', '复制诊断', '远程体检', '更新预检', '⚙ 设置')) {
         if ($Label -notin $Labels) { $Failures += "missing daily control: $Label" }
     }
     foreach ($Label in @('远程重启', 'Tailscale修复', '检查更新', '更新 DSH', '重启 WSL', '清空日志', 'web profile')) {
@@ -49,6 +49,11 @@ foreach ($Action in @('wsl', 'tailscale', 'check-update', 'update-dsh')) {
     if ($PollerSource -match "'$Action'\s*\{") { $Failures += "obsolete poller action remains: $Action" }
 }
 if ($PollerSource -match 'function Repair-TailscaleAction|\$UpdateScript') { $Failures += 'obsolete helper or update script parameter remains' }
+foreach ($Action in @('remote-health', 'update-preflight')) {
+    if ($PollerSource -notmatch "'$Action'\s*\{") { $Failures += "missing read-only poller action: $Action" }
+}
+if (-not (Test-Path -LiteralPath (Join-Path $PackageRoot 'dsh-gui-probes.ps1'))) { $Failures += 'diagnostic probe script is missing' }
+if (-not (Test-Path -LiteralPath (Join-Path $PackageRoot 'dsh-update-preflight.sh'))) { $Failures += 'WSL preflight script is missing' }
 
 if ($Failures.Count -gt 0) {
     foreach ($Failure in $Failures) { Write-Host "RED $Failure" }

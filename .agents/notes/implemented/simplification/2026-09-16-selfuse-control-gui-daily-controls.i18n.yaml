@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/simplification/2026-09-16-selfuse-control-gui-daily-controls.md
-2026-09-16-selfuse-control-gui-daily-controls.md: 4f5401b7d40d184406a1b3c9723a8fe2cb992dbf
-2026-09-16-selfuse-control-gui-daily-controls.zh.md: 9ceff8720570125b833d55a1202261c71ed6d78c
+2026-09-16-selfuse-control-gui-daily-controls.md: 90bca93ed0e71aa4b3a65e5ef84382031267b44a
+2026-09-16-selfuse-control-gui-daily-controls.zh.md: db9d1cb9267ca8d06243ee4c4ac8cbcb2bef40c3

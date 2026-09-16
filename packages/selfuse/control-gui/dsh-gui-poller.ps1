@@ -29,6 +29,12 @@ $script:cachedWsl = 'Unknown'
 $script:lastWslCheckAt = [datetime]::MinValue
 $script:cachedTsInfo = $null
 $script:lastTsCheckAt = [datetime]::MinValue
+$probeFile = Join-Path $PSScriptRoot 'dsh-gui-probes.ps1'
+if (-not (Test-Path -LiteralPath $probeFile)) {
+    $probeFile = Join-Path $HarnessRoot 'packages\selfuse\control-gui\dsh-gui-probes.ps1'
+}
+$script:probesAvailable = Test-Path -LiteralPath $probeFile
+if ($script:probesAvailable) { . $probeFile }
 
 function Get-PortOpen([int]$Port) {
     try {
@@ -349,6 +355,14 @@ while ($true) {
                         $lines += Stop-DshAllAction
                         Start-Sleep -Seconds 1
                         $lines += Start-WatchdogAction
+                    }
+                    'remote-health' {
+                        if ($script:probesAvailable) { $lines += @(Get-RemoteHealthReport $WebPort $WebLog) }
+                        else { $lines += '远程检查脚本缺失' }
+                    }
+                    'update-preflight' {
+                        if ($script:probesAvailable) { $lines += @(Get-UpdatePreflightReport) }
+                        else { $lines += '更新预检脚本缺失' }
                     }
                     default { $lines += "unknown command: $($cmd.action)" }
                 }
