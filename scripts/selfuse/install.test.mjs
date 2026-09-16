@@ -52,6 +52,22 @@ test('the managed and runnable Web startup scripts stay identical', async () => 
   assert.match(runnable, /F:\\Tailscale\\tailscale\.exe/u)
 })
 
+test('Web startup accepts only the configured Tailnet hostname', async t => {
+  let script = join(repoRoot, 'scripts', 'selfuse', 'management', 'run-dsh-web.test.ps1')
+  if (process.platform !== 'win32') {
+    if (!process.env.WSL_DISTRO_NAME) {
+      t.skip('PowerShell startup is only exercised on Windows or WSL')
+      return
+    }
+    const { stdout } = await execFileAsync('wslpath', ['-w', script])
+    script = stdout.trim()
+  }
+  const { stdout } = await execFileAsync('powershell.exe', [
+    '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script,
+  ])
+  assert.match(stdout, /run-dsh-web trusted-host regression: PASS/u)
+})
+
 test('the generated Web profile applies managed overrides to inherited rows', async () => {
   const dshHome = await mkdtemp(join(tmpdir(), 'dsh-selfuse-profile-'))
   try {

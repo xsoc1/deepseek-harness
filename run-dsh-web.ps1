@@ -62,6 +62,24 @@ function Resolve-TailscaleExe {
     return $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
 }
 
+function Get-ConfiguredTailnetHost([string]$SettingsText) {
+    $inRemoteSection = $false
+    foreach ($line in ($SettingsText -split "\r?\n")) {
+        if ($line -match '^[^\s#]') {
+            $inRemoteSection = $line -match '^remote-web-ui:\s*(?:#.*)?$'
+            continue
+        }
+        if (-not $inRemoteSection -or $line -notmatch '^  publicBaseUrl:\s*(.+?)\s*$') { continue }
+        $value = ($Matches[1] -replace '\s+#.*$', '').Trim().Trim("'", '"')
+        $url = $null
+        if (-not [Uri]::TryCreate($value, [UriKind]::Absolute, [ref]$url)) { return $null }
+        if ($url.Scheme -ne 'https' -or -not $url.IsDefaultPort -or $url.AbsolutePath -ne '/' -or $url.Query -or $url.Fragment -or $url.UserInfo) { return $null }
+        if ($url.Host -notmatch '^([a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.){2,}ts\.net$') { return $null }
+        return $url.Host.ToLowerInvariant()
+    }
+    return $null
+}
+
 $wslDistro = "Ubuntu"
 $wslStartTimeoutSec = 20
 $wslGatewayTimeoutSec = 30
@@ -134,6 +152,13 @@ else {
 }
 
 # Tailscale 私有远程：通过 Tailscale Serve 暴露 https://<machine>.<tailnet>.ts.net -> 127.0.0.1:3080
+$configuredTailnetHost = $null
+try {
+    $settingsPath = '\\wsl.localhost\Ubuntu\home\huangzy\.dsh\settings.yaml'
+    $configuredTailnetHost = Get-ConfiguredTailnetHost (Get-Content -LiteralPath $settingsPath -Raw -Encoding UTF8 -ErrorAction Stop)
+} catch {
+    Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale trusted-host: remote settings unavailable" -Encoding UTF8
+}
 $tailscaleExe = Resolve-TailscaleExe
 $tailscaleHost = $null
 if ($tailscaleExe) {
@@ -144,8 +169,6 @@ if ($tailscaleExe) {
         $tailscaleHost = $null
     }
     if ($tailscaleHost) {
-        $trustedArgs += @("--trusted-host", $tailscaleHost)
-        Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale serve host: $tailscaleHost (trusted-host added)" -Encoding UTF8
         $serveStatusText = & $tailscaleExe serve status 2>&1 | Out-String
         if ($serveStatusText -match 'No serve config') {
             Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale serve not enabled; open https://login.tailscale.com/f/serve?node=ny59qLPW6Y11CNTRL to enable" -Encoding UTF8
@@ -156,11 +179,16 @@ if ($tailscaleExe) {
         }
     }
     else {
-        Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale not logged in; skipping tailscale serve/trusted-host" -Encoding UTF8
+        Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale not logged in; skipping tailscale serve" -Encoding UTF8
     }
 }
 else {
-    Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale not found; skipping tailscale serve/trusted-host" -Encoding UTF8
+    Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale not found; skipping tailscale serve" -Encoding UTF8
+}
+$trustedTailnetHost = if ($tailscaleHost) { $tailscaleHost } else { $configuredTailnetHost }
+if ($trustedTailnetHost) {
+    $trustedArgs += @("--trusted-host", $trustedTailnetHost)
+    Add-Content -LiteralPath "$HarnessRoot\dsh-web.log" -Value "tailscale trusted-host: $trustedTailnetHost" -Encoding UTF8
 }
 
 # Start dsh-bridge.mjs so Windows localhost:3080 forwards to WSL eth0:3080
