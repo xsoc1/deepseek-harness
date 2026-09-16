@@ -1,13 +1,81 @@
-import { a as joinUnc, c as parseWslUnc, l as windowsToMntPath, n as isAbsoluteLinuxPath, o as mntToWindowsPath } from "./paths-BDE1NVOv.js";
 import z from "@deepseek-ai/schemastery";
 import { link, lstat, rename } from "node:fs/promises";
 import { FsError } from "@deepseek-ai/dsh-fs";
 import { LocalFileSystem } from "@deepseek-ai/dsh-fs-local";
+//#region src/shared/paths.ts
+/** The two UNC hosts WSL exposes a distribution's filesystem under. */
+const UNC_HOSTS = ["wsl.localhost", "wsl$"];
+/**
+* Parse a WSL UNC path into its distro and Linux path. Accepts the WSL2
+* `\\wsl.localhost\<distro>\<linux>` form, the legacy `\\wsl$\<distro>\<linux>`
+* interop form, and forward-slash spellings of either.
+* @param raw - candidate absolute path.
+* @returns the parsed target, or null when the path is not a WSL UNC.
+*/
+function parseWslUnc(raw) {
+	const normalized = raw.replace(/\\/g, "/").replace(/\/\/+/g, "//");
+	if (!normalized.startsWith("//")) return null;
+	const segments = normalized.slice(2).split("/");
+	const host = (segments[0] ?? "").toLowerCase();
+	if (!UNC_HOSTS.includes(host)) return null;
+	const distro = segments[1] ?? "";
+	if (distro === "") return null;
+	return {
+		distro,
+		linuxPath: `/${segments.slice(2).filter((segment) => segment.length > 0).join("/")}`
+	};
+}
+/**
+* Whether a path is an absolute, non-empty Linux path.
+* @param path - candidate.
+* @returns whether it starts with `/` and contains no NUL.
+*/
+function isAbsoluteLinuxPath(path) {
+	return path.startsWith("/") && !path.includes("\0");
+}
+/**
+* Join a distro and a Linux absolute path into the WSL2 UNC form used as the
+* workspace identity (`\\wsl.localhost\<distro>\<linux>`, backslash segments).
+* @param distro - distro name.
+* @param linuxPath - absolute Linux path (leading `/`).
+* @returns the UNC path.
+*/
+function joinUnc(distro, linuxPath) {
+	if (!isAbsoluteLinuxPath(linuxPath)) throw new Error(`wsl-workspace: cannot map a non-absolute Linux path "${linuxPath}" to UNC`);
+	if (distro === "" || distro === "." || distro === ".." || /[\\/]/.test(distro)) throw new Error(`wsl-workspace: invalid distribution name "${distro}"`);
+	const normalized = linuxPath.replace(/\/+/g, "/").replace(/\/$/, "");
+	const windowsSegments = (normalized.startsWith("/") ? normalized.slice(1) : normalized).replace(/\//g, "\\");
+	return `\\\\wsl.localhost\\${distro}${windowsSegments === "" ? "" : `\\${windowsSegments}`}`;
+}
+/**
+* Translate a Windows drive path to the drvfs mount path WSL distributions
+* conventionally expose it at (`C:\foo` → `/mnt/c/foo`). Only single-letter
+* drives under `/mnt` are mapped; custom mount points are out of scope.
+* @param path - the candidate Windows path.
+* @returns the `/mnt/<drive>/…` path, or `null` for non-drive paths.
+*/
+function windowsToMntPath(path) {
+	const match = /^([A-Za-z]):[\\/](.*)$/.exec(path);
+	if (match === null) return null;
+	const rest = (match[2] ?? "").replace(/\\/g, "/").replace(/\/+/g, "/").replace(/\/$/, "");
+	return `/mnt/${(match[1] ?? "").toLowerCase()}${rest === "" ? "" : `/${rest}`}`;
+}
+/**
+* Translate a `/mnt/<drive>/…` path back to its Windows drive path.
+* @param linuxPath - the candidate Linux path.
+* @returns the `X:\…` drive path, or `null` when the path is not a drvfs mount.
+*/
+function mntToWindowsPath(linuxPath) {
+	const match = /^\/mnt\/([a-zA-Z])(?:\/(.*))?$/.exec(linuxPath);
+	if (match === null) return null;
+	const rest = (match[2] ?? "").replace(/\//g, "\\");
+	return `${(match[1] ?? "").toUpperCase()}:\\${rest}`;
+}
+//#endregion
 //#region src/fs.ts
 /**
-* The WSL filesystem backend. Identity keys are canonical UNC paths; the
-* Linux form is derived on demand, so both worlds stay in sync across
-* aliases and symlinks.
+* The WSL filesystem backend. Identity keys are host-native realpaths; the
+* Linux display form stays stable across Windows and WSL hosts.
 */
 var WslFileSystem = class WslFileSystem extends LocalFileSystem {
 	static Config = z.object({
@@ -16,10 +84,11 @@ var WslFileSystem = class WslFileSystem extends LocalFileSystem {
 		diffBasisMaxBytes: z.number().default(10 * 1024 * 1024)
 	});
 	distro;
+	nativeLinux = process.platform === "linux";
 	constructor(ctx, config) {
 		super(ctx, config);
 		this.distro = config.distro;
-		this.internals = {
+		if (!this.nativeLinux) this.internals = {
 			linkFile: WslFileSystem.publishNoReplace,
 			replaceFile: WslFileSystem.replaceOverWrite,
 			copyFileDacl: WslFileSystem.skipDaclCopy
@@ -60,8 +129,26 @@ var WslFileSystem = class WslFileSystem extends LocalFileSystem {
 	}
 	/** 9P files inherit their directory's DACL; nothing to preserve. */
 	static async skipDaclCopy() {}
-	/** Translate a model/plugin path into Windows-side coordinates. */
+	/** Translate a model/plugin path into coordinates the host Node process can open. */
 	translate(path, cwd) {
+		if (this.nativeLinux) {
+			const base = this.nativeCwd(cwd);
+			const unc = parseWslUnc(path);
+			if (unc !== null) return {
+				input: this.nativeUncPath(unc.distro, unc.linuxPath),
+				cwd: base
+			};
+			const mounted = windowsToMntPath(path);
+			if (mounted !== null) return {
+				input: mounted,
+				cwd: base
+			};
+			if (/^[A-Za-z]:/.test(path) || path.startsWith("\\\\")) throw new FsError(`wsl-fs: path "${path}" is not an absolute WSL path`, "FS_IO_ERROR");
+			return {
+				input: path,
+				cwd: base
+			};
+		}
 		const unc = parseWslUnc(path);
 		if (unc !== null) return {
 			input: joinUnc(unc.distro, unc.linuxPath),
@@ -87,6 +174,22 @@ var WslFileSystem = class WslFileSystem extends LocalFileSystem {
 			cwd: this.uncCwd(cwd)
 		};
 	}
+	/** Resolve one UNC coordinate only when it names this Linux host's distribution. */
+	nativeUncPath(distro, linuxPath) {
+		const hostDistro = process.env.WSL_DISTRO_NAME;
+		if (hostDistro === void 0 || hostDistro.toLowerCase() !== distro.toLowerCase()) throw new FsError(`wsl-fs: distribution "${distro}" is not the local WSL distribution`, "FS_IO_ERROR");
+		return linuxPath;
+	}
+	/** Convert the session cwd into the local Linux filesystem's coordinates. */
+	nativeCwd(cwd) {
+		const base = cwd ?? this.config.cwd ?? process.cwd();
+		const unc = parseWslUnc(base);
+		if (unc !== null) return this.nativeUncPath(unc.distro, unc.linuxPath);
+		const mounted = windowsToMntPath(base);
+		if (mounted !== null) return mounted;
+		if (isAbsoluteLinuxPath(base)) return base;
+		throw new FsError(`wsl-fs: cwd "${base}" is not an absolute WSL path`, "FS_IO_ERROR");
+	}
 	/** A base for absolute inputs (unused by resolution, but the parent needs one). */
 	cwdOr(cwd) {
 		return cwd ?? this.config.cwd ?? process.cwd();
@@ -107,8 +210,9 @@ var WslFileSystem = class WslFileSystem extends LocalFileSystem {
 		if (distro === void 0 || distro === "") throw new FsError("wsl-fs: Linux path carries no distribution and none is configured", "FS_IO_ERROR");
 		return distro;
 	}
-	/** The Linux display path for a resolved Windows-side path. */
+	/** The Linux display path for a resolved host-native path. */
 	linuxDisplay(raw) {
+		if (this.nativeLinux && isAbsoluteLinuxPath(raw)) return raw;
 		const unc = parseWslUnc(raw);
 		if (unc !== null) return unc.linuxPath;
 		const mnt = windowsToMntPath(raw);
@@ -129,6 +233,7 @@ var WslFileSystem = class WslFileSystem extends LocalFileSystem {
 	}
 	processPath(target) {
 		const key = String(target.targetKey);
+		if (this.nativeLinux && isAbsoluteLinuxPath(key)) return key;
 		const unc = parseWslUnc(key);
 		if (unc !== null) return unc.linuxPath;
 		const mnt = windowsToMntPath(key);
@@ -139,6 +244,7 @@ var WslFileSystem = class WslFileSystem extends LocalFileSystem {
 		return `file://${this.processPath(target).split("/").map(encodeURIComponent).join("/")}`;
 	}
 	contains(parent, child) {
+		if (this.nativeLinux) return super.contains(parent, child);
 		const parentWorld = this.worldPath(parent);
 		const childWorld = this.worldPath(child);
 		if (parentWorld.distro !== childWorld.distro) return false;

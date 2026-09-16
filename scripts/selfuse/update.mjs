@@ -104,12 +104,12 @@ function buildSelfuse() {
     const p = join(repoRoot, 'packages/selfuse', entry, 'package.json')
     if (!existsSync(p)) continue
     const pkg = JSON.parse(readFileSync(p, 'utf8'))
-    if (pkg.scripts && pkg.scripts.build) pkgs.push(pkg.name)
+    if (pkg.scripts && (pkg.scripts.build || pkg.scripts['build:fs'])) pkgs.push({ name: pkg.name, script: pkg.scripts.build ? 'build' : 'build:fs' })
   }
-  for (const name of pkgs) {
-    console.log(`  -> ${name}`)
+  for (const { name, script } of pkgs) {
+    console.log(`  -> ${name} (${script})`)
     try {
-      run('pnpm', ['--filter', name, 'run', 'build'])
+      run('pnpm', ['--filter', name, 'run', script])
     } catch (error) {
       console.error(`  build failed for ${name}; continuing with tracked lib/ artifacts`)
     }

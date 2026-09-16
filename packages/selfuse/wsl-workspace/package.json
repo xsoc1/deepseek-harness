@@ -46,6 +46,10 @@
     "@deepseek-ai/dsh-timeout": "workspace:*",
     "@deepseek-ai/schemastery": "workspace:*"
   },
+  "scripts": {
+    "build:fs": "node scripts/build-fs.mjs",
+    "test": "vitest run tests/fs-linux.spec.ts"
+  },
   "files": [
     "lib",
     "cordis.patch.yml",

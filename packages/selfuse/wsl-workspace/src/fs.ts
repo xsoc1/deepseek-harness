@@ -1,11 +1,10 @@
 /**
  * WSL Service Provider for the `ctx.fs` capability seam. Backed by the host
- * filesystem over the `\\wsl.localhost\<distro>\…` 9P share — zero install
- * inside the distribution — while every model/UI-facing path is the Linux
- * path a WSL process would open (`processPath`, `displayPath`, `fileUrl`).
- * Reuses `LocalFileSystem`'s mechanics (realpath identity, atomic writes,
- * per-target locks, version guards) unchanged, because those operate on the
- * UNC path Node can open directly.
+ * filesystem. On a Windows host it opens the `\\wsl.localhost\<distro>\…`
+ * 9P share; inside WSL it opens native Linux paths. Every model/UI-facing
+ * path remains the Linux path a WSL process would open (`processPath`,
+ * `displayPath`, `fileUrl`). `LocalFileSystem` supplies realpath identity,
+ * guarded writes, per-target locks, and version checks in both hosts.
  *
  * Both UNC paths and Linux absolute paths resolve; Windows drive paths
  * resolve through their `/mnt/<drive>` form, so a WSL-composed session can
@@ -39,16 +38,15 @@ export interface Config {
 
 /** One translated coordinate: the input the local backend opens plus its cwd. */
 interface Translated {
-  /** Absolute path to hand to the local backend (UNC or Windows drive). */
+  /** Path to hand to the host-local backend (UNC, Windows drive, or Linux). */
   input: string
-  /** Absolute Windows-side base for relative inputs (UNC or Windows drive). */
+  /** Absolute base for relative inputs in the host's native coordinates. */
   cwd: string
 }
 
 /**
- * The WSL filesystem backend. Identity keys are canonical UNC paths; the
- * Linux form is derived on demand, so both worlds stay in sync across
- * aliases and symlinks.
+ * The WSL filesystem backend. Identity keys are host-native realpaths; the
+ * Linux display form stays stable across Windows and WSL hosts.
  */
 export class WslFileSystem extends LocalFileSystem {
   static override Config: z<Config> = z.object({
@@ -58,18 +56,20 @@ export class WslFileSystem extends LocalFileSystem {
   })
 
   private readonly distro: string | undefined
+  private readonly nativeLinux = process.platform === 'linux'
 
   constructor(ctx: Context, config: Config) {
     // schemastery fills the defaults before construction; the parent validates
     // `diffBasisMaxBytes` and stores the resolved shape.
     super(ctx, config)
     this.distro = config.distro
-    // The 9P/drvfs substrate has no hard links and no Win32 security semantics:
-    // replace the atomic-publication boundaries the parent's fsio defaults to.
-    this.internals = {
-      linkFile: WslFileSystem.publishNoReplace,
-      replaceFile: WslFileSystem.replaceOverWrite,
-      copyFileDacl: WslFileSystem.skipDaclCopy,
+    // Windows opens the 9P share; Linux uses the parent's native publication.
+    if (!this.nativeLinux) {
+      this.internals = {
+        linkFile: WslFileSystem.publishNoReplace,
+        replaceFile: WslFileSystem.replaceOverWrite,
+        copyFileDacl: WslFileSystem.skipDaclCopy,
+      }
     }
   }
 
@@ -113,8 +113,19 @@ export class WslFileSystem extends LocalFileSystem {
   /** 9P files inherit their directory's DACL; nothing to preserve. */
   private static async skipDaclCopy(): Promise<void> {}
 
-  /** Translate a model/plugin path into Windows-side coordinates. */
+  /** Translate a model/plugin path into coordinates the host Node process can open. */
   private translate(path: string, cwd?: string): Translated {
+    if (this.nativeLinux) {
+      const base = this.nativeCwd(cwd)
+      const unc = parseWslUnc(path)
+      if (unc !== null) return { input: this.nativeUncPath(unc.distro, unc.linuxPath), cwd: base }
+      const mounted = windowsToMntPath(path)
+      if (mounted !== null) return { input: mounted, cwd: base }
+      if (/^[A-Za-z]:/.test(path) || path.startsWith('\\\\')) {
+        throw new FsError(`wsl-fs: path "${path}" is not an absolute WSL path`, 'FS_IO_ERROR')
+      }
+      return { input: path, cwd: base }
+    }
     const unc = parseWslUnc(path)
     if (unc !== null) {
       return { input: joinUnc(unc.distro, unc.linuxPath), cwd: this.cwdOr(cwd) }
@@ -134,6 +145,26 @@ export class WslFileSystem extends LocalFileSystem {
     // Relative: resolve against the caller cwd (or the configured base).
     const base = this.uncCwd(cwd)
     return { input: path, cwd: base }
+  }
+
+  /** Resolve one UNC coordinate only when it names this Linux host's distribution. */
+  private nativeUncPath(distro: string, linuxPath: string): string {
+    const hostDistro = process.env.WSL_DISTRO_NAME
+    if (hostDistro === undefined || hostDistro.toLowerCase() !== distro.toLowerCase()) {
+      throw new FsError(`wsl-fs: distribution "${distro}" is not the local WSL distribution`, 'FS_IO_ERROR')
+    }
+    return linuxPath
+  }
+
+  /** Convert the session cwd into the local Linux filesystem's coordinates. */
+  private nativeCwd(cwd?: string): string {
+    const base = cwd ?? this.config.cwd ?? process.cwd()
+    const unc = parseWslUnc(base)
+    if (unc !== null) return this.nativeUncPath(unc.distro, unc.linuxPath)
+    const mounted = windowsToMntPath(base)
+    if (mounted !== null) return mounted
+    if (isAbsoluteLinuxPath(base)) return base
+    throw new FsError(`wsl-fs: cwd "${base}" is not an absolute WSL path`, 'FS_IO_ERROR')
   }
 
   /** A base for absolute inputs (unused by resolution, but the parent needs one). */
@@ -163,8 +194,9 @@ export class WslFileSystem extends LocalFileSystem {
     return distro
   }
 
-  /** The Linux display path for a resolved Windows-side path. */
+  /** The Linux display path for a resolved host-native path. */
   private linuxDisplay(raw: string): string {
+    if (this.nativeLinux && isAbsoluteLinuxPath(raw)) return raw
     const unc = parseWslUnc(raw)
     if (unc !== null) return unc.linuxPath
     const mnt = windowsToMntPath(raw)
@@ -184,6 +216,7 @@ export class WslFileSystem extends LocalFileSystem {
 
   override processPath(target: FsTarget): string {
     const key = String(target.targetKey)
+    if (this.nativeLinux && isAbsoluteLinuxPath(key)) return key
     const unc = parseWslUnc(key)
     if (unc !== null) return unc.linuxPath
     const mnt = windowsToMntPath(key)
@@ -198,6 +231,7 @@ export class WslFileSystem extends LocalFileSystem {
   }
 
   override contains(parent: FsTarget, child: FsTarget): boolean {
+    if (this.nativeLinux) return super.contains(parent, child)
     const parentWorld = this.worldPath(parent)
     const childWorld = this.worldPath(child)
     if (parentWorld.distro !== childWorld.distro) return false
