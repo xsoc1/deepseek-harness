@@ -1,36 +1,51 @@
+---
+description: "Operate and inspect the local WSL-hosted DSH Web deployment from the Windows control console."
+kind: "package-reference"
+---
+
 # @dsh-selfuse/control-gui
 
-DeepSeek Harness 独立图形控制台程序。
+English | [中文](README.zh.md)
 
-## 特性
-- **独立 Windows EXE**：通过 C# (.NET Framework 4.8) 原生编译为轻量级 Windows 可执行程序 `dsh-control-gui.exe`，无需外部脚本引擎启动。
-- **后台守护进程解耦**：状态轮询与异步动作由轻量守护进程 `dsh-gui-poller.ps1` 在后台执行，UI 线程毫秒级响应，永不卡顿。
-- **状态监控**：Web UI (3080) 须有 HTTP 200 才显示运行中，单有监听端口显示未就绪；Tailscale 须服务运行、CLI 后端连接且有 Tailnet IP 才显示已连接。轮询数据超过 15 秒未更新时显示状态未知，不沿用旧的绿色状态。
-- **配置与设置面板**：内置设置窗口，支持自定义顶部横幅图片、显示模式（Zoom/Stretch/Center）、高度调整，并具备窗口尺寸持久化记忆与自动工作区探测能力。
-- **高分屏 DWM 自动缩放**：采用标准 Windows 缩放，保持大尺寸界面与清晰可读性。
+## Summary
 
-## 文件结构
-- `dsh-control-gui.exe`：编译生成的可执行文件
-- `build-gui-exe.ps1`：控制台主程序一键编译脚本
-- `build-installer.ps1`：完整安装包与向导生成脚本（输出至 Downloads 目录）
-- `install.ps1` / `install.bat`：压缩包便携一键配置与快捷方式安装脚本
-- `dsh-gui-poller.ps1`：后台状态探测与控制守护脚本
-- `gui-src/`：C# 源码 (`DshControlApp.cs`) 与应用程序清单 (`app.manifest`)
-- `installer-src/`：安装向导 C# 源码 (`InstallerApp.cs`) 与清单
-- `dist/`：打包生成的 `DshControl-Setup.exe` 与完整 zip
-- `dsh.ico`：控制台应用图标
+This Windows control console starts and observes the locally deployed, WSL-hosted DSH Web service. It is a companion to the native Web UI, not a Harness plugin or an alternative plugin manager.
 
-## 构建方式
-1. **编译主控制台**：
+## Table of Contents
+
+- [Controls](#controls)
+- [Status](#status)
+- [Build](#build)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+## Controls
+
+- Start, stop, and restart the local DSH watchdog and Web process chain.
+- Open the local Web UI, view recent watchdog and Web logs, and refresh status. The log panel also follows new output; its context menu and Ctrl+L clear only the displayed text.
+- Open the active WSL DSH configuration directory, copy a status diagnostic, and adjust the banner and source paths in Settings. The main window size persists across launches.
+
+## Status
+
+The console polls in a background PowerShell process. Web is green only after HTTP 200, and Tailscale is green only when its service and backend are running with a Tailnet IP. A status file older than 15 seconds produces an unknown state. Tailscale status is read-only: the console does not change Serve configuration.
+
+The default DSH configuration path is `\\wsl.localhost\Ubuntu\home\huangzy\.dsh`. Existing settings that still name the old Windows `%USERPROFILE%\.dsh` path are mapped to this WSL path when loaded; an explicitly customized path is preserved. The Windows source directory and WSL DSH configuration directory are different locations.
+
+## Build
+
+From this package directory on Windows:
+
 ```powershell
-powershell -ExecutionPolicy Bypass -File ./build-gui-exe.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build-gui-exe.ps1
 ```
-附加 `-CreateDesktopShortcut` 可直接在桌面生成快捷方式。
 
-2. **生成完整安装包 (放置于 Downloads)**：
-```powershell
-powershell -ExecutionPolicy Bypass -File ./build-installer.ps1
-```
-将自动生成并输出：
-- `Downloads/DshControl-Setup.exe`（单文件原生 GUI 安装向导，内嵌完整组件）
-- `Downloads/dsh-control-gui-v0.1.0-windows-x64.zip`（全套便携安装包）
+The resulting `dsh-control-gui.exe` uses `dsh-gui-poller.ps1` beside it or in the configured source checkout. Reopen the console after replacing a running executable.
+
+## Known Limitations and Deferred Work
+
+- The console deliberately has no automatic DSH updater or Tailscale Serve repair button. DSH source upgrades require a reviewed maintenance workflow; plugin management belongs to the native `dsh plugin --profile web` CLI.
+- The console controls only this machine's DSH deployment. Its status checks do not verify an iPad or other remote client's browser session.
+
+## Dev Note
+
+`tests/console-features.ps1` checks the visible controls and the removed poller commands. `tests/status-regression.ps1` checks Web and Tailscale status behavior.

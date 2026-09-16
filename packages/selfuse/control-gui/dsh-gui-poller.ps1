@@ -11,7 +11,6 @@
     [string]$WatchdogFile,
     [string]$WebLog,
     [string]$WatchdogLog,
-    [string]$UpdateScript,
     [string]$HarnessRoot,
     [string]$PollerPidFile,
     [int]$Interval = 3
@@ -169,16 +168,6 @@ function Get-WslState([bool]$WebIsUp, [switch]$Force) {
     }
 }
 
-function Get-DshVersion {
-    $pkg = Join-Path $HarnessRoot 'package.json'
-    if (Test-Path $pkg) {
-        try {
-            return ((Get-Content -LiteralPath $pkg -Raw -Encoding UTF8) | ConvertFrom-Json).version
-        } catch {}
-    }
-    return 'unknown'
-}
-
 function Get-DshWebUrl([switch]$Force) {
     if (-not $Force -and $script:cachedWebUrl) { return $script:cachedWebUrl }
     if (Test-Path $WebLog) {
@@ -330,44 +319,6 @@ function Get-TailscaleInfo([switch]$Force) {
     return $script:cachedTsInfo
 }
 
-function Repair-TailscaleAction {
-    $ts = Resolve-TailscaleExe
-    if (-not $ts) {
-        Write-Activity 'Tailscale 未安装'
-        return 'Tailscale not installed'
-    }
-    $serve = & $ts serve status 2>&1 | Out-String
-    if ($serve -notmatch 'No serve config') {
-        $url = ''
-        if ($serve -match 'https://([^\s]+)') { $url = $matches[1] }
-        Write-Activity "Tailscale Serve 已就绪: $url"
-        return "Tailscale Serve OK: $url"
-    }
-    Write-Activity 'Tailscale Serve 无配置，尝试自动创建 serve --bg --https=443 http://127.0.0.1:3080 ...'
-    $job = Start-Job -ScriptBlock {
-        param($exe)
-        & $exe serve --bg --https=443 http://127.0.0.1:3080 2>&1 | Out-String
-    } -ArgumentList $ts
-    if (Wait-Job $job -Timeout 10) {
-        $out = Receive-Job $job
-        Remove-Job $job -Force
-        if ($out) { Write-Activity $out.Trim() }
-        $serve = & $ts serve status 2>&1 | Out-String
-        if ($serve -notmatch 'No serve config') {
-            $url = ''
-            if ($serve -match 'https://([^\s]+)') { $url = $matches[1] }
-            Write-Activity "Tailscale Serve 修复成功: $url"
-            return "Tailscale Serve fixed: $url"
-        }
-    }
-    else {
-        Stop-Job $job
-        Remove-Job $job -Force
-    }
-    Write-Activity 'Tailscale Serve 未启用，请打开启用链接'
-    return 'Tailscale Serve not enabled; open https://login.tailscale.com/f/serve?node=ny59qLPW6Y11CNTRL'
-}
-
 while ($true) {
     $isForced = $false
     if (Test-Path $TriggerFile) {
@@ -399,34 +350,8 @@ while ($true) {
                         Start-Sleep -Seconds 1
                         $lines += Start-WatchdogAction
                     }
-                    'wsl' {
-                        $out = wsl --shutdown 2>&1 | Out-String
-                        if ($out.Trim()) { $lines += $out.Trim() }
-                        $lines += 'WSL shut down; it will restart on next wsl_bash call'
-                    }
-                    'tailscale' { $lines += Repair-TailscaleAction; $script:cachedTsInfo = $null }
-                    'check-update' {
-                        if (Test-Path $UpdateScript) {
-                            $lines += '==== 检查 DSH 版本 ===='
-                            $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $UpdateScript -Check 2>&1 | Out-String
-                            $lines += @($out -split "`r?`n" | Where-Object { $_.Trim() })
-                        } else {
-                            $lines += "update script not found: $UpdateScript"
-                        }
-                    }
-                    'update-dsh' {
-                        if (Test-Path $UpdateScript) {
-                            $lines += '==== 开始更新 DSH ===='
-                            $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $UpdateScript -Apply 2>&1 | Out-String
-                            $lines += @($out -split "`r?`n" | Where-Object { $_.Trim() })
-                            $lines += '==== 更新结束 ===='
-                        } else {
-                            $lines += "update script not found: $UpdateScript"
-                        }
-                    }
                     default { $lines += "unknown command: $($cmd.action)" }
                 }
-                if ($cmd.action -eq 'wsl' -or $cmd.action -eq 'tailscale') { $script:activeAction = $null }
             }
             $resultFile = $ResultPrefix + $cmd.id + '.json'
             $tmpResult = $resultFile + '.tmp'
@@ -500,7 +425,6 @@ while ($true) {
         wsl = $wsl
         dshHome = Test-Path $DshHome
         dshProfile = Test-Path $DshProfile
-        dshVersion = Get-DshVersion
         tailscale = $tsInfo.status
         tailscaleIp = $tsInfo.ip
         tailscaleServe = $tsInfo.serve

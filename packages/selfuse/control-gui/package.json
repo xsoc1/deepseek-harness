@@ -17,7 +17,8 @@
     "install.bat",
     "dsh-control-gui.exe",
     "dsh.ico",
-    "README.md"
+    "README.md",
+    "README.zh.md"
   ],
   "keywords": [
     "dsh",

@@ -14,6 +14,7 @@ namespace DshControl
 {
     public class GuiSettings
     {
+        public const string ActiveWslDshHome = @"\\wsl.localhost\Ubuntu\home\huangzy\.dsh";
         public string HarnessRoot { get; set; }
         public string DshHome { get; set; }
         public string BannerImagePath { get; set; }
@@ -25,7 +26,7 @@ namespace DshControl
         public GuiSettings()
         {
             HarnessRoot = @"F:\tools\deepseek-harness";
-            DshHome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dsh");
+            DshHome = ActiveWslDshHome;
             BannerImagePath = @"C:\Users\HuangZY\Pictures\IMG_1891.PNG";
             BannerHeight = 280;
             BannerSizeMode = "Zoom";
@@ -46,6 +47,16 @@ namespace DshControl
             }
         }
 
+        public static string NormalizeDshHome(string value)
+        {
+            string legacyHome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".dsh");
+            if (string.IsNullOrWhiteSpace(value) || string.Equals(value.TrimEnd('\\', '/'), legacyHome, StringComparison.OrdinalIgnoreCase))
+            {
+                return ActiveWslDshHome;
+            }
+            return value;
+        }
+
         public static GuiSettings Load()
         {
             GuiSettings s = new GuiSettings();
@@ -60,7 +71,7 @@ namespace DshControl
                     if (loaded != null)
                     {
                         if (!string.IsNullOrEmpty(loaded.HarnessRoot)) s.HarnessRoot = loaded.HarnessRoot;
-                        if (!string.IsNullOrEmpty(loaded.DshHome)) s.DshHome = loaded.DshHome;
+                        s.DshHome = NormalizeDshHome(loaded.DshHome);
                         if (!string.IsNullOrEmpty(loaded.BannerImagePath)) s.BannerImagePath = loaded.BannerImagePath;
                         if (loaded.BannerHeight >= 0 && loaded.BannerHeight <= 800) s.BannerHeight = loaded.BannerHeight;
                         if (!string.IsNullOrEmpty(loaded.BannerSizeMode)) s.BannerSizeMode = loaded.BannerSizeMode;
@@ -641,9 +652,6 @@ namespace DshControl
 
             // 横幅右键菜单
             ContextMenuStrip bannerMenu = new ContextMenuStrip();
-            bannerMenu.Items.Add("更换背景图...", null, (s, e) => OpenSettingsDialog());
-            bannerMenu.Items.Add("调整横幅高度...", null, (s, e) => OpenSettingsDialog());
-            bannerMenu.Items.Add(new ToolStripSeparator());
             bannerMenu.Items.Add("控制台设置 (⚙)...", null, (s, e) => OpenSettingsDialog());
             bannerBox.ContextMenuStrip = bannerMenu;
 
@@ -651,7 +659,7 @@ namespace DshControl
             statusGroup = new GroupBox();
             statusGroup.Text = "状态";
             statusGroup.Dock = DockStyle.Top;
-            statusGroup.Height = 220;
+            statusGroup.Height = 190;
             statusGroup.Padding = new Padding(8);
             statusGroup.ForeColor = Color.WhiteSmoke;
             statusGroup.BackColor = Color.FromArgb(32, 38, 52);
@@ -659,19 +667,19 @@ namespace DshControl
             tblStatus = new TableLayoutPanel();
             tblStatus.Dock = DockStyle.Fill;
             tblStatus.ColumnCount = 2;
-            tblStatus.RowCount = 6;
+            tblStatus.RowCount = 5;
             tblStatus.BackColor = Color.FromArgb(32, 38, 52);
             tblStatus.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 95f));
             tblStatus.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 5; i++)
             {
-                tblStatus.RowStyles.Add(new RowStyle(SizeType.Percent, 16.66f));
+                tblStatus.RowStyles.Add(new RowStyle(SizeType.Percent, 20f));
             }
             statusGroup.Controls.Add(tblStatus);
 
             Font nameFont = new Font("Microsoft YaHei UI", 9.5f, FontStyle.Bold);
             Font valFont = new Font("Microsoft YaHei UI", 9.5f);
-            string[] names = new string[] { "web", "watchdog", "WSL", "dsh home", "Tailscale", "DSH版本" };
+            string[] names = new string[] { "web", "watchdog", "WSL", "dsh home", "Tailscale" };
             for (int i = 0; i < names.Length; i++)
             {
                 Label lblName = new Label();
@@ -695,7 +703,7 @@ namespace DshControl
             // 3. 按钮面板
             btnPanel = new FlowLayoutPanel();
             btnPanel.Dock = DockStyle.Top;
-            btnPanel.Height = 126;
+            btnPanel.Height = 88;
             btnPanel.Padding = new Padding(10, 10, 10, 4);
             btnPanel.AutoScroll = true;
             btnPanel.BackColor = Color.FromArgb(26, 30, 42);
@@ -728,34 +736,11 @@ namespace DshControl
             }, "停止端口 3080 进程链与 watchdog 服务", Color.FromArgb(180, 70, 70));
 
             addButton("重启", 76, (s, e) => SendAction("restart", "重启 dsh"), "先停止端口 3080 进程链，再启动 watchdog", Color.Empty);
-            addButton("远程重启", 96, (s, e) => SendAction("restart", "重启 dsh (Tailscale 远程模式)"), "需要先启用 Tailscale Serve；启用后重启 dsh 并自动配置 trusted-host，供 Android/iPad 访问", Color.Empty);
-            addButton("Tailscale修复", 100, (s, e) => SendAction("tailscale", "Tailscale 修复"), "检查/修复 Tailscale Serve：自动执行 serve --bg 3080，并显示状态", Color.Empty);
-            addButton("检查更新", 80, (s, e) => SendAction("check-update", "检查 DSH 版本"), "只读检查本地与上游 DSH 版本是否一致", Color.Empty);
-            addButton("更新 DSH", 80, (s, e) =>
-            {
-                if (MessageBox.Show("确认更新 DeepSeek Harness 到最新版本? 将拉取上游、合并分支并在 WSL 中重新构建。", "更新 DSH", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-                {
-                    SendAction("update-dsh", "更新 DSH");
-                }
-            }, "拉取上游最新版本、合并分支并在 WSL 中重新构建", Color.Empty);
-
             addButton("打开 Web UI", 104, (s, e) => OpenWebUi(), "浏览器打开 http://127.0.0.1:3080", Color.Empty);
             addButton("查看日志", 84, (s, e) => ShowRecentLogs(), "显示 watchdog 与 dsh-web 最近日志", Color.Empty);
-            addButton("重启 WSL", 84, (s, e) =>
-            {
-                if (MessageBox.Show("确认重启 WSL (虚拟 linux)? 运行中的 Linux 进程会被终止。", "重启 WSL", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-                {
-                    SendAction("wsl", "重启 WSL");
-                }
-            }, "关闭当前 WSL 虚拟机", Color.Empty);
-
             addButton("刷新", 72, (s, e) => { ForceRefresh(); AddLog("状态已刷新 (F5)"); }, "刷新状态 (F5)", Color.Empty);
-            addButton("清空日志", 84, (s, e) => { logBox.Clear(); AddLog("日志已清空 (Ctrl+L)"); }, "清空日志输出 (Ctrl+L)", Color.Empty);
             addButton("配置目录", 84, (s, e) => OpenFolder(settings.DshHome), "打开 " + settings.DshHome, Color.Empty);
             addButton("复制诊断", 84, (s, e) => CopyDiagnostics(), "复制当前状态与关键路径，便于反馈问题", Color.Empty);
-            addButton("web profile", 92, (s, e) => OpenFolder(Path.Combine(settings.DshHome, @"profiles\web")), "打开 web profile 目录", Color.Empty);
-
-            // ★ 新增「设置」按钮
             addButton("⚙ 设置", 84, (s, e) => OpenSettingsDialog(), "打开控制台设置：自定义背景图、尺寸、自动搜索功能目录等", Color.FromArgb(70, 130, 90));
 
             // 4. 日志面板
@@ -968,11 +953,12 @@ namespace DshControl
 
         private void OpenSettingsDialog()
         {
+            string previousRoot = settings.HarnessRoot;
+            string previousHome = settings.DshHome;
             using (SettingsForm sf = new SettingsForm(this.settings))
             {
                 if (sf.ShowDialog(this) == DialogResult.OK && sf.SettingsChanged)
                 {
-                    // 重新应用设置
                     this.settings = GuiSettings.Load();
                     bannerBox.Height = settings.BannerHeight;
                     bannerBox.Visible = settings.BannerHeight > 0;
@@ -983,6 +969,11 @@ namespace DshControl
                     if (this.ClientSize.Height < minH)
                     {
                         this.ClientSize = new Size(this.ClientSize.Width, minH);
+                    }
+                    if (!string.Equals(previousRoot, settings.HarnessRoot, StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(previousHome, settings.DshHome, StringComparison.OrdinalIgnoreCase))
+                    {
+                        RestartStatusPoller();
                     }
                     AddLog("⚙ 设置已更新并生效");
                 }
@@ -1124,10 +1115,6 @@ namespace DshControl
                     SetStatusText("dsh home", settings.DshHome + " (缺失)", Color.Firebrick);
                 }
 
-                // DSH 版本
-                string ver = snap.ContainsKey("dshVersion") && snap["dshVersion"] != null ? snap["dshVersion"].ToString() : "unknown";
-                SetStatusText("DSH版本", ver, Color.ForestGreen);
-
                 // Tailscale
                 string ts = snap.ContainsKey("tailscale") && snap["tailscale"] != null ? snap["tailscale"].ToString() : "";
                 string tsIp = snap.ContainsKey("tailscaleIp") && snap["tailscaleIp"] != null ? snap["tailscaleIp"].ToString() : "";
@@ -1154,6 +1141,28 @@ namespace DshControl
                 ShowStatusUnavailable("读取异常");
                 refreshLabel.Text = "状态读取异常: " + ex.Message;
             }
+        }
+
+        private void RestartStatusPoller()
+        {
+            try
+            {
+                if (pollerProcess != null && !pollerProcess.HasExited)
+                {
+                    pollerProcess.Kill();
+                    pollerProcess.WaitForExit(3000);
+                }
+            }
+            catch { }
+            pollerProcess = null;
+            try
+            {
+                if (File.Exists(PollerPidFile)) File.Delete(PollerPidFile);
+                if (File.Exists(StatusFile)) File.Delete(StatusFile);
+            }
+            catch { }
+            ShowStatusUnavailable("等待轮询");
+            StartStatusPoller();
         }
 
         private void StartStatusPoller()
@@ -1200,16 +1209,14 @@ namespace DshControl
                 string watchdogFile = Path.Combine(settings.HarnessRoot, "dsh-watchdog.ps1");
                 string webLog = Path.Combine(settings.HarnessRoot, "dsh-web.log");
                 string watchdogLog = Path.Combine(settings.HarnessRoot, "dsh-watchdog.log");
-                string updateScript = Path.Combine(settings.HarnessRoot, "scripts", "update-dsh.ps1");
-                if (!File.Exists(updateScript)) updateScript = Path.Combine(settings.HarnessRoot, "update-dsh.ps1");
                 string dshProfile = Path.Combine(settings.DshHome, @"profiles\web");
 
                 ProcessStartInfo psi = new ProcessStartInfo();
                 psi.FileName = "powershell.exe";
                 psi.Arguments = string.Format(
-                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{0}\" -StatusFile \"{1}\" -TriggerFile \"{2}\" -CmdFile \"{3}\" -ResultPrefix \"{4}\" -ActivityFile \"{5}\" -WebUrl \"http://127.0.0.1:3080\" -WebPort 3080 -DshHome \"{6}\" -DshProfile \"{7}\" -WatchdogFile \"{8}\" -WebLog \"{9}\" -WatchdogLog \"{10}\" -UpdateScript \"{11}\" -HarnessRoot \"{12}\" -PollerPidFile \"{13}\" -Interval 3",
+                    "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{0}\" -StatusFile \"{1}\" -TriggerFile \"{2}\" -CmdFile \"{3}\" -ResultPrefix \"{4}\" -ActivityFile \"{5}\" -WebUrl \"http://127.0.0.1:3080\" -WebPort 3080 -DshHome \"{6}\" -DshProfile \"{7}\" -WatchdogFile \"{8}\" -WebLog \"{9}\" -WatchdogLog \"{10}\" -HarnessRoot \"{11}\" -PollerPidFile \"{12}\" -Interval 3",
                     pollerPath, StatusFile, TriggerFile, CmdFile, ResultPrefix, ActivityFile,
-                    settings.DshHome, dshProfile, watchdogFile, webLog, watchdogLog, updateScript, settings.HarnessRoot, PollerPidFile
+                    settings.DshHome, dshProfile, watchdogFile, webLog, watchdogLog, settings.HarnessRoot, PollerPidFile
                 );
                 psi.UseShellExecute = false;
                 psi.CreateNoWindow = true;
