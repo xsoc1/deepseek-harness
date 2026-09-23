@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { runGitTool } from "../lib/index.js";
 import {
 	MAX_MESSAGE_LENGTH,
 	clampLogCount,
@@ -146,4 +147,47 @@ test("renderStatus covers empty and populated states", () => {
 	assert.match(populated, /M  a\.js/);
 	assert.match(populated, /\?\?  b\.md/);
 	assert.match(populated, /UU  c\.txt/);
+});
+
+test("git execution carries the active session policy through the DSH shell", async () => {
+	const session = { id: "test-session" };
+	const signal = new AbortController().signal;
+	const requests = [];
+	const shell = {
+		sandboxMode: "workspace-write",
+		resolve: (request) => request,
+		execute: async (request) => {
+			requests.push(request);
+			return { result: async () => ({ exitCode: 0, timedOut: false, aborted: false,
+				stdout: { text: "ok" }, stderr: { text: "" }, sandbox: { mode: "read-only", denied: false } }) };
+		}
+	};
+	const policy = { resolve: ({ session: target }) => {
+		assert.equal(target, session);
+		return { mode: "read-only", workspaceRoot: "/tmp/project" };
+	} };
+	const ctx = { get: (name) => ({ shell, sandboxPolicy: policy })[name] };
+	const result = await runGitTool(ctx, { agent: { session }, signal }, ["status", "a' b"], "/tmp/project");
+	assert.equal(result.ok, true);
+	assert.equal(requests[0].sandboxPolicy.mode, "read-only");
+	assert.equal(requests[0].signal, signal);
+	assert.equal(requests[0].command, "git 'status' 'a'\\'' b'");
+});
+
+test("git execution fails closed without a DSH shell or sandbox policy", async () => {
+	const missingShell = await runGitTool({ get: () => undefined }, {}, ["status"], "/tmp/project");
+	assert.equal(missingShell.ok, false);
+	const shell = { sandboxMode: "workspace-write" };
+	const missingPolicy = await runGitTool({ get: (name) => name === "shell" ? shell : undefined }, {}, ["status"], "/tmp/project");
+	assert.equal(missingPolicy.ok, false);
+});
+
+test("git execution reports a sandbox denial even when the process exits zero", async () => {
+	const shell = { sandboxMode: "read-only", resolve: (request) => request,
+		execute: async () => ({ result: async () => ({ exitCode: 0, timedOut: false, aborted: false,
+			stdout: { text: "" }, stderr: { text: "" }, sandbox: { mode: "read-only", denied: true } }) }) };
+	const ctx = { get: (name) => ({ shell, sandboxPolicy: { resolve: () => ({ mode: "read-only" }) } })[name] };
+	const result = await runGitTool(ctx, {}, ["commit"], "/tmp/project");
+	assert.equal(result.ok, false);
+	assert.match(result.message, /denied by read-only policy/);
 });

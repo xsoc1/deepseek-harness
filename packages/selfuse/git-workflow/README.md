@@ -46,14 +46,14 @@ git_branch                        # 分支列表
 
 ## 设计说明
 
-- **零 shell**:所有 git 调用走 `child_process.execFile("git", argsArray)`,参数数组传递,用户输入永远不可能被解释为 shell 语法。
+- **官方执行边界**:同步上游 `0.1.2` 的意图，所有 git 调用经 DSH 的 `ctx.shell.execute()` 和当前会话的 sandbox policy 执行；缺少 shell/政策时拒绝执行，不退回无沙箱的 `execFile`。参数逐个引用，路径和 commit message 仍先校验。
 - **输入校验**:commit message 非空、≤2000 字符、无 NUL;路径拒绝绝对路径与 `..` 穿越(反斜杠归一化后检查),保证不越出仓库。
 - **纯逻辑可单测**:解析(porcelain / diff-stat / log / branch)与校验全部在 `lib/git.js` 纯函数里,`npm test` 零依赖。
 - **结构化输出**:每个工具返回带 schema 的 JSON,render 输出可读文本;失败返回 `{ ok:false, exitCode, message }` 而非裸报错。
 
 ## 诚实边界
 
-- 工具直接以 host 进程身份运行 `git`,**不经过 fs-sandbox 围栏**;路径校验是词法级的,符号链接/工作树外路径依赖 git 自身约束。需要更强隔离时,请勿在 untrusted 会话挂载此插件。
+- 路径校验仍是词法级的；实际文件边界由 DSH 当前 sandbox policy 执行。若所在预设没有 shell 或 sandbox policy，工具失败关闭，不会绕过围栏。
 - commit 需要仓库已配置 `user.name`/`user.email`(git 自身报错会透传)。
 - `git_log` 的 `files` 解析假设 `--name-status` 输出格式;非常规编码的路径可能显示不完整。
 - 不含 push / pull / rebase 等网络操作(后续版本可加,需审批语义配合)。

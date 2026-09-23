@@ -11,10 +11,8 @@
  *  - `git_commit` — stage paths and create a commit from a validated message
  *  - `git_branch` — list local branches
  *
- * Every `git` invocation goes through `child_process.execFile("git", args)`
- * with an argument array — never through a shell — so no user input can be
- * interpreted as shell syntax. Paths are validated to stay inside the
- * repository, and commit messages are validated and passed with `-m`.
+ * Every `git` invocation goes through the harness shell executor, including
+ * the active session's sandbox policy. Paths and commit messages are validated.
  *
  * Mount it in a profile patch or agent preset:
  *   - id: git-workflow
@@ -22,8 +20,6 @@
  *
  * @module @dsh-selfuse/git-workflow
  */
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { isAbsolute, resolve } from "node:path";
 import {
 	clampLogCount,
@@ -45,7 +41,6 @@ const name = "git-workflow";
 const inject = ["tools"];
 
 const MAX_BUFFER = 8 * 1024 * 1024;
-const runGit = promisify(execFile);
 
 /** Resolve the tool workdir: explicit arg (relative to session cwd) or the session cwd. */
 function resolveWorkdir(workdir, exec) {
@@ -55,26 +50,45 @@ function resolveWorkdir(workdir, exec) {
 	return isAbsolute(workdir) ? workdir : resolve(fallback, workdir);
 }
 
-/**
- * Run `git` with an argument array and no shell. Resolves instead of throwing
- * so the tool can return a structured, model-readable failure.
- */
-async function runGitTool(args, workdir, options = {}) {
-	const { timeoutMs = 30000, input, signal } = options;
+/** Quote one argument for the host shell. No command string comes from the user. */
+function shellQuote(arg) {
+	const value = String(arg);
+	if (process.platform === "win32") return `'${value.replaceAll("'", "''")}'`;
+	return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+/** Execute through the current DSH shell and fail closed if its sandbox seam is absent. */
+async function runGitTool(ctx, exec, args, workdir, options = {}) {
+	const { timeoutMs = 30000 } = options;
 	try {
-		const { stdout, stderr } = await runGit("git", args, {
-			cwd: workdir,
-			timeout: timeoutMs,
-			maxBuffer: MAX_BUFFER,
-			windowsHide: true,
-			encoding: "utf8",
-			input,
-			signal
+		const shell = ctx.get("shell");
+		const policy = ctx.get("sandboxPolicy");
+		if (shell === undefined || (shell.sandboxMode !== undefined && policy === undefined)) {
+			return { ok: false, exitCode: null, message: "Git tool requires the DSH shell and sandbox policy" };
+		}
+		const sandboxPolicy = policy?.resolve(exec?.agent === undefined ? {} : { session: exec.agent.session });
+		const request = shell.resolve({
+			command: `git ${args.map(shellQuote).join(" ")}`,
+			workdir,
+			timeoutMs,
+			stdoutMaxBytes: MAX_BUFFER,
+			signal: exec?.signal,
+			...(sandboxPolicy === undefined ? {} : { sandboxPolicy })
 		});
-		return { ok: true, stdout, stderr };
+		const result = await (await shell.execute(request)).result();
+		const denied = result.sandbox?.denied === true || result.sandbox?.runnerFailed === true;
+		return {
+			ok: result.exitCode === 0 && !result.timedOut && !result.aborted && !denied,
+			exitCode: result.exitCode,
+			stdout: result.stdout?.text ?? "",
+			stderr: result.stderr?.text ?? "",
+			timedOut: result.timedOut,
+			...(result.exitCode === 0 && !denied ? {} : { message: denied
+				? `Git command denied by ${result.sandbox?.mode ?? "sandbox"} policy`
+				: result.stderr?.text?.trim() || `git exited ${result.exitCode}` })
+		};
 	} catch (error) {
-		const code = error?.code !== undefined ? error.code : error?.exitCode ?? -1;
-		return { ok: false, exitCode: typeof code === "number" ? code : null, message: String(error?.stderr || error?.message || "git failed").trim() };
+		return { ok: false, exitCode: null, message: String(error?.message || "git failed").trim() };
 	}
 }
 
@@ -89,8 +103,7 @@ const pathsParam = (description) => ({
 });
 
 /**
- * Register the five git tools. All execution and validation logic lives in
- * pure functions (lib/git.js); this wrapper is a thin adapter over execFile.
+ * Register the five git tools. Pure parsing lives in lib/git.js.
  */
 function apply(ctx) {
 	const definitions = [
@@ -131,7 +144,7 @@ function apply(ctx) {
 			},
 			timeoutMs: 30000,
 			async execute(args, exec) {
-				const result = await runGitTool(["status", "--porcelain", "-b"], resolveWorkdir(args?.workdir, exec));
+                const result = await runGitTool(ctx, exec, ["status", "--porcelain", "-b"], resolveWorkdir(args?.workdir, exec));
 				if (!result.ok) return { ok: false, exitCode: result.exitCode, message: result.message };
 				return { ok: true, state: parsePorcelainStatus(result.stdout) };
 			}
@@ -180,7 +193,7 @@ function apply(ctx) {
 				if (args?.staged === true) gitArgs.push("--cached");
 				if (args?.stat === true) gitArgs.push("--stat");
 				if (args?.paths !== undefined && args?.paths !== null) gitArgs.push("--", ...args.paths);
-				const result = await runGitTool(gitArgs, resolveWorkdir(args?.workdir, exec));
+                const result = await runGitTool(ctx, exec, gitArgs, resolveWorkdir(args?.workdir, exec));
 				if (!result.ok) return { ok: false, exitCode: result.exitCode, message: result.message };
 				const { text, truncated } = truncateLines(result.stdout, clampMaxLines(args?.maxLines));
 				return {
@@ -243,7 +256,7 @@ function apply(ctx) {
 				const gitArgs = ["log", `-n ${count}`, "--date=short", "--pretty=tformat:%h%x09%ad%x09%s"];
 				if (args?.files === true) gitArgs.push("--name-status");
 				if (args?.paths !== undefined && args?.paths !== null) gitArgs.push("--", ...args.paths);
-				const result = await runGitTool(gitArgs, resolveWorkdir(args?.workdir, exec));
+                const result = await runGitTool(ctx, exec, gitArgs, resolveWorkdir(args?.workdir, exec));
 				if (!result.ok) return { ok: false, exitCode: result.exitCode, message: result.message };
 				return { ok: true, commits: parseLog(result.stdout, args?.files === true) };
 			}
@@ -285,19 +298,19 @@ function apply(ctx) {
 				if (pathsError) return { ok: false, exitCode: null, message: pathsError };
 				const workdir = resolveWorkdir(args?.workdir, exec);
 				if (args?.paths !== undefined && args?.paths !== null && args.paths.length > 0) {
-					const addResult = await runGitTool(["add", "--", ...args.paths], workdir);
+                    const addResult = await runGitTool(ctx, exec, ["add", "--", ...args.paths], workdir);
 					if (!addResult.ok) return { ok: false, exitCode: addResult.exitCode, message: `git add failed: ${addResult.message}` };
 				}
 				const commitArgs = ["commit", "-m", args.message];
 				if (args?.allowEmpty === true) commitArgs.push("--allow-empty");
-				const commitResult = await runGitTool(commitArgs, workdir);
+                const commitResult = await runGitTool(ctx, exec, commitArgs, workdir);
 				if (!commitResult.ok) {
 					const hint = /nothing to commit|no changes added|nothing added to commit/.test(commitResult.message)
 						? " — stage paths with the `paths` argument (or pass allowEmpty: true for an empty commit)"
 						: "";
 					return { ok: false, exitCode: commitResult.exitCode, message: commitResult.message + hint };
 				}
-				const hashResult = await runGitTool(["rev-parse", "--short", "HEAD"], workdir);
+                const hashResult = await runGitTool(ctx, exec, ["rev-parse", "--short", "HEAD"], workdir);
 				return {
 					ok: true,
 					shortHash: hashResult.ok ? hashResult.stdout.trim() : "?",
@@ -342,7 +355,7 @@ function apply(ctx) {
 			},
 			timeoutMs: 30000,
 			async execute(args, exec) {
-				const result = await runGitTool(["branch", "--format=%(HEAD)%(refname:short)"], resolveWorkdir(args?.workdir, exec));
+                const result = await runGitTool(ctx, exec, ["branch", "--format=%(HEAD)%(refname:short)"], resolveWorkdir(args?.workdir, exec));
 				if (!result.ok) return { ok: false, exitCode: result.exitCode, message: result.message };
 				return { ok: true, branches: parseBranches(result.stdout).branches };
 			}
@@ -353,4 +366,4 @@ function apply(ctx) {
 	}
 }
 
-export { apply, inject, name };
+export { apply, inject, name, runGitTool };
