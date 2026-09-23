@@ -32,6 +32,19 @@ disabledRows:
 # tolerates mobile Tailnet path changes without allowing an infinite half-open
 # browser stream.
 rowConfigs:
+  agent-preset-registry:
+    default: standard
+    selectedDefault: ptc
+    aliases:
+      wsl-router-standard-v011-bak: standard
+      wsl-router-standard: standard
+      router-standard: standard
+      standard-minimal: minimal
+      creative-minimal: minimal
+      wsl-standard: standard
+      wsl-ptc: ptc
+      wsl-minimal: minimal
+      wsl-cordis: cordis
   typert-gateway:
     websocketHeartbeatIntervalMs: 10000
   furongjun1999-dsh-memory:

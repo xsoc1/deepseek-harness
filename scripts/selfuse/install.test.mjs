@@ -130,6 +130,23 @@ test('profile regeneration preserves plugins installed through the native CLI', 
   }
 })
 
+test('profile regeneration retains local migrated overrides and legacy preset mappings', async () => {
+  const dshHome = await mkdtemp(join(tmpdir(), 'dsh-selfuse-local-overrides-'))
+  try {
+    await execFileAsync(process.execPath, [generator, '--dsh-home', dshHome])
+    const patchPath = join(dshHome, 'profiles', 'web', 'cordis.patch.yml')
+    const local = '# Local instance overrides (preserved by profile generator).\n- id: local-account\n  config:\n    enabled: true\n'
+    await writeFile(patchPath, (await readFile(patchPath, 'utf8')) + '\n' + local)
+    await execFileAsync(process.execPath, [generator, '--dsh-home', dshHome])
+    const patch = await readFile(patchPath, 'utf8')
+    assert.equal(patch.split(local).length, 2)
+    assert.match(patch, /- id: agent-preset-registry\n  config:\n    default: standard\n    selectedDefault: ptc\n    aliases:\n(?:      [^\n]+\n)*?      wsl-router-standard: standard/u)
+    assert.equal((patch.match(/- id: local-account/gu) ?? []).length, 1)
+  } finally {
+    await rm(dshHome, { recursive: true, force: true })
+  }
+})
+
 test('the full installer copies vendored skills under their final path component', async () => {
   const dshHome = await mkdtemp(join(tmpdir(), 'dsh-selfuse-skills-'))
   try {

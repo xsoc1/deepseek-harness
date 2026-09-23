@@ -65,6 +65,23 @@ describe('declarative preset revisions', () => {
     expect(livePresetMounts(ctx.fiber)).toEqual([])
   })
 
+  it('resolves configured legacy preset names to a registered composition without overriding real definitions', async () => {
+    const ctx = await harness({ live: true })
+    contexts.push(ctx)
+    const live = liveRegistries.get(ctx)!
+    await live.replace({ default: 'standard', aliases: { 'old-router': 'standard', 'old-code': 'minimal' } })
+    await declare(ctx, contribution('standard'))
+    await declare(ctx, contribution('minimal'))
+    expect(await ctx.agentPresets.resolve('old-router')).toEqual({ id: 'standard' })
+    expect((await ctx.agentPresets.readDocument('old-code')).agentPreset).toBe('minimal')
+    const scope = createScope(ctx, {})
+    expect(await ctx.agentPresets.mount(scope.ctx, 'old-router')).toEqual({ id: 'standard' })
+    expect(await currentKey(ctx, 'old-router')).toBe(await currentKey(ctx, 'standard'))
+    await declare(ctx, contribution('old-router'))
+    expect(await ctx.agentPresets.resolve('old-router')).toEqual({ id: 'old-router' })
+    await expect(ctx.agentPresets.resolve('unknown')).rejects.toThrow('Unknown agent preset: unknown')
+  })
+
   it('reports a failed definition while allowing healthy definitions and the host to start', async () => {
     const ctx = await setup()
     await declare(ctx, { id: 'broken', plugins: [{ name: 'missing-preset-plugin-for-test' }] })

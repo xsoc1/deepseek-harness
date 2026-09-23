@@ -54,6 +54,7 @@ export class AgentPresetRegistry extends TypertRemoteService {
     default: z.string().required(),
     selectedDefault: z.string().volatile(),
     modeSelectionEnabled: z.boolean().default(true).volatile(),
+    aliases: z.dict(z.string()).default({}),
   })
   private readonly owner: Context
   private readonly definitions = new Map<string, Definition>()
@@ -74,9 +75,15 @@ export class AgentPresetRegistry extends TypertRemoteService {
   /** Default preset for a subsequently created session. */
   get defaultId(): string { return this.policy().defaultId }
 
+  /** An installed definition always wins; aliases only recover uninstalled legacy names. */
+  private canonicalId(id: string): string {
+    return this.definitions.has(id) ? id : this.config.aliases[id] ?? id
+  }
+
   private policy(): { enabled: boolean; defaultId: string } {
     const enabled = this.config.modeSelectionEnabled.get()
-    return { enabled, defaultId: enabled ? this.config.selectedDefault.get() ?? this.config.default : this.config.default }
+    const selected = enabled ? this.config.selectedDefault.get() ?? this.config.default : this.config.default
+    return { enabled, defaultId: this.canonicalId(selected) }
   }
 
   /** Register and eagerly load a definition; activation failure remains visible in the roster.
@@ -185,10 +192,11 @@ export class AgentPresetRegistry extends TypertRemoteService {
    * @returns Current metadata, including failure when activation failed.
    */
   async resolve(id?: string): Promise<AgentPreset> {
-    const wanted = id ?? this.defaultId
+    const requested = id ?? this.defaultId
+    const wanted = this.canonicalId(requested)
     const record = this.definitions.get(wanted)
-    if (record === undefined) throw new RemoteError('agent-preset/not-found', `Unknown agent preset: ${wanted}`,
-      { agentPreset: wanted, available: [...this.definitions.keys()] })
+    if (record === undefined) throw new RemoteError('agent-preset/not-found', `Unknown agent preset: ${requested}`,
+      { agentPreset: requested, available: [...this.definitions.keys()] })
     const broken = await this.diagnostic(record)
     return { id: wanted, ...(broken === undefined ? {} : { broken }) }
   }
@@ -199,7 +207,7 @@ export class AgentPresetRegistry extends TypertRemoteService {
    */
   @Remote('read')
   readDocument(agentPreset: string): Promise<AgentPresetDocument> {
-    const record = this.definitions.get(agentPreset)
+    const record = this.definitions.get(this.canonicalId(agentPreset))
     if (record === undefined) {
       return Promise.reject(new RemoteError('agent-preset/not-found', `Unknown agent preset: ${agentPreset}`,
         { agentPreset, available: [...this.definitions.keys()] }))
@@ -213,11 +221,12 @@ export class AgentPresetRegistry extends TypertRemoteService {
   }
 
   private async retain(id?: string): Promise<Generation> {
-    const wanted = id ?? this.defaultId
+    const requested = id ?? this.defaultId
     while (true) {
+      const wanted = this.canonicalId(requested)
       const record = this.definitions.get(wanted)
-      if (record === undefined) throw new RemoteError('agent-preset/not-found', `Unknown agent preset: ${wanted}`,
-        { agentPreset: wanted, available: [...this.definitions.keys()] })
+      if (record === undefined) throw new RemoteError('agent-preset/not-found', `Unknown agent preset: ${requested}`,
+        { agentPreset: requested, available: [...this.definitions.keys()] })
       const broken = await this.diagnostic(record)
       if (this.definitions.get(wanted) !== record) continue
       const generation = record.generation
