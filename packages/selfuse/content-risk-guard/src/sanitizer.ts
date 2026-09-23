@@ -1,152 +1,87 @@
-import type { ContentBlock, Message } from '@deepseek-ai/dsh-llm'
-
-/**
- * Sanitize text that may trigger upstream content safety WAF
- * (e.g. DeepSeek official API's "Content Exists Risk" caused by proxy configs or subscriptions).
- */
-export function sanitizeRiskContent(text: string): string {
-  if (!text || typeof text !== 'string') return text
-
-  let sanitized = text
-
-  // 1. Clash / Mihomo proxies list block
-  sanitized = sanitized.replace(
-    /(^|\n)([ \t]*proxies:\s*\n)(?:[ \t]*-[ \t]+[^\n]*\n(?:[ \t]+[^\n]*\n|\n)*)+/g,
-    '$1$2  - name: "[代理节点配置已由 DSH 本地安全脱敏，避免触发上游风控]"\n    type: direct\n',
-  )
-
-  // 2. proxy-groups list block
-  sanitized = sanitized.replace(
-    /(^|\n)([ \t]*proxy-groups:\s*\n)(?:[ \t]*-[ \t]+[^\n]*\n(?:[ \t]+[^\n]*\n|\n)*)+/g,
-    '$1$2  - name: "[策略组已脱敏]"\n    type: select\n    proxies: ["[代理节点已脱敏]"]\n',
-  )
-
-  // 3. Proxy protocol URIs (vmess, vless, trojan, ss, ssr, hysteria, tuic)
-  sanitized = sanitized.replace(
-    /\b(vmess|vless|trojan|ss|ssr|hysteria|hysteria2|tuic):\/\/[a-z0-9_.~:/?#[\]@!$&'()*+,;=-]+/gi,
-    '[$1://节点配置已自动脱敏]',
-  )
-
-  // 4. Base64 subscription blobs (e.g. vmess:// base64 starting with dm1lc3M)
-  sanitized = sanitized.replace(
-    /\b(dm1lc3M|dmxlc3M|dHJvamFu|c3M6)[A-Za-z0-9+/=]{20,}\b/g,
-    '[Base64订阅数据已脱敏]',
-  )
-
-  // 5. Subscription URLs
-  sanitized = sanitized.replace(
-    /https?:\/\/[^\s/$.?#].[^\s]*(?:subscribe|token=|subscription)[^\s]*/gi,
-    '[订阅链接已脱敏]',
-  )
-
-  return sanitized
+/** Network configuration facts that contain no names, hosts, links, or credentials. */
+export interface SafeNetworkFacts {
+  bytes: number
+  proxyEntries: number
+  groupEntries: number
+  protocolLinks: number
+  subscriptionLinks: number
+  hasTunSection: boolean
+  hasDnsSection: boolean
 }
 
-/**
- * Determine if an error or error response string represents an upstream "Content Exists Risk" rejection.
- */
-export function isContentRiskError(error: unknown): boolean {
-  if (!error) return false
-
-  if (typeof error === 'string') {
-    return error.includes('Content Exists Risk') || error.includes('content_exists_risk')
-  }
-
-  if (typeof error === 'object') {
-    const err = error as Record<string, unknown>
-    const candidates = [
-      err.message,
-      err.detail,
-      err.code,
-      err.rawResponse,
-      err.statusText,
-      err.cause instanceof Error ? err.cause.message : String(err.cause ?? ''),
-    ]
-    for (const c of candidates) {
-      if (typeof c === 'string' && (c.includes('Content Exists Risk') || c.includes('content_exists_risk'))) {
-        return true
+function scanTexts(text: string): { texts: string[]; complete: boolean } {
+  const candidates = [text]
+  const fragments: string[] = []
+  let complete = true
+  try {
+    const parsed: unknown = JSON.parse(text)
+    const visit = (value: unknown, depth: number): void => {
+      if (depth > 24) {
+        complete = false
+        return
+      }
+      if (typeof value === 'string') {
+        candidates.push(value)
+        fragments.push(value)
+        if (/^[\s]*[\[{\"]/.test(value)) {
+          try {
+            visit(JSON.parse(value) as unknown, depth + 1)
+          } catch {
+            // A string that looks like JSON may still be ordinary tool text.
+          }
+        }
+      } else if (Array.isArray(value)) {
+        for (const item of value) visit(item, depth + 1)
+      } else if (value !== null && typeof value === 'object') {
+        for (const item of Object.values(value)) visit(item, depth + 1)
       }
     }
-    if ('cause' in err && err.cause) {
-      return isContentRiskError(err.cause)
-    }
+    visit(parsed, 0)
+    candidates.push(fragments.join('\n'))
+  } catch {
+    // Tool text often contains prose around JSON; escaped lines are checked below.
   }
-
-  return false
-}
-
-function sanitizeContentBlocks(blocks: readonly ContentBlock[]): { changed: boolean; blocks: ContentBlock[] } {
-  let changed = false
-  const mapped: ContentBlock[] = []
-
-  for (const block of blocks) {
-    if (block.type === 'text') {
-      const sanitized = sanitizeRiskContent(block.text)
-      if (sanitized !== block.text) {
-        changed = true
-        mapped.push({ ...block, text: sanitized })
-      } else {
-        mapped.push(block)
-      }
-    } else if (block.type === 'tool-result') {
-      const inner = sanitizeContentBlocks(block.content)
-      if (inner.changed) {
-        changed = true
-        mapped.push({ ...block, content: inner.blocks })
-      } else {
-        mapped.push(block)
-      }
-    } else {
-      mapped.push(block)
-    }
+  return {
+    complete,
+    texts: candidates.map(candidate => candidate
+      .replace(/\\r?\\n/g, '\n')
+      .replace(/\\t/g, '\t')
+      .replace(/^[ \t]*(?:L)?\d{1,9}(?:[ \t]*[|:]|\t| +)([ \t]*)/gm, '$1')),
   }
-
-  return { changed, blocks: changed ? mapped : (blocks as ContentBlock[]) }
 }
 
-/**
- * Sanitize all tool results and text messages in the conversation history.
- */
-export function sanitizeMessagesForRisk(messages: readonly Message[]): Message[] {
-  let anyChanged = false
-  const result: Message[] = []
+function containsNetworkMaterial(text: string): boolean {
+  const nodeType = /(?:^|\n)[ \t]*type:[ \t]*(?:socks5|vmess|vless|trojan|ss|ssr|hysteria|hysteria2|tuic)\b/im.test(text)
+  const credentialField = /(?:^|\n)[ \t]*(?:username|password):/im.test(text)
+  const serverField = /(?:^|\n)[ \t]*server:[ \t]*\S+/im.test(text)
+  return /(?:^|\n)[ \t]*(?:proxies|proxy-groups):[ \t]*(?:\n|$)/im.test(text)
+    || /\b(?:vmess|vless|trojan|ss|ssr|hysteria|hysteria2|tuic):\/\//i.test(text)
+    || /\b(?:dm1lc3M|dmxlc3M|dHJvamFu|c3M6)[A-Za-z0-9+/=]{20,}\b/.test(text)
+    || /https?:\/\/[^\s]*(?:subscribe|token=|subscription)[^\s]*/i.test(text)
+    || serverField && (nodeType || credentialField)
+}
 
-  for (const message of messages) {
-    const { changed, blocks } = sanitizeContentBlocks(message.content)
-    if (changed) {
-      anyChanged = true
-      result.push({ ...message, content: blocks })
-    } else {
-      result.push(message)
-    }
+/** Extract bounded, non-identifying facts from one locally retained result. */
+export function summarizeRiskContent(text: string): SafeNetworkFacts {
+  const candidates = scanTexts(text).texts
+  const normalized = candidates.find(candidate => /(?:^|\n)[ \t]*proxies:[ \t]*\n/m.test(candidate))
+    ?? candidates[0] ?? text
+  const proxySection = normalized.match(/(?:^|\n)proxies:\s*\n((?:[ \t]+[^\n]*\n)*)/m)?.[1] ?? ''
+  const groupSection = normalized.match(/(?:^|\n)proxy-groups:\s*\n((?:[ \t]+[^\n]*\n)*)/m)?.[1] ?? ''
+  return {
+    bytes: Buffer.byteLength(text, 'utf8'),
+    proxyEntries: (proxySection.match(/^[ \t]*-[ \t]+name:/gm) ?? []).length,
+    groupEntries: (groupSection.match(/^[ \t]*-[ \t]+name:/gm) ?? []).length,
+    protocolLinks: (normalized.match(/\b(?:vmess|vless|trojan|ss|ssr|hysteria|hysteria2|tuic):\/\//gi) ?? []).length,
+    subscriptionLinks: (normalized.match(/https?:\/\/[^\s]*(?:subscribe|token=|subscription)[^\s]*/gi) ?? []).length,
+    hasTunSection: /(?:^|\n)tun:\s*\n/m.test(normalized),
+    hasDnsSection: /(?:^|\n)dns:\s*\n/m.test(normalized),
   }
-
-  return anyChanged ? result : (messages as Message[])
 }
 
-function redactBlocks(blocks: readonly ContentBlock[]): ContentBlock[] {
-  return blocks.map((block) => {
-    if (block.type === 'tool-result') {
-      return {
-        ...block,
-        content: [
-          {
-            type: 'text',
-            text: '[该工具输出因触发上游内容审查 (Content Exists Risk) 已由安全机制自动截断脱敏]',
-          },
-        ],
-      }
-    }
-    return block
-  })
-}
-
-/**
- * Deeply redact all historical tool results in messages to guarantee the retry avoids Content Exists Risk.
- */
-export function deepRedactToolResults(messages: readonly Message[]): Message[] {
-  return messages.map(message => ({
-    ...message,
-    content: redactBlocks(message.content),
-  }))
+/** Conservative classifier; it does not claim to predict an upstream policy verdict. */
+export function hasSensitiveNetworkContent(text: string): boolean {
+  if (!text) return false
+  const scanned = scanTexts(text)
+  return !scanned.complete || scanned.texts.some(containsNetworkMaterial)
 }

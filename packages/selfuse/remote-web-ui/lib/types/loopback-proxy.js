@@ -2,9 +2,9 @@
  * Loopback-shaped reverse proxy used by the remote desktop channel: after
  * the pairing cookie gate, traffic is re-issued to 127.0.0.1 so sibling
  * plugin fences (socket + Host loopback) accept it. Origin, cookies, and
- * caller-controlled Sec-Fetch markers are dropped. HTTP requests receive a
- * synthetic same-origin marker after the pairing gate so sibling loopback
- * routes that require a browser tripwire accept the authenticated proxy.
+ * caller-controlled Sec-Fetch markers are dropped. The paired-device gate
+ * supplies a fresh Host-signed cookie for the inner request; HTTP also gets
+ * a synthetic same-origin marker for sibling browser tripwires.
  */
 import { request as httpRequest } from 'node:http';
 import { connect } from 'node:net';
@@ -31,10 +31,12 @@ const HTTP_FORWARD_RESPONSE_HEADERS = [
  * @param res - the outer response.
  * @param port - local webServer port.
  * @param upstreamPath - path + query on 127.0.0.1 (must start with `/`).
+ * @param authCookie - Host-signed loopback browser cookie minted only after the paired-device gate.
  */
-export function proxyLoopbackHttp(req, res, port, upstreamPath) {
+export function proxyLoopbackHttp(req, res, port, upstreamPath, authCookie) {
     const headers = {
         host: `127.0.0.1:${String(port)}`,
+        cookie: authCookie,
         'sec-fetch-site': 'same-origin',
     };
     const contentType = req.headers['content-type'];
@@ -78,11 +80,13 @@ export function proxyLoopbackHttp(req, res, port, upstreamPath) {
  * @param head - bytes already read past the handshake.
  * @param port - local webServer port.
  * @param upstreamPath - path + query on 127.0.0.1.
+ * @param authCookie - Host-signed loopback browser cookie minted only after the paired-device gate.
  */
-export function proxyLoopbackUpgrade(req, socket, head, port, upstreamPath) {
+export function proxyLoopbackUpgrade(req, socket, head, port, upstreamPath, authCookie) {
     const lines = [
         `GET ${upstreamPath} HTTP/1.1`,
         `Host: 127.0.0.1:${String(port)}`,
+        `Cookie: ${authCookie}`,
         'Upgrade: websocket',
         'Connection: Upgrade',
     ];

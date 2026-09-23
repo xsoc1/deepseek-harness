@@ -9,10 +9,12 @@
  */
 import type { IncomingMessage } from 'node:http';
 import type { Context } from '@deepseek-ai/cordis';
-import z from 'schemastery';
+import z from '@deepseek-ai/schemastery';
 import { type PairingConfig } from './pairing.ts';
 declare module '@deepseek-ai/cordis' {
     interface Events {
+        /** The current Loader commits root-volatile settings before this event. */
+        'loader/volatile-update'(paths: readonly (readonly string[])[]): void;
         /**
          * Waterfall seam on the /api transport fence: the connection plugin
          * fires this per /api request before bridging to the API proxy on
@@ -31,7 +33,7 @@ export declare const inject: string[];
  * settings surface edits. Spelled here rather than imported: the browser
  * half spells the same value and must not depend on a Host package.
  */
-export declare const REMOTE_WEB_UI_SETTINGS_NAMESPACE: "remote-web-ui";
+export declare const REMOTE_WEB_UI_SETTINGS_NAMESPACE = "web-ui-remote-web-ui";
 /** Plugin config, validated by the same-named schemastery schema. */
 export interface Config {
     /** Token lifetime in ms; the QR link dies after this. */

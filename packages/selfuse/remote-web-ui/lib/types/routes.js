@@ -85,6 +85,7 @@ export function publicHostOf(url) {
 const COOKIE_MAX_AGE_SEC = 365 * 24 * 60 * 60;
 /** Route paths (exact matches under /api). */
 export const PAIR_PATHS = {
+    landing: '/pair',
     issue: '/api/pair/issue',
     accept: '/api/pair/accept',
     stop: '/api/pair/stop',
@@ -257,7 +258,7 @@ export function makeRoutes(deps) {
             const workspaceQuery = workspaceId === undefined ? '' : `&workspace=${encodeURIComponent(workspaceId)}`;
             writeJson(res, 200, {
                 ok: true,
-                url: `${base}/?pair=${token}${workspaceQuery}`,
+                url: `${base}${PAIR_PATHS.landing}?pair=${token}${workspaceQuery}`,
                 token,
                 expiresAt,
                 // Every constructible base, so a multi-homed panel can switch the
@@ -304,10 +305,20 @@ export function makeRoutes(deps) {
         // No Secure attribute: LAN pairing runs over plain HTTP (the cookie must
         // work there), and the same cookie rides HTTPS on the tunnel. Lax keeps
         // top-level navigations working while blocking cross-site subrequests.
+        let browserCookie;
+        try {
+            browserCookie = deps.browserAuthCookie(req.headers.host ?? '');
+        }
+        catch {
+            service.revoke(result.deviceId);
+            writeJson(res, 502, { ok: false, code: 'browser-auth-unavailable' });
+            return;
+        }
         res.writeHead(200, {
             'content-type': 'application/json; charset=utf-8',
             'set-cookie': [
                 `${service.config.cookieName}=${result.deviceId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${String(COOKIE_MAX_AGE_SEC)}`,
+                browserCookie,
             ],
         });
         res.end(JSON.stringify({ ok: true, deviceId: result.deviceId }));
@@ -399,6 +410,27 @@ export function makeRoutes(deps) {
         events.push(service.snapshot());
     };
     return [
+        { kind: 'exact', path: PAIR_PATHS.landing, handler: (req, res) => {
+                if (!requireMethod(req, res, 'GET'))
+                    return;
+                if (!lanFence(req)) {
+                    res.writeHead(403).end();
+                    return;
+                }
+                res.writeHead(200, {
+                    'content-type': 'text/html; charset=utf-8',
+                    'cache-control': 'no-store',
+                    'referrer-policy': 'no-referrer',
+                    'content-security-policy': "default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
+                });
+                res.end(`<!doctype html><html lang="zh-CN"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Deepseek Harness 配对</title><body style="font:16px system-ui;max-width:30rem;margin:20vh auto;padding:1rem"><p id="status">正在配对设备…</p><script>
+const token = new URLSearchParams(location.search).get('pair');
+if (!token) document.getElementById('status').textContent = '配对链接无效。';
+else fetch('/api/pair/accept', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token})})
+  .then(async response => {if (!response.ok) throw new Error(String(response.status)); const workspace = new URLSearchParams(location.search).get('workspace'); location.replace(workspace ? '/?workspace=' + encodeURIComponent(workspace) : '/');})
+  .catch(() => {document.getElementById('status').textContent = '配对失败或链接已失效，请在电脑上重新生成二维码。';});
+<\/script></body></html>`);
+            } },
         { kind: 'exact', path: PAIR_PATHS.issue, handler: handleIssue },
         { kind: 'exact', path: PAIR_PATHS.accept, handler: handleAccept },
         { kind: 'exact', path: PAIR_PATHS.stop, handler: handleStop },

@@ -1,4 +1,4 @@
-import type { ClientContext, SettingsScope, SettingsScopeSpec } from '@deepseek-ai/dsh-client-runtime/client';
+import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client';
 import { type RemoteKey } from './locales.ts';
 export type { RemoteEntryProps } from './RemoteEntry.tsx';
 export type { PanelState, RemotePanelProps } from './RemotePanel.tsx';
@@ -45,18 +45,6 @@ export interface SidebarRemoteOwnerProps {
 export interface SettingsPluginItemOwnerProps {
     /** Marker field: card owner props are intentionally empty. */
     children?: never;
-}
-declare module '@deepseek-ai/cordis' {
-    interface Context {
-        /**
-         * Optional rc.6 compatibility binder provided by dsh-web-ui-settings;
-         * absent when that group plugin is not installed, so callers fall back to
-         * the official settings scope.
-         */
-        webUiSettings?: {
-            bind<S>(spec: SettingsScopeSpec<S>): SettingsScope<S>;
-        };
-    }
 }
 /** Services required by this plugin. */
 export declare const inject: string[];

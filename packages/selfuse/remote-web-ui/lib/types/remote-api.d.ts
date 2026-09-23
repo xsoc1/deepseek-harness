@@ -15,9 +15,9 @@
  * - `/api/pair/*`, `/api/update/*`, `/api/plugin-manager/*`,
  *   `/api/dsh-desktop-launcher/*` and `/api/dsh-web-ui-settings/*` stay physically local.
  * - Everything else is HTTP- or WebSocket-proxied to the local port with
- *   Host rewritten, Origin and cookies dropped, and a synthetic same-origin
- *   browser marker added after authentication. Plugin loopback fences then
- *   pass. The pairing cookie never leaves this process.
+ *   Host rewritten, caller Origin and cookies dropped, and a fresh Host-signed
+ *   loopback browser cookie attached only after pairing. HTTP also receives a
+ *   synthetic same-origin marker. Neither cookie is sent back to the browser.
  */
 import type { WebRoute, WebUpgradeRoute } from '@deepseek-ai/dsh-host-webserver';
 import type { PairingService } from './pairing.ts';
@@ -29,6 +29,8 @@ export interface RemoteApiDeps {
     service: PairingService;
     /** The local webServer port the loopback proxy connects to. */
     port: number;
+    /** Mint a fresh Host-signed inner cookie after pairing; never send it to the paired browser. */
+    loopbackAuthCookie: () => string;
     /** Live LAN-pairing requirement, resolved per request. */
     requirePairingForLan?: () => boolean;
 }

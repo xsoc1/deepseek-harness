@@ -1,0 +1,6 @@
+!lib/
+lib/*
+!lib/local-result-store.js
+!lib/types/
+lib/types/*
+!lib/types/local-result-store.d.ts

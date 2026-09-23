@@ -1,5 +1,4 @@
-import { installSettingsSection, settingsNamespace } from "@deepseek-ai/dsh-settings";
-import z from "schemastery";
+import z from "@deepseek-ai/schemastery";
 import { chmodSync, cpSync, createReadStream, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7452,7 +7451,7 @@ const inject = ["webServer"];
 * skin center. The browser half spells the same string so it can bind the
 * scope without depending on this Host package.
 */
-const SKIN_BACKGROUND_NAMESPACE = settingsNamespace("skin-background");
+const SKIN_BACKGROUND_NAMESPACE = "skin-background";
 /**
 * Runtime schema for SkinBackgroundConfig. Persists the master switch
 * (`enabled`) alongside the background strength fields.
@@ -7470,7 +7469,7 @@ const SkinBackgroundConfigSchema = z.object({
 * persists the selection here; the host half reads weLibraryDirs to extend
 * the library scan beyond the auto-detected Steam folders.
 */
-const SKIN_WALLPAPER_NAMESPACE = settingsNamespace("skin-wallpaper");
+const SKIN_WALLPAPER_NAMESPACE = "skin-wallpaper";
 /** Runtime schema for SkinWallpaperConfig. */
 const SkinWallpaperConfigSchema = z.object({
 	enabled: z.boolean().default(true),
@@ -7478,6 +7477,8 @@ const SkinWallpaperConfigSchema = z.object({
 	selection: z.string().default(""),
 	mode: z.union(["live", "frame"]).default("live"),
 	pauseOnHidden: z.boolean().default(true),
+	sound: z.boolean().default(false),
+	volume: z.number().min(0).max(100).step(5).default(100),
 	dim: z.number().min(0).max(90).step(5).default(25),
 	wallpaperBlur: z.number().min(0).max(60).step(1).default(0),
 	fit: z.union([
@@ -7486,6 +7487,11 @@ const SkinWallpaperConfigSchema = z.object({
 		"fill"
 	]).default("cover")
 });
+/** Official settings now expose one form per active Loader entry. */
+const Config = z.object({
+	background: SkinBackgroundConfigSchema.default({}),
+	wallpaper: SkinWallpaperConfigSchema.default({})
+}).volatile();
 /**
 * Register the skin-center API routes.
 *
@@ -7495,20 +7501,10 @@ const SkinWallpaperConfigSchema = z.object({
 * @param ctx - cordis context.
 */
 const apply = mountOnce("@dsh-selfuse/skin-center", applyImpl);
-function applyImpl(ctx) {
-	installSettingsSection(ctx, SKIN_BACKGROUND_NAMESPACE, SkinBackgroundConfigSchema, {}, {
-		setSource: () => {},
-		onChange: () => {}
-	});
-	let wallpaperSource = () => ({});
-	installSettingsSection(ctx, SKIN_WALLPAPER_NAMESPACE, SkinWallpaperConfigSchema, {}, {
-		setSource: (source) => {
-			wallpaperSource = source;
-		},
-		onChange: () => {}
-	});
+function applyImpl(ctx, config) {
+	const current = () => typeof config?.get === "function" ? config.get() : config ?? {};
 	const routes = [...makeSkinCenterV2Routes(), ...makeWeRoutes({
-		getConfig: () => wallpaperSource(),
+		getConfig: () => current().wallpaper ?? {},
 		storeDir: defaultWallpapersStoreDir(resolveHarnessHome())
 	})];
 	try {
@@ -7547,4 +7543,4 @@ function applyImpl(ctx) {
 	}
 }
 //#endregion
-export { SKIN_BACKGROUND_NAMESPACE, SKIN_CENTER_V2_PREFIX, SKIN_WALLPAPER_NAMESPACE, SkinBackgroundConfigSchema, SkinCssSafetyError, SkinWallpaperConfigSchema, WE_API_PREFIX, apply, builtinSkinsDir, defaultActiveStatePath, findSkin, inject, loadSkinCatalog, makeSkinCenterV2Routes, makeWeRoutes, name, readActiveSelection, resolveInsideSkin, transformSkinCss, userSkinsDir, validateSkinManifestV2, writeActiveSelection };
+export { Config, SKIN_BACKGROUND_NAMESPACE, SKIN_CENTER_V2_PREFIX, SKIN_WALLPAPER_NAMESPACE, SkinBackgroundConfigSchema, SkinCssSafetyError, SkinWallpaperConfigSchema, WE_API_PREFIX, apply, builtinSkinsDir, defaultActiveStatePath, findSkin, inject, loadSkinCatalog, makeSkinCenterV2Routes, makeWeRoutes, name, readActiveSelection, resolveInsideSkin, transformSkinCss, userSkinsDir, validateSkinManifestV2, writeActiveSelection };

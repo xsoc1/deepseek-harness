@@ -1,7 +1,7 @@
 {
   "name": "@dsh-selfuse/content-risk-guard",
-  "version": "0.1.0",
-  "description": "Content risk guard for DSH: automatically sanitizes proxy/VPN nodes and provides seamless auto-recovery for Content Exists Risk upstream WAF rejections",
+  "version": "0.2.0",
+  "description": "Keep detected sensitive network tool output local and expose only session-scoped safe facts to the model",
   "private": true,
   "type": "module",
   "main": "./lib/index.js",
@@ -19,13 +19,18 @@
     "src"
   ],
   "license": "MIT",
+  "dependencies": {
+    "@deepseek-ai/dsh-atomic-write": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:*",
+    "yaml": "^2.9.0"
+  },
   "peerDependencies": {
     "@deepseek-ai/dsh-llm": "workspace:*",
     "@deepseek-ai/dsh-tools": "workspace:*",
-    "cordis": "^4.0.0-rc.7",
-    "schemastery": "^3.18.0"
+    "@deepseek-ai/cordis": "workspace:*"
   },
   "devDependencies": {
+    "@deepseek-ai/dsh-user-approval": "workspace:*",
     "@types/node": "^24.13.3",
     "typescript": "^5.9.0"
   },

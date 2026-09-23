@@ -7,7 +7,7 @@
 import clsx from 'clsx'
 import { QRCodeSVG } from 'qrcode.react'
 import {
-  IconCloseOutline16, IconCopyOutline16, IconRefreshOutline16, IconStopFill16,
+  IconCloseOutlineRegular, IconCopyOutlineRegular, IconRefreshOutlineRegular, IconStopFillRegular,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { PairingPhase } from '../pairing.ts'
@@ -86,7 +86,9 @@ function statusOf(
  * @param props - copy, state, and actions.
  * @returns the panel element tree.
  */
-export function RemotePanel({ t, state, copied, onClose, onStop, onRefresh, onCopy, onPickAddress, onPickPublic, onRevoke }: RemotePanelProps) {
+export function RemotePanel({
+  t, state, copied, onClose, onStop, onRefresh, onCopy, onPickAddress, onPickPublic, onRevoke,
+}: RemotePanelProps) {
   return (
     <div className={css.panel} role="dialog" aria-modal="true" aria-label={t('title')}>
       <div className={css.header}>
@@ -95,7 +97,7 @@ export function RemotePanel({ t, state, copied, onClose, onStop, onRefresh, onCo
           <p className={css.subtitle}>{t('subtitle')}</p>
         </div>
         <button type="button" className={css.close} aria-label={t('close.label')} onClick={onClose}>
-          <IconCloseOutline16 size={14} />
+          <IconCloseOutlineRegular size={14} />
         </button>
       </div>
 
@@ -150,7 +152,7 @@ export function RemotePanel({ t, state, copied, onClose, onStop, onRefresh, onCo
                 <code className={css.link} title={state.url}>{state.url}</code>
               </div>
               <button type="button" className={css.copyLink} onClick={() => onCopy(state.url)}>
-                <IconCopyOutline16 size={14} />
+                <IconCopyOutlineRegular size={14} />
                 {copied ? t('action.copied') : t('action.copy')}
               </button>
             </div>
@@ -200,11 +202,11 @@ export function RemotePanel({ t, state, copied, onClose, onStop, onRefresh, onCo
 
           <div className={css.actions}>
             <button type="button" className={css.action} onClick={onStop}>
-              <IconStopFill16 size={14} />
+              <IconStopFillRegular size={14} />
               {t('action.stop')}
             </button>
             <button type="button" className={css.action} onClick={onRefresh}>
-              <IconRefreshOutline16 size={14} />
+              <IconRefreshOutlineRegular size={14} />
               {t('action.refresh')}
             </button>
           </div>

@@ -3061,15 +3061,25 @@ window.__ModuleLoader__.load({
 		//#region src/client/index.ts
 		/** Locale namespace owned by this plugin. */
 		const NS = "skinCenter";
-		/** Required services: slots + locale (plugin card), theme (preview toggle), and settingsScope + its transport (background scrim). */
+		/** Required services: slots, locale, theme, and the official entry-scoped config forms. */
 		const inject = [
 			"slots",
 			"locale",
 			"theme",
-			"settingsScope",
+			"configForms",
 			"connection",
 			"remote"
 		];
+		function nestedConfigForm(form, section) {
+			return {
+				getSnapshot: () => {
+					const snapshot = form.getSnapshot();
+					return { ...snapshot, value: snapshot.value?.[section] };
+				},
+				subscribe: (listener) => form.subscribe(listener),
+				set: (field, value) => form.mutate([{ op: "set", path: [section, field], value }])
+			};
+		}
 		/**
 		* Register the skin-center dictionaries, the body scope attribute, and the
 		* Skin Center as a first-level settings section.
@@ -3087,10 +3097,10 @@ window.__ModuleLoader__.load({
 				};
 			}, "ui-skin-center: body scope");
 			const theme = ctx.get("theme");
-			const binder = ctx.get("webUiSettings") ?? ctx.settingsScope;
-			const background = new BackgroundController(binder.bind({ namespace: SKIN_BACKGROUND_NS }));
+			const form = ctx.configForms.get("web-ui-skin-center");
+			const background = new BackgroundController(nestedConfigForm(form, "background"));
 			ctx.effect(() => () => background.dispose(), "ui-skin-center: background dispose");
-			const wallpaper = new WallpaperController(binder.bind({ namespace: SKIN_WALLPAPER_NS }));
+			const wallpaper = new WallpaperController(nestedConfigForm(form, "wallpaper"));
 			ctx.effect(() => () => wallpaper.dispose(), "ui-skin-center: wallpaper dispose");
 			installBootRestore(wallpaper);
 			const runtime = bootSkinRuntime({ suppressBackgroundMedia: () => wallpaper.enabled() && wallpaper.activeId() !== null && wallpaper.activeId() !== "" });

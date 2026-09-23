@@ -1,14 +1,307 @@
 import { describe, expect, it } from 'vitest'
 import {
-  deepRedactToolResults,
-  isContentRiskError,
-  sanitizeMessagesForRisk,
-  sanitizeRiskContent,
+  hasSensitiveNetworkContent,
+  summarizeRiskContent,
 } from '../src/sanitizer.ts'
-import type { ContentBlock, Message } from '@deepseek-ai/dsh-llm'
+import type { Message } from '@deepseek-ai/dsh-llm'
+import { Context } from '@deepseek-ai/cordis'
+import LlmRuntime, { LlmAdapter, ToolCallId } from '@deepseek-ai/dsh-llm'
+import type { GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
+import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
+import ToolRuntime, { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
+import type { PtcDispatchLog, ToolExecutionInput } from '@deepseek-ai/dsh-tools'
+import { SessionId } from '@deepseek-ai/dsh-session'
+import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import * as ContentRiskGuard from '../src/index.ts'
+import { LocalResultStore } from '../src/local-result-store.ts'
 
-describe('@dsh-selfuse/content-risk-guard sanitizer', () => {
-  it('sanitizes Clash proxies list block', () => {
+it('does not silently retry by replacing an unrelated tool result after a provider risk rejection', async () => {
+  const ctx = new Context()
+  await ctx.plugin(LlmRuntime)
+  await ctx.plugin(SystemPrompt)
+  await ctx.plugin(ToolRuntime)
+  const requests: GenerateOptions[] = []
+  class RiskAdapter extends LlmAdapter {
+    async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
+      requests.push(options)
+      if (requests.length === 1) {
+        yield {
+          type: 'finish',
+          reason: { kind: 'error', failure: { message: 'Content Exists Risk', code: 'content_exists_risk' } },
+        }
+      } else {
+        yield { type: 'finish', reason: { kind: 'stop' } }
+      }
+    }
+  }
+  ctx.llm.registerAdapter(['risk-fixture'], new RiskAdapter())
+  await ctx.plugin(ContentRiskGuard, {})
+  const messages: Message[] = [{
+    role: 'tool',
+    content: [{
+      type: 'tool-result', id: 'safe', name: 'bash', content: [{ type: 'text', text: 'BENIGN_OK' }],
+    }],
+  }]
+
+  const chunks: StreamChunk[] = []
+  try {
+    for await (const chunk of ctx.llm.stream({ provider: 'risk-fixture', model: 'fixture', messages })) {
+      chunks.push(chunk)
+    }
+  } finally {
+    await ctx.fiber.dispose()
+  }
+  expect(chunks.at(-1)).toMatchObject({ type: 'finish', reason: { kind: 'error' } })
+  expect(requests).toHaveLength(1)
+  expect(requests[0]?.messages[0]?.content).toEqual(messages[0]?.content)
+})
+
+it('stops a contaminated historical result before any adapter receives it', async () => {
+  const ctx = new Context()
+  await ctx.plugin(LlmRuntime)
+  await ctx.plugin(SystemPrompt)
+  await ctx.plugin(ToolRuntime)
+  const requests: GenerateOptions[] = []
+  class CaptureAdapter extends LlmAdapter {
+    async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
+      requests.push(options)
+      yield { type: 'finish', reason: { kind: 'stop' } }
+    }
+  }
+  ctx.llm.registerAdapter(['risk-fixture'], new CaptureAdapter())
+  await ctx.plugin(ContentRiskGuard, {})
+  const historical = JSON.stringify({ output: '  1\tproxies:\n  2\t  - name: fixture-node\n  3\t    type: socks5\n  4\t    password: fixture-pass' })
+  const messages: Message[] = [{
+    role: 'tool', content: [{
+      type: 'tool-result', id: 'old-result', name: 'run_code', content: [{ type: 'text', text: historical }],
+    }],
+  }]
+  expect(hasSensitiveNetworkContent(JSON.stringify({ messages }))).toBe(true)
+  const chunks: StreamChunk[] = []
+  try {
+    for await (const chunk of ctx.llm.stream({ provider: 'risk-fixture', model: 'fixture', messages })) {
+      chunks.push(chunk)
+    }
+  } finally {
+    await ctx.fiber.dispose()
+  }
+  expect(requests).toHaveLength(0)
+  expect(chunks.at(-1)).toMatchObject({ type: 'finish', reason: { kind: 'error' } })
+  expect(JSON.stringify(chunks)).not.toContain('fixture-pass')
+})
+
+it('checks user, system, and tool-schema text before provider dispatch', async () => {
+  const ctx = new Context()
+  await ctx.plugin(LlmRuntime)
+  await ctx.plugin(SystemPrompt)
+  await ctx.plugin(ToolRuntime)
+  let dispatched = 0
+  class CaptureAdapter extends LlmAdapter {
+    async * stream(): AsyncIterable<StreamChunk> {
+      dispatched += 1
+      yield { type: 'finish', reason: { kind: 'stop' } }
+    }
+  }
+  ctx.llm.registerAdapter(['risk-fixture'], new CaptureAdapter())
+  await ctx.plugin(ContentRiskGuard, {})
+  const raw = 'proxies:\n  - name: fixture-node\n    type: socks5\n'
+  const requests: GenerateOptions[] = [
+    { provider: 'risk-fixture', model: 'fixture', messages: [{ role: 'user', content: [{ type: 'text', text: raw }] }] },
+    { provider: 'risk-fixture', model: 'fixture', messages: [], system: raw },
+    { provider: 'risk-fixture', model: 'fixture', messages: [],
+      tools: [{ name: 'fixture', description: raw, parameters: {} }] },
+  ]
+  try {
+    for (const request of requests) {
+      const chunks: StreamChunk[] = []
+      for await (const chunk of ctx.llm.stream(request)) chunks.push(chunk)
+      expect(chunks.at(-1)).toMatchObject({ type: 'finish', reason: { kind: 'error' } })
+    }
+    expect(dispatched).toBe(0)
+  } finally {
+    await ctx.fiber.dispose()
+  }
+})
+
+it('keeps a sensitive result local while leaving an unrelated result intact', async () => {
+  const privateRoot = await mkdtemp(join(tmpdir(), 'dsh-risk-fixture-'))
+  const ctx = new Context()
+  const agent = { session: { header: { id: SessionId('risk-session') } } }
+  const exec = (name: string, callId: string): ToolExecutionInput => ({
+    name,
+    callId: ToolCallId(callId),
+    arguments: {},
+    agent,
+    signal: new AbortController().signal,
+  } as unknown as ToolExecutionInput)
+  const secret = 'proxies:\n  - name: "node-secret"\n    type: vmess\n    server: node.example.test\n    password: fixture-secret\n'
+  try {
+    await ctx.plugin(SystemPrompt)
+    await ctx.plugin(ToolRuntime)
+    const guardFiber = await ctx.plugin(ContentRiskGuard, { privateRoot })
+    ctx.tools.register(defineContentToolFixture({
+      name: 'network_fixture',
+      description: 'fixture',
+      parameters: {},
+      async execute() { return [{ type: 'text', text: secret }] },
+    }))
+    ctx.tools.register(defineContentToolFixture({
+      name: 'ordinary_fixture',
+      description: 'fixture',
+      parameters: {},
+      async execute() { return [{ type: 'text', text: 'BENIGN_OK' }] },
+    }))
+
+    const risky = await ctx.tools.execute(exec('network_fixture', 'risk-call'))
+    const safe = await ctx.tools.execute(exec('ordinary_fixture', 'safe-call'))
+    const riskyText = risky.content[0]?.type === 'text' ? risky.content[0].text : ''
+    expect(riskyText).toContain('local-result:')
+    expect(riskyText).not.toContain('node-secret')
+    expect(safe.content).toEqual([{ type: 'text', text: 'BENIGN_OK' }])
+    const files = await readdir(privateRoot)
+    expect(files).toHaveLength(1)
+    const path = join(privateRoot, files[0]!)
+    expect((await stat(path)).mode & 0o777).toBe(0o600)
+    expect(await readFile(path, 'utf8')).toContain('node-secret')
+    const handle = riskyText.match(/local-result:([a-f0-9]{32})/)?.[1]
+    expect(handle).toBeDefined()
+    const inspected = await ctx.tools.execute({
+      ...exec('inspect_local_network_result', 'inspect-call'),
+      arguments: { handle },
+    })
+    expect(inspected.isError).toBeFalsy()
+    expect(inspected.content[0]).toMatchObject({
+      type: 'text',
+      text: JSON.stringify({
+        bytes: Buffer.byteLength(secret), proxyEntries: 1, groupEntries: 0,
+        protocolLinks: 0, subscriptionLinks: 0, hasTunSection: false, hasDnsSection: false,
+      }),
+    })
+    const otherSession = await ctx.tools.execute({
+      ...exec('inspect_local_network_result', 'inspect-other-session'),
+      agent: { session: { header: { id: SessionId('other-session') } } },
+      arguments: { handle },
+    } as ToolExecutionInput)
+    expect(otherSession.isError).toBe(true)
+    expect(JSON.stringify(otherSession.content)).not.toContain('node-secret')
+    await guardFiber.dispose()
+    const afterDisposal = await ctx.tools.execute({
+      ...exec('inspect_local_network_result', 'inspect-after-disposal'),
+      arguments: { handle },
+    })
+    expect(afterDisposal.isError).toBe(true)
+    expect(JSON.stringify(afterDisposal.content)).not.toContain('node-secret')
+  } finally {
+    await ctx.fiber.dispose()
+    await rm(privateRoot, { recursive: true, force: true })
+  }
+})
+
+it('fails closed when a sensitive result cannot be stored', async () => {
+  const privateRoot = await mkdtemp(join(tmpdir(), 'dsh-risk-limit-'))
+  const ctx = new Context()
+  const secret = 'proxies:\n  - name: limit-secret\n    type: vmess\n'
+  try {
+    await ctx.plugin(SystemPrompt)
+    await ctx.plugin(ToolRuntime)
+    await ctx.plugin(ContentRiskGuard, { privateRoot, maxStoredBytes: 8 })
+    ctx.tools.register(defineContentToolFixture({
+      name: 'oversize_fixture', description: 'fixture', parameters: {},
+      async execute() { return [{ type: 'text', text: secret }] },
+    }))
+    const result = await ctx.tools.execute({
+      name: 'oversize_fixture', callId: ToolCallId('oversize-call'), arguments: {},
+      agent: { session: { header: { id: SessionId('limit-session') } } },
+      signal: new AbortController().signal,
+    } as unknown as ToolExecutionInput)
+    expect(result.isError).toBe(true)
+    expect(JSON.stringify(result.content)).not.toContain('limit-secret')
+    expect(await readdir(privateRoot)).toEqual([])
+  } finally {
+    await ctx.fiber.dispose()
+    await rm(privateRoot, { recursive: true, force: true })
+  }
+})
+
+it('bounds the complete stored record at an exact multibyte limit', async () => {
+  const privateRoot = await mkdtemp(join(tmpdir(), 'dsh-risk-bytes-'))
+  const raw = 'é'
+  const exact = Buffer.byteLength(JSON.stringify({
+    sessionId: 's', callId: 'c', createdAt: Date.now(), raw,
+  }), 'utf8')
+  try {
+    const exactStore = new LocalResultStore(privateRoot, 60_000, exact)
+    const handle = await exactStore.save('s', 'c', raw)
+    expect(await exactStore.load('s', handle)).toBe(raw)
+    await expect(new LocalResultStore(privateRoot, 60_000, exact - 1).save('s', 'c', raw))
+      .rejects.toThrow('size limit')
+    expect(await readdir(privateRoot)).toHaveLength(1)
+  } finally {
+    await rm(privateRoot, { recursive: true, force: true })
+  }
+})
+
+it('isolates a sensitive PTC sub-call log without rewriting a harmless one', async () => {
+  const privateRoot = await mkdtemp(join(tmpdir(), 'dsh-risk-ptc-'))
+  const ctx = new Context()
+  const agent = { session: { header: { id: SessionId('ptc-session') } } }
+  try {
+    await ctx.plugin(SystemPrompt)
+    await ctx.plugin(ToolRuntime)
+    await ctx.plugin(ContentRiskGuard, { privateRoot })
+    const shape = (text: string, id: string) => ctx.waterfall(ctx, 'tools/ptc-dispatch-log', {
+      agent, subCallId: ToolCallId(id), name: 'fixture', content: [{ type: 'text', text }],
+    } as unknown as PtcDispatchLog, async () => [{ type: 'text' as const, text }])
+    const secret = 'proxies:\n  - name: subcall-secret\n    type: vmess\n'
+    const risky = await shape(secret, 'ptc-risk')
+    expect(JSON.stringify(risky)).toContain('local-result:')
+    expect(JSON.stringify(risky)).not.toContain('subcall-secret')
+    expect(await shape('BENIGN_OK', 'ptc-safe')).toEqual([{ type: 'text', text: 'BENIGN_OK' }])
+    expect(await readdir(privateRoot)).toHaveLength(1)
+    const failed = await ctx.waterfall(ctx, 'tools/ptc-dispatch-log', {
+      agent, subCallId: ToolCallId('ptc-failed'), name: 'fixture',
+      content: [{ type: 'text', text: secret }],
+    } as unknown as PtcDispatchLog, async (): Promise<never> => {
+      throw new Error('fixture log shaping failed')
+    })
+    expect(JSON.stringify(failed)).not.toContain('subcall-secret')
+  } finally {
+    await ctx.fiber.dispose()
+    await rm(privateRoot, { recursive: true, force: true })
+  }
+})
+
+describe('@dsh-selfuse/content-risk-guard classifier', () => {
+  it('identifies numbered read output and JSON-encoded PTC output', () => {
+    const numbered = [
+      '  1\tproxies:',
+      '  2\t  - name: fixture-node',
+      '  3\t    type: socks5',
+      '  4\t    server: fixture.example.test',
+      '  5\t    username: fixture-user',
+      '  6\t    password: fixture-pass',
+    ].join('\n')
+    expect(hasSensitiveNetworkContent(numbered)).toBe(true)
+    expect(hasSensitiveNetworkContent(JSON.stringify({ output: numbered }))).toBe(true)
+    expect(hasSensitiveNetworkContent(JSON.stringify({ lines: [
+      { text: '1: proxies:' }, { text: '2:   - name: fixture-node' },
+    ] }))).toBe(true)
+    expect(hasSensitiveNetworkContent(JSON.stringify({ lines: [
+      { text: '1: append:' }, { text: '2:   - type: socks5' },
+      { text: '3:     server: fixture.example.test' },
+      { text: '4:     username: fixture-user' }, { text: '5:     password: fixture-pass' },
+    ] }))).toBe(true)
+  })
+
+  it('treats excessively nested JSON as uninspectable', () => {
+    let nested: unknown = 'BENIGN_OK'
+    for (let depth = 0; depth < 30; depth += 1) nested = { value: nested }
+    expect(hasSensitiveNetworkContent(JSON.stringify(nested))).toBe(true)
+  })
+
+  it('identifies Clash proxies list block', () => {
     const yaml = `
 mixed-port: 7890
 proxies:
@@ -29,28 +322,17 @@ proxy-groups:
     type: select
     proxies: ["HK-VIP-01"]
 `
-    const cleaned = sanitizeRiskContent(yaml)
-    expect(cleaned).not.toContain('HK-VIP-01')
-    expect(cleaned).not.toContain('us.example.com')
-    expect(cleaned).toContain('[代理节点配置已由 DSH 本地安全脱敏，避免触发上游风控]')
-    expect(cleaned).toContain('[策略组已脱敏]')
+    expect(hasSensitiveNetworkContent(yaml)).toBe(true)
   })
 
-  it('sanitizes proxy URIs (vmess, trojan, ss, etc.)', () => {
+  it('identifies proxy URIs (vmess, trojan, ss, etc.)', () => {
     const text = 'Check out these nodes: vmess://eyJhZGQiOiIxMjcuMC4wLjEifQ== and trojan://pwd@1.2.3.4:443#name and ss://YWVzLTI1Ni1nY206cGFzc3dvcmRAMTI3LjAuMC4xOjEyMzQ=!'
-    const cleaned = sanitizeRiskContent(text)
-    expect(cleaned).not.toContain('vmess://eyJhZGQiOiIxMjcuMC4wLjEifQ==')
-    expect(cleaned).not.toContain('trojan://pwd@1.2.3.4:443#name')
-    expect(cleaned).toContain('[vmess://节点配置已自动脱敏]')
-    expect(cleaned).toContain('[trojan://节点配置已自动脱敏]')
-    expect(cleaned).toContain('[ss://节点配置已自动脱敏]')
+    expect(hasSensitiveNetworkContent(text)).toBe(true)
   })
 
-  it('sanitizes subscription URLs', () => {
+  it('identifies subscription URLs', () => {
     const text = 'Download config from https://vpn.service.net/api/v1/client/subscribe?token=9876543210abcdef to start'
-    const cleaned = sanitizeRiskContent(text)
-    expect(cleaned).not.toContain('token=9876543210abcdef')
-    expect(cleaned).toContain('[订阅链接已脱敏]')
+    expect(hasSensitiveNetworkContent(text)).toBe(true)
   })
 
   it('preserves normal code and ordinary prose', () => {
@@ -60,71 +342,13 @@ function calculateSum(a: number, b: number): number {
 }
 console.log("Normal application running on http://localhost:3000");
 `
-    expect(sanitizeRiskContent(normal)).toBe(normal)
+    expect(hasSensitiveNetworkContent(normal)).toBe(false)
   })
 
-  it('identifies Content Exists Risk errors', () => {
-    expect(isContentRiskError('HTTP 400 Content Exists Risk: sensitive content')).toBe(true)
-    expect(isContentRiskError(new Error('DeepSeek API error: Content Exists Risk'))).toBe(true)
-    expect(isContentRiskError({ code: 'content_exists_risk', message: 'Rejected' })).toBe(true)
-    expect(isContentRiskError({ cause: { message: 'HTTP 400: {"error":{"message":"Content Exists Risk"}}' } })).toBe(true)
-    expect(isContentRiskError(new Error('Normal connection timeout'))).toBe(false)
-  })
-
-  it('sanitizes messages with tool-result containing proxy configs', () => {
-    const messages: Message[] = [
-      {
-        role: 'user',
-        content: [{ type: 'text', text: 'Please inspect the config' }],
-      },
-      {
-        role: 'tool',
-        content: [
-          {
-            type: 'tool-result',
-            id: 'call_1',
-            name: 'read_file',
-            content: [
-              {
-                type: 'text',
-                text: 'proxies:\n  - name: "node-1"\n    type: vmess\n    server: 1.1.1.1\n',
-              },
-            ],
-          },
-        ],
-      },
-    ]
-
-    const sanitized = sanitizeMessagesForRisk(messages)
-    const toolResult = sanitized[1]!.content[0] as Extract<ContentBlock, { type: 'tool-result' }>
-    const textBlock = toolResult.content[0] as Extract<ContentBlock, { type: 'text' }>
-    expect(textBlock.text).toContain('[代理节点配置已由 DSH 本地安全脱敏，避免触发上游风控]')
-    expect(textBlock.text).not.toContain('node-1')
-  })
-
-  it('deeply redacts tool results for emergency retry', () => {
-    const messages: Message[] = [
-      {
-        role: 'user',
-        content: [{ type: 'text', text: 'Run the script' }],
-      },
-      {
-        role: 'tool',
-        content: [
-          {
-            type: 'tool-result',
-            id: 'call_2',
-            name: 'bash',
-            content: [{ type: 'text', text: 'Sensitive output that was blocked' }],
-          },
-        ],
-      },
-    ]
-
-    const redacted = deepRedactToolResults(messages)
-    const toolBlock = redacted[1]!.content[0] as Extract<ContentBlock, { type: 'tool-result' }>
-    const textBlock = toolBlock.content[0] as Extract<ContentBlock, { type: 'text' }>
-    expect(textBlock.text).toContain('Content Exists Risk')
-    expect(textBlock.text).not.toContain('Sensitive output')
+  it('summarizes locally retained content without identifiers', () => {
+    expect(summarizeRiskContent('proxies:\n  - name: secret-node\n    type: vmess\n')).toEqual({
+      bytes: 47, proxyEntries: 1, groupEntries: 0, protocolLinks: 0,
+      subscriptionLinks: 0, hasTunSection: false, hasDnsSection: false,
+    })
   })
 })

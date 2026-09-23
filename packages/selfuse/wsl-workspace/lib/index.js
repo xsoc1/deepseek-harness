@@ -1,10 +1,277 @@
-import { a as joinUnc, c as parseWslUnc, n as isAbsoluteLinuxPath, o as mntToWindowsPath, r as isValidWslUsername, s as normalizeLinuxPath } from "./paths-BDE1NVOv.js";
-import { a as getWindowsWorkspace, c as registerWindowsWorkspace, i as canonicalWslUnc, l as setWorkspaceUsername, o as getWorkspaceUsername, r as listDistros, s as listWorkspaceKeys, t as defaultDistro } from "./wsl-CW3VPEIA.js";
 import z from "@deepseek-ai/schemastery";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+//#region src/shared/paths.ts
+/** The two UNC hosts WSL exposes a distribution's filesystem under. */
+const UNC_HOSTS = ["wsl.localhost", "wsl$"];
+/**
+* Parse a WSL UNC path into its distro and Linux path. Accepts the WSL2
+* `\\wsl.localhost\<distro>\<linux>` form, the legacy `\\wsl$\<distro>\<linux>`
+* interop form, and forward-slash spellings of either.
+* @param raw - candidate absolute path.
+* @returns the parsed target, or null when the path is not a WSL UNC.
+*/
+function parseWslUnc(raw) {
+	const normalized = raw.replace(/\\/g, "/").replace(/\/\/+/g, "//");
+	if (!normalized.startsWith("//")) return null;
+	const segments = normalized.slice(2).split("/");
+	const host = (segments[0] ?? "").toLowerCase();
+	if (!UNC_HOSTS.includes(host)) return null;
+	const distro = segments[1] ?? "";
+	if (distro === "") return null;
+	return {
+		distro,
+		linuxPath: `/${segments.slice(2).filter((segment) => segment.length > 0).join("/")}`
+	};
+}
+/**
+* Normalize a Linux absolute path for the Host: collapse repeated slashes and
+* strip a trailing slash (root becomes `/`).
+* @param path - absolute Linux path.
+* @returns the normalized path.
+*/
+function normalizeLinuxPath(path) {
+	const collapsed = path.replace(/\/+/g, "/");
+	return collapsed === "/" ? "/" : collapsed.replace(/\/$/, "");
+}
+/**
+* Whether a path is an absolute, non-empty Linux path.
+* @param path - candidate.
+* @returns whether it starts with `/` and contains no NUL.
+*/
+function isAbsoluteLinuxPath(path) {
+	return path.startsWith("/") && !path.includes("\0");
+}
+/**
+* Join a distro and a Linux absolute path into the WSL2 UNC form used as the
+* workspace identity (`\\wsl.localhost\<distro>\<linux>`, backslash segments).
+* @param distro - distro name.
+* @param linuxPath - absolute Linux path (leading `/`).
+* @returns the UNC path.
+*/
+function joinUnc(distro, linuxPath) {
+	if (!isAbsoluteLinuxPath(linuxPath)) throw new Error(`wsl-workspace: cannot map a non-absolute Linux path "${linuxPath}" to UNC`);
+	if (distro === "" || distro === "." || distro === ".." || /[\\/]/.test(distro)) throw new Error(`wsl-workspace: invalid distribution name "${distro}"`);
+	const normalized = linuxPath.replace(/\/+/g, "/").replace(/\/$/, "");
+	const windowsSegments = (normalized.startsWith("/") ? normalized.slice(1) : normalized).replace(/\//g, "\\");
+	return `\\\\wsl.localhost\\${distro}${windowsSegments === "" ? "" : `\\${windowsSegments}`}`;
+}
+/**
+* Translate a `/mnt/<drive>/…` path back to its Windows drive path.
+* @param linuxPath - the candidate Linux path.
+* @returns the `X:\…` drive path, or `null` when the path is not a drvfs mount.
+*/
+function mntToWindowsPath(linuxPath) {
+	const match = /^\/mnt\/([a-zA-Z])(?:\/(.*))?$/.exec(linuxPath);
+	if (match === null) return null;
+	const rest = (match[2] ?? "").replace(/\//g, "\\");
+	return `${(match[1] ?? "").toUpperCase()}:\\${rest}`;
+}
+/**
+* Canonical Windows drive path for store keys and cross-realm identity:
+* separators unified to `\`, trailing separator stripped, and the WHOLE path
+* lowercased — Windows paths compare case-insensitively, and the workspace
+* registry may realpath a different casing than the caller spelled (8.3 or
+* on-disk casing), so the store key must collide across casings.
+* @param path - candidate Windows drive path.
+* @returns the canonical form, or `null` when not drive-shaped.
+*/
+function canonicalWindowsPath(path) {
+	const match = /^([A-Za-z]):[\\/](.*)$/.exec(path);
+	if (match === null) return null;
+	const rest = (match[2] ?? "").replace(/[\\/]+/g, "\\").replace(/\\$/, "").toLowerCase();
+	return `${(match[1] ?? "").toLowerCase()}:\\${rest}`;
+}
+/** Linux username shape for `wsl.exe -u`: starts with a letter or underscore, then letters/digits/`_`/`.`/`-` (max 64). */
+const WSL_USERNAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/;
+/**
+* Whether a value is a safe Linux username for `wsl.exe -u`. The check is
+* strict on purpose: a value starting with `-` could be parsed as a wsl.exe
+* option instead of a username.
+* @param value - candidate username.
+* @returns whether it matches the Linux username shape.
+*/
+function isValidWslUsername(value) {
+	return WSL_USERNAME_PATTERN.test(value);
+}
+//#endregion
+//#region src/shared/wsl-credentials.ts
+/**
+* Per-workspace WSL credentials (host side only). The dialog stores the
+* optional Linux username of a WSL workspace under the harness home; the
+* per-session env contributor and the WSL shell executor read it back so
+* `wsl.exe -u <username>` can run commands as that user. Keys are canonical
+* UNC workspace paths. This module touches node builtins, so the browser
+* half never imports it.
+* @module @dsh-selfuse/wsl-workspace/shared/wsl-credentials
+*/
+/** The store file lives under the harness home so both host halves share it. */
+function storePath() {
+	return join(process.env.DSH_HOME ?? join(homedir(), ".dsh"), "wsl-workspaces.json");
+}
+/** Read the store; a missing or corrupt file reads as empty (never throws). */
+function readStore() {
+	try {
+		const parsed = JSON.parse(readFileSync(storePath(), "utf8"));
+		if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+		return parsed;
+	} catch {
+		return {};
+	}
+}
+/**
+* Canonicalize any accepted WSL UNC spelling into the store's key form.
+* @param path - candidate workspace path (either UNC host form).
+* @returns the canonical UNC path, or null when the path is not a WSL UNC.
+*/
+function canonicalWslUnc(path) {
+	const parsed = parseWslUnc(path);
+	return parsed === null ? null : joinUnc(parsed.distro, parsed.linuxPath);
+}
+/**
+* Read the stored username for a WSL workspace.
+* @param uncPath - the workspace path (any accepted WSL UNC spelling).
+* @returns the username, or undefined when none is stored.
+*/
+function getWorkspaceUsername(uncPath) {
+	const key = canonicalWslUnc(uncPath);
+	if (key === null) return void 0;
+	const username = readStore()[key]?.username;
+	return username === void 0 || username === "" ? void 0 : username;
+}
+/**
+* Store (or clear) the username of a WSL workspace.
+* @param uncPath - the workspace path (any accepted WSL UNC spelling).
+* @param username - the username; empty or undefined clears the stored value.
+*/
+function setWorkspaceUsername(uncPath, username) {
+	const key = canonicalWslUnc(uncPath);
+	if (key === null) throw new Error("wsl-workspace: workspace path is not a WSL UNC path");
+	const store = readStore();
+	if (username === void 0 || username.trim() === "") delete store[key];
+	else {
+		const trimmed = username.trim();
+		if (!isValidWslUsername(trimmed)) throw new Error("wsl-workspace: username must match the Linux username pattern [A-Za-z_][A-Za-z0-9_.-]*");
+		store[key] = { username: trimmed };
+	}
+	const path = storePath();
+	mkdirSync(dirname(path), { recursive: true });
+	writeFileSync(path, JSON.stringify(store, null, 2) + "\n", "utf8");
+}
+/**
+* Register the WSL distribution (and optional Linux username) of a
+* Windows-drive workspace (`/mnt/<drive>` path). Keys are canonical Windows
+* drive paths; the per-session env contributor reads the entry back so
+* `wsl.exe -d <distro>` can run when the session cwd is a drive path.
+* @param winPath - the Windows drive path (any spelling).
+* @param distro - the WSL distribution the workspace belongs to.
+* @param username - optional Linux username (distro default when absent).
+*/
+function registerWindowsWorkspace(winPath, distro, username) {
+	const key = canonicalWindowsPath(winPath);
+	if (key === null) throw new Error("wsl-workspace: workspace path is not a Windows drive path");
+	const entry = { distro };
+	if (username !== void 0 && username.trim() !== "") {
+		const trimmed = username.trim();
+		if (!isValidWslUsername(trimmed)) throw new Error("wsl-workspace: username must match the Linux username pattern [A-Za-z_][A-Za-z0-9_.-]*");
+		entry.username = trimmed;
+	}
+	const store = readStore();
+	store[key] = entry;
+	const path = storePath();
+	mkdirSync(dirname(path), { recursive: true });
+	writeFileSync(path, JSON.stringify(store, null, 2) + "\n", "utf8");
+}
+/**
+* Read the stored credentials of a Windows-drive workspace.
+* @param winPath - the Windows drive path (any spelling).
+* @returns the stored entry, or undefined when none is registered.
+*/
+function getWindowsWorkspace(winPath) {
+	const key = canonicalWindowsPath(winPath);
+	if (key === null) return void 0;
+	return readStore()[key];
+}
+/** Every stored workspace key (canonical UNC and Windows drive paths). */
+function listWorkspaceKeys() {
+	return Object.keys(readStore());
+}
+//#endregion
+//#region src/shared/wsl.ts
+/**
+* WSL discovery helpers (host side): enumerate installed distributions
+* through `wsl.exe -l -q` and read the default distribution from the Lxss
+* registry key. `wsl.exe` output is UTF-16LE on most builds, so decoding
+* sniffs for NUL bytes before choosing an encoding.
+* @module @dsh-selfuse/wsl-workspace/shared/wsl
+*/
+const execFileAsync = promisify(execFile);
+/** Executable timeout for the short discovery calls. */
+const DISCOVERY_TIMEOUT_MS = 1e4;
+const LXSS_KEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
+/** Human text for an unknown rejection. */
+function messageOf$1(value) {
+	return value instanceof Error ? value.message : String(value);
+}
+/**
+* Decode `wsl.exe -l -q` output. Newer builds emit UTF-8; most emit UTF-16LE
+* with NUL bytes interleaved — the NUL probe picks the right one.
+* @param buffer - the raw captured output.
+* @returns the decoded text.
+*/
+function decodeWslOutput(buffer) {
+	return buffer.includes(0) ? buffer.toString("utf16le") : buffer.toString("utf8");
+}
+/**
+* List installed WSL distributions in `wsl.exe` order.
+* @param wslPath - the `wsl.exe` executable (absolute or PATH name).
+* @returns distribution names, blank lines dropped.
+*/
+async function listDistros(wslPath = "wsl.exe") {
+	let stdout;
+	try {
+		stdout = (await execFileAsync(wslPath, ["-l", "-q"], {
+			encoding: "buffer",
+			timeout: DISCOVERY_TIMEOUT_MS
+		})).stdout;
+	} catch (error) {
+		throw new Error(`wsl-workspace: cannot list WSL distributions (${messageOf$1(error)}); is WSL installed?`);
+	}
+	return decodeWslOutput(stdout).split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0);
+}
+/**
+* Read the user's default distribution from the Lxss registry. Non-fatal:
+* returns `undefined` when the value is absent or unreadable (the caller
+* falls back to list order).
+* @returns the default distribution name, or `undefined`.
+*/
+async function defaultDistro() {
+	try {
+		const value = await execFileAsync("reg.exe", [
+			"query",
+			LXSS_KEY,
+			"/v",
+			"DefaultDistribution"
+		], { timeout: DISCOVERY_TIMEOUT_MS });
+		const guid = /DefaultDistribution\s+REG_SZ\s+(\{[0-9a-fA-F-]+\})/i.exec(value.stdout)?.[1];
+		if (guid === void 0) return void 0;
+		const name = await execFileAsync("reg.exe", [
+			"query",
+			`${LXSS_KEY}\\${guid}`,
+			"/v",
+			"DistributionName"
+		], { timeout: DISCOVERY_TIMEOUT_MS });
+		const distro = /DistributionName\s+REG_SZ\s+(.+)/i.exec(name.stdout)?.[1]?.trim();
+		return distro === void 0 || distro === "" ? void 0 : distro;
+	} catch {
+		return;
+	}
+}
+//#endregion
 //#region src/host/variants.ts
 /**
 * WSL preset-variant generator. For every healthy source preset the roster
@@ -44,7 +311,7 @@ function wslWorldGroup(shellPath, fsPath, includeEditor) {
 		"    shell: true",
 		"    fs: true",
 		"  config:",
-		`    - id: shell-wsl`,
+		"    - id: shell-wsl",
 		`      name: '${shellPath.replace(/'/g, "''")}'`,
 		"    - id: fs-wsl",
 		`      name: '${fsPath.replace(/'/g, "''")}'`,
@@ -451,7 +718,8 @@ async function materializeVariants(agentPresets, dshHome, shellPath, fsPath) {
 		if (preset.broken !== void 0) continue;
 		if (isWslVariantId(preset.id)) continue;
 		const variantId = variantIdFor(preset.id);
-		const transformed = transformPresetForWsl(await agentPresets.read(preset.id), shellPath, fsPath);
+		const source = (await agentPresets.readDocument(preset.id)).content;
+		const transformed = transformPresetForWsl(source, shellPath, fsPath);
 		const dir = join(userRoot, variantId);
 		mkdirSync(dir, { recursive: true });
 		writeFileSync(join(dir, "agent.cordis.yml"), transformed, "utf8");

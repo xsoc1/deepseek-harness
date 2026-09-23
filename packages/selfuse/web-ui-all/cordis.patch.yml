@@ -20,8 +20,3 @@
 - insert:
     - id: web-ui-skin-center
       name: '@dsh-selfuse/skin-center'
-
-# host apiproxy SDK compatibility
-- insert:
-    - id: web-ui-host-apiproxy
-      name: '@deepseek-ai/dsh-host-apiproxy'

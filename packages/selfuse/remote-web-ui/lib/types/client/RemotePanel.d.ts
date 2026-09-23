@@ -53,5 +53,5 @@ export interface RemotePanelProps {
  * @param props - copy, state, and actions.
  * @returns the panel element tree.
  */
-export declare function RemotePanel({ t, state, copied, onClose, onStop, onRefresh, onCopy, onPickAddress, onPickPublic, onRevoke }: RemotePanelProps): import("react").JSX.Element;
+export declare function RemotePanel({ t, state, copied, onClose, onStop, onRefresh, onCopy, onPickAddress, onPickPublic, onRevoke, }: RemotePanelProps): import("react").JSX.Element;
 //# sourceMappingURL=RemotePanel.d.ts.map

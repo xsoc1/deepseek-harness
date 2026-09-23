@@ -9,7 +9,7 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-run
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { IconDownloadOutline16 } from '@deepseek-ai/dsh-client-ui-primitives';
+import { IconDownloadOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives';
 import { fetchUpdateStatus, runUpdate, UpdateStatusError } from "./update-api.js";
 import { UpdatePanel } from "./UpdatePanel.js";
 import css from './remote.module.css';
@@ -108,5 +108,5 @@ export function UpdateEntry({ wide, t }) {
         };
     }, [probeAvailability]);
     const updateLabel = updateAvailable ? t('update.availableLabel') : t('update.label');
-    return (_jsxs(_Fragment, { children: [_jsx("button", { type: "button", className: css.trigger, "data-wide": wide ? undefined : 'rail', "data-update-available": updateAvailable ? 'true' : undefined, "aria-label": updateLabel, title: updateLabel, onClick: openPanel, children: _jsx(IconDownloadOutline16, { size: wide ? 16 : 18 }) }), open && createPortal((_jsxs("div", { className: css.overlay, role: "presentation", children: [_jsx("div", { className: css.mask, "aria-hidden": "true", onClick: closePanel }), _jsx(UpdatePanel, { t: t, view: view, onClose: closePanel, onRecheck: () => { void check(); }, onStartUpdate: (status) => { void startUpdate(status); } })] })), document.body)] }));
+    return (_jsxs(_Fragment, { children: [_jsx("button", { type: "button", className: css.trigger, "data-wide": wide ? undefined : 'rail', "data-update-available": updateAvailable ? 'true' : undefined, "aria-label": updateLabel, title: updateLabel, onClick: openPanel, children: _jsx(IconDownloadOutlineRegular, { size: wide ? 16 : 18 }) }), open && createPortal((_jsxs("div", { className: css.overlay, role: "presentation", children: [_jsx("div", { className: css.mask, "aria-hidden": "true", onClick: closePanel }), _jsx(UpdatePanel, { t: t, view: view, onClose: closePanel, onRecheck: () => { void check(); }, onStartUpdate: (status) => { void startUpdate(status); } })] })), document.body)] }));
 }

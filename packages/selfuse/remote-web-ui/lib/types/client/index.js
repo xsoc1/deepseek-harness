@@ -20,11 +20,11 @@ import { FenceNotice } from "./FenceNotice.js";
 /** Dictionary namespace owned by this plugin. */
 const NS = 'remote';
 /** Settings namespace the remote-control card edits (the Host plugin registers it). */
-const REMOTE_WEB_UI_NS = 'remote-web-ui';
+const REMOTE_WEB_UI_NS = 'web-ui-remote-web-ui';
 /** Heartbeat cadence from a paired remote desktop (presence + revocation liveness). */
 const HEARTBEAT_INTERVAL_MS = 10_000;
 /** Services required by this plugin. */
-export const inject = ['slots', 'locale', 'connection', 'settingsScope', 'remote'];
+export const inject = ['slots', 'locale', 'connection', 'configForms', 'remote'];
 /**
  * Register the remote-control surface.
  * @param ctx - client root context.
@@ -32,8 +32,13 @@ export const inject = ['slots', 'locale', 'connection', 'settingsScope', 'remote
 export function apply(ctx) {
     ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'remote-web-ui: dictionaries');
     const t = ctx.locale.bind(NS);
-    const binder = ctx.get('webUiSettings') ?? ctx.settingsScope;
-    const settingsScope = binder.bind({ namespace: REMOTE_WEB_UI_NS });
+    const form = ctx.configForms.get(REMOTE_WEB_UI_NS);
+    const settingsScope = {
+        getSnapshot: () => form.getSnapshot(),
+        subscribe: listener => form.subscribe(listener),
+        set: async (field, value) => { await form.set(field, value); },
+        unset: async (field) => { await form.unset(field); },
+    };
     const enabled = () => {
         const snapshot = settingsScope.getSnapshot();
         return snapshot.status === 'ready'

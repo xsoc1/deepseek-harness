@@ -15,9 +15,9 @@
  * - `/api/pair/*`, `/api/update/*`, `/api/plugin-manager/*`,
  *   `/api/dsh-desktop-launcher/*` and `/api/dsh-web-ui-settings/*` stay physically local.
  * - Everything else is HTTP- or WebSocket-proxied to the local port with
- *   Host rewritten, Origin and cookies dropped, and a synthetic same-origin
- *   browser marker added after authentication. Plugin loopback fences then
- *   pass. The pairing cookie never leaves this process.
+ *   Host rewritten, caller Origin and cookies dropped, and a fresh Host-signed
+ *   loopback browser cookie attached only after pairing. HTTP also receives a
+ *   synthetic same-origin marker. Neither cookie is sent back to the browser.
  */
 import { readCookie } from "./gate.js";
 import { writeJson } from "./http.js";
@@ -99,7 +99,7 @@ export function loopbackOnlyDenial(innerPath) {
  * @returns the routes to register on webServer.
  */
 export function makeRemoteApiRoutes(deps) {
-    const { service, port, requirePairingForLan } = deps;
+    const { service, port, loopbackAuthCookie, requirePairingForLan } = deps;
     const handler = (req, res) => {
         // Gate the cookie before buffering an unpaired request body.
         const deviceId = readCookie(req.headers.cookie, service.config.cookieName);
@@ -128,7 +128,16 @@ export function makeRemoteApiRoutes(deps) {
             envelopeError(res, 403, 'invalid-request', 'forbidden', denied);
             return;
         }
-        proxyLoopbackHttp(req, res, port, `${inner}${url.search}`);
+        let authCookie;
+        try {
+            authCookie = loopbackAuthCookie();
+        }
+        catch {
+            req.resume();
+            envelopeError(res, 502, 'invalid-request', 'upstream-auth-failure', 'desktop authentication is unavailable');
+            return;
+        }
+        proxyLoopbackHttp(req, res, port, `${inner}${url.search}`, authCookie);
     };
     return [{ kind: 'prefix', path: REMOTE_PREFIX, handler }];
 }
@@ -157,7 +166,7 @@ export function upgradeInnerPath(reqUrl, fallbackPath) {
  * @returns the upgrade routes to register on webServer.
  */
 export function makeRemoteApiUpgradeRoutes(deps) {
-    const { service, port, requirePairingForLan } = deps;
+    const { service, port, loopbackAuthCookie, requirePairingForLan } = deps;
     const handlerFor = (fallbackPath) => (req, socket, head) => {
         const deviceId = readCookie(req.headers.cookie, service.config.cookieName);
         if (requirePairingForLan?.() !== false && (deviceId === undefined || !service.touchDevice(deviceId))) {
@@ -172,7 +181,16 @@ export function makeRemoteApiUpgradeRoutes(deps) {
             socket.destroy();
             return;
         }
-        proxyLoopbackUpgrade(req, socket, head, port, inner);
+        let authCookie;
+        try {
+            authCookie = loopbackAuthCookie();
+        }
+        catch {
+            socket.write('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n');
+            socket.destroy();
+            return;
+        }
+        proxyLoopbackUpgrade(req, socket, head, port, inner, authCookie);
     };
     return REMOTE_UPGRADE_PATHS.map(path => ({
         path,

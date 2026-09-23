@@ -37,6 +37,7 @@ export declare function isTrustedApiRequest(request: IncomingMessage, trustedHos
 export declare function publicHostOf(url: string | undefined): string | undefined;
 /** Route paths (exact matches under /api). */
 export declare const PAIR_PATHS: {
+    readonly landing: "/pair";
     readonly issue: "/api/pair/issue";
     readonly accept: "/api/pair/accept";
     readonly stop: "/api/pair/stop";
@@ -84,6 +85,8 @@ export interface PairRoutesDeps {
     service: PairingService;
     /** The LAN IP literals the fence accepts (derived from the bind host). */
     lanAddresses: readonly string[];
+    /** Official browser credential issued only after a valid one-time pair token. */
+    browserAuthCookie: (authority: string) => string;
 }
 /**
  * Build the /api/pair route family.

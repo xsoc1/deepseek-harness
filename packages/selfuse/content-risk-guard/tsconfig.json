@@ -2,10 +2,14 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "lib",
+    "declarationDir": "lib/types",
     "rootDir": "src",
     "composite": false,
     "allowImportingTsExtensions": false,
-    "rewriteRelativeImportExtensions": false
+    "rewriteRelativeImportExtensions": false,
+    "paths": {
+      "@deepseek-ai/cordis": ["../../../vendor/cordis/lib/types/index.d.ts"]
+    }
   },
   "include": ["src"]
 }

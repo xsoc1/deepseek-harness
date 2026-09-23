@@ -8,12 +8,12 @@
  */
 import { createElement } from 'react'
 import { createRoot } from 'react-dom/client'
-import type { ClientContext, SettingsScope, SettingsScopeSpec } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ClientContext, SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'
 // Type-only: pulls the locale plugin's Context merge (ctx.locale) and the
 // ui-sidebar SlotMap merge (the 'sidebar.remote' hole).
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: pulls the settings-surface SlotMap merge (the 'settings.section'
-// entry) and the ctx.settingsScope Context merge.
+// entry) and the ctx.configForms Context merge.
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client'
@@ -24,7 +24,7 @@ import { RemoteSettingsCard, RemoteSettingsCardController, type RemoteSettings }
 import { en, zh, type RemoteKey } from './locales.ts'
 import { PAIR_FAILED_MARKER, runPairBootFlow } from './deep-link.ts'
 import { sendHeartbeat } from './pair-api.ts'
-import { channelTransition, installRemoteChannel, isLoopbackHostname } from './remote-channel.ts'
+import { channelTransition, installRemoteChannel } from './remote-channel.ts'
 import { FenceNotice } from './FenceNotice.tsx'
 
 export type { RemoteEntryProps } from './RemoteEntry.tsx'
@@ -70,29 +70,17 @@ export interface SettingsPluginItemOwnerProps {
   children?: never
 }
 
-declare module '@deepseek-ai/cordis' {
-  interface Context {
-    /**
-     * Optional rc.6 compatibility binder provided by dsh-web-ui-settings;
-     * absent when that group plugin is not installed, so callers fall back to
-     * the official settings scope.
-     */
-    webUiSettings?: { bind<S>(spec: SettingsScopeSpec<S>): SettingsScope<S> }
-  }
-}
-
-
 /** Dictionary namespace owned by this plugin. */
 const NS = 'remote'
 
 /** Settings namespace the remote-control card edits (the Host plugin registers it). */
-const REMOTE_WEB_UI_NS = 'remote-web-ui'
+const REMOTE_WEB_UI_NS = 'web-ui-remote-web-ui'
 
 /** Heartbeat cadence from a paired remote desktop (presence + revocation liveness). */
 const HEARTBEAT_INTERVAL_MS = 10_000
 
 /** Services required by this plugin. */
-export const inject = ['slots', 'locale', 'connection', 'settingsScope', 'remote']
+export const inject = ['slots', 'locale', 'connection', 'configForms', 'remote']
 
 /**
  * Register the remote-control surface.
@@ -102,8 +90,13 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'remote-web-ui: dictionaries')
 
   const t = ctx.locale.bind(NS)
-  const binder = ctx.get('webUiSettings') ?? ctx.settingsScope
-  const settingsScope = binder.bind<RemoteSettings>({ namespace: REMOTE_WEB_UI_NS })
+  const form = ctx.configForms.get<RemoteSettings>(REMOTE_WEB_UI_NS)
+  const settingsScope: SettingsScope<RemoteSettings> = {
+    getSnapshot: () => form.getSnapshot(),
+    subscribe: listener => form.subscribe(listener),
+    set: async (field, value) => { await form.set(field, value) },
+    unset: async (field) => { await form.unset(field) },
+  }
   const enabled = (): boolean => {
     const snapshot = settingsScope.getSnapshot()
     return snapshot.status === 'ready'

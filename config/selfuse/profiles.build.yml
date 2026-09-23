@@ -37,6 +37,8 @@ rowConfigs:
   furongjun1999-dsh-memory:
     python: /usr/bin/python3
     roleplayWebEnabled: false
+    memory:
+      autoRecall: false
     mdcg:
       enabled: true
       root: /home/huangzy/.dsh/lingshu/mdcg

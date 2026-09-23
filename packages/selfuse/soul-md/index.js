@@ -21,15 +21,13 @@ import { readFileSync, watch } from "node:fs";
 import { isAbsolute, join } from "node:path";
 import z from "@deepseek-ai/schemastery";
 import { resolveDshHome } from "@deepseek-ai/dsh-home-paths";
-import { installSettingsSection, settingsNamespace } from "@deepseek-ai/dsh-settings";
-import { ensureSettingsNamespaceExposed } from "./vendor/dsh-settings-expose.js";
 
 /** Cordis plugin name. */
 const name = "soul-md";
 /** The prompt registry this row contributes to. */
 const inject = ["systemPrompt"];
 /** Settings namespace owned by this plugin (Web UI settings section). */
-const NS = settingsNamespace("soul-md");
+const NS = "dsh-soul-md";
 
 /** Section name; deliberately distinct from the registry-owned `deployment:persona`. */
 const SECTION_NAME = "soul:persona";
@@ -56,10 +54,11 @@ const Config = z.object({
   watch: z.boolean().default(true),
   /** Debounce for file-change reloads, in milliseconds. */
   debounceMs: z.number().default(300),
-});
+}).volatile();
 
 function apply(ctx, config) {
-  let current = config;
+  const readConfig = () => typeof config?.get === "function" ? config.get() : config;
+  let current = readConfig();
   let active = null;
   let timer = undefined;
   let watcher = undefined;
@@ -132,32 +131,14 @@ function apply(ctx, config) {
     };
   }, "soul-md.section()");
 
-  // ── settings-backed configuration ─────────────────────────────────────────
-  // NOTE: `installSettingsSection` hands `setSource` a GETTER
-  // (`() => scope.get()`), not the config object. Keep it and re-read it on
-  // settings change, so `current.*` below always sees resolved values and
-  // hot-reloads (watch) keep working.
-  let sourceGetter = null;
-  installSettingsSection(ctx, NS, Config, config, {
-    setSource: (getter) => {
-      sourceGetter = getter;
-    },
-    onChange: () => {
-      try {
-        if (sourceGetter) current = sourceGetter();
-        refresh();
-        startWatch();
-      } catch (error) {
-        ctx.logger.warn(`[soul-md] settings change refresh failed: ${String(error)}`);
-      }
-    },
-  });
+  ctx.effect(() => ctx.on("loader/volatile-update", () => {
+    current = readConfig();
+    refresh();
+    startWatch();
+  }), "soul-md: live configuration");
 
-  // dsh-host-apiproxy hard-codes which settings namespaces the Web client may
-  // see; without this, the settings section answers `settings-not-exposed`
-  // on any stock install. Patch the allowlist idempotently (self-heals after
-  // dsh updates overwrite the file).
-  ensureSettingsNamespaceExposed(ctx, "soul-md", ctx.logger);
+  // The official settings service now derives this form from the Loader entry's
+  // exported Config; editing it remounts the plugin with the new configuration.
 }
 
 export { Config, NS, SECTION_NAME, apply, inject, name };

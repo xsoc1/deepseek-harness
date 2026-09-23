@@ -77,30 +77,6 @@ function requestAuthority(headers: ConnectionTrustRequest['headers']): string | 
   }
 }
 
-/** Host-mode exemption for private/tailnet origins: loopback, RFC1918, CGNAT, and *.ts.net. */
-function requestHostname(headers: ConnectionTrustRequest['headers']): string | undefined {
-  const host = header(headers, 'host')
-  if (host === undefined) return undefined
-  try {
-    return new URL(`http://${host}`).hostname
-  } catch {
-    return undefined
-  }
-}
-
-function isInternalHostname(hostname: string | undefined): boolean {
-  if (hostname === undefined) return false
-  const h = hostname.toLowerCase()
-  if (h === 'localhost' || h === '[::1]' || h === '::1') return true
-  if (h.endsWith('.ts.net')) return true
-  const ip = h.replace(/^\[|\]$/g, '')
-  return /^127\./.test(ip)
-    || /^10\./.test(ip)
-    || /^192\.168\./.test(ip)
-    || /^172\.(1[6-9]|2\d|3[01])\./.test(ip)
-    || /^100\.(6[4-9]|[7-9]\d|1[0-1]\d|12[0-7])\./.test(ip)
-}
-
 function canonicalSecret(value: unknown): Buffer | undefined {
   if (typeof value !== 'string') return undefined
   const decoded = decodeBase64Url(value)
@@ -240,23 +216,21 @@ export class BrowserAuth {
   }
 
   /**
-   * Add this process's launch token to the ordinary application root URL.
-   * @param baseUrl - canonical browser origin without credentials.
-   * @returns root URL carrying the process token as its sole authentication input.
+   * Add this process's launch token to the caller's application URL.
+   * @param baseUrl - clean browser URL whose authority and mount are preserved.
+   * @returns the same URL carrying the process token as its sole authentication input.
    */
   authenticatedUrl(baseUrl: string): string {
     const url = new URL(baseUrl)
-    url.pathname = '/'
-    url.search = ''
-    url.hash = ''
     url.searchParams.set(TOKEN_QUERY, this.launchToken)
     return url.href
   }
 
   /**
    * Authenticate an index request. A valid root query token mints the cookie
-   * and redirects to clean `/`; a valid cookie lets the caller serve the
-   * index; every other request receives the same minimal 401 response.
+   * and redirects to the directory-relative clean `./`; a valid cookie lets
+   * the caller serve the index; every other request receives the same minimal
+   * 401 response.
    * @param req - incoming root or configured-index request.
    * @param res - response owned when this method returns false.
    * @returns true only when the caller may serve index.html.
@@ -279,7 +253,7 @@ export class BrowserAuth {
         }, this.secret)
         res.writeHead(303, {
           'cache-control': 'no-store',
-          'location': '/',
+          'location': './',
           'referrer-policy': 'no-referrer',
           'set-cookie': sessionCookie(
             cookieName(authority), value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000),
@@ -291,7 +265,7 @@ export class BrowserAuth {
       if (req.method === 'GET' && url.pathname === '/' && this.isAuthenticated(req)) {
         res.writeHead(303, {
           'cache-control': 'no-store',
-          'location': '/',
+          'location': './',
           'referrer-policy': 'no-referrer',
         })
         res.end()
@@ -311,7 +285,6 @@ export class BrowserAuth {
    * @returns true only for an unexpired cookie signed by this activation's loaded secret.
    */
   isAuthenticated(request: ConnectionTrustRequest): boolean {
-    if (isInternalHostname(requestHostname(request.headers))) return true
     const authority = requestAuthority(request.headers)
     const rawCookie = header(request.headers, 'cookie')
     if (authority === undefined || rawCookie === undefined) return false

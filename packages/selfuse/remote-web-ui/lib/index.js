@@ -1,161 +1,901 @@
 import { createRequire } from "node:module";
 import { dirname, isAbsolute, join } from "node:path";
 import { setInterval, setTimeout as setTimeout$1 } from "node:timers";
-import { Service } from "@deepseek-ai/cordis";
-import z from "schemastery";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir, networkInterfaces } from "node:os";
-import { z as z$1 } from "zod";
+import { Service } from "@deepseek-ai/cordis";
+import { z } from "zod";
 import http, { request } from "node:http";
 import { connect } from "node:net";
 import { Tunnel, bin, install } from "cloudflared";
 import { spawn } from "node:child_process";
-//#region ../../util/values/lib/index.js
-/**
-* Compare JSON-compatible values structurally.
-* @param a - one JSON-compatible value.
-* @param b - the other JSON-compatible value.
-* @returns whether both values contain the same JSON data.
-*/
-function deepEqualJson(a, b) {
-	if (a === b) return true;
-	if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
-	if (Array.isArray(a) || Array.isArray(b)) {
-		if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
-		return a.every((entry, index) => deepEqualJson(entry, b[index]));
-	}
-	const left = a;
-	const right = b;
-	const keys = Object.keys(left);
-	if (keys.length !== Object.keys(right).length) return false;
-	return keys.every((key) => key in right && deepEqualJson(left[key], right[key]));
+//#region ../../../vendor/cosmokit/lib/index.js
+/** Return true when a value is `null` or `undefined`. */
+function isNullable(value) {
+	return value === null || value === void 0;
 }
-//#endregion
-//#region ../../settings/settings/lib/index.js
-/**
-* Structural secret redaction for settings values. `role('secret')` fields are
-* removed from a value before it crosses a wire boundary; a sidecar records
-* each schema-declared secret position and whether it currently holds a value,
-* so a configuration surface can render a write-only input without ever
-* receiving the secret itself.
-* @module @deepseek-ai/dsh-settings/redact
-*/
-/** Whether a value is a plain data object the walker may recurse into. */
-function isRecord(value) {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
+/** Return true for non-array object values. */
+function isPlainObject(data) {
+	return data && typeof data === "object" && !Array.isArray(data);
 }
-function walk(node, value, path, secrets) {
-	if (node === void 0) return value;
-	if (node.meta?.role === "secret") {
-		secrets.push({
-			path,
-			set: value !== void 0
-		});
-		return;
+/** Filter object entries and return a new object. */
+function filterKeys(object, filter) {
+	return Object.fromEntries(Object.entries(object).filter(([key, value]) => filter(key, value)));
+}
+/** Map object values while preserving the original key set. */
+function mapValues(object, transform) {
+	return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, transform(value, key)]));
+}
+/** Pick selected keys from an object, optionally including `undefined` values. */
+function pick(source, keys, forced) {
+	if (!keys) return { ...source };
+	const result = {};
+	for (const key of keys) if (forced || source[key] !== void 0) result[key] = source[key];
+	return result;
+}
+/** Shared config references used by schema validators and plugin runtimes. */
+const write = Symbol.for("cosmokit.volatile.write");
+function snapshot(value, ancestors = /* @__PURE__ */ new Set()) {
+	if (typeof value === "function") throw new TypeError("volatile config cannot contain functions");
+	if (value === null || typeof value !== "object") return value;
+	if (ancestors.has(value)) throw new TypeError("volatile config cannot contain cycles");
+	ancestors.add(value);
+	try {
+		if (Array.isArray(value)) return Object.freeze(value.map((item) => snapshot(item, ancestors)));
+		if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) throw new TypeError("volatile config objects must be plain objects or arrays");
+		return Object.freeze(Object.fromEntries(Object.entries(value).map(([key, item]) => [key, snapshot(item, ancestors)])));
+	} finally {
+		ancestors.delete(value);
 	}
-	switch (node.type) {
-		case "object": {
-			const properties = node.dict ?? {};
-			const source = isRecord(value) ? value : void 0;
-			const rebuilt = {};
-			if (source !== void 0) for (const [key, entry] of Object.entries(source)) {
-				if (key in properties) continue;
-				rebuilt[key] = entry;
-			}
-			for (const [key, child] of Object.entries(properties)) {
-				const stripped = walk(child, source?.[key], [...path, key], secrets);
-				if (stripped !== void 0) rebuilt[key] = stripped;
-			}
-			return source === void 0 && Object.keys(rebuilt).length === 0 ? value : rebuilt;
+}
+/**
+* Create a detached reference containing an immutable copy of the supplied data.
+* @param value - validated config data; class instances and functions are unsupported.
+* @returns a reference whose value is updated only by its owning runtime.
+*/
+function createVolatile(value) {
+	let current = snapshot(value);
+	return Object.freeze({
+		get: () => current,
+		[write]: (value) => {
+			current = value;
 		}
-		case "dict": {
-			if (!isRecord(value)) return value;
-			const rebuilt = {};
-			for (const [key, entry] of Object.entries(value)) {
-				const stripped = walk(node.inner, entry, [...path, key], secrets);
-				if (stripped !== void 0) rebuilt[key] = stripped;
-			}
-			return rebuilt;
-		}
-		case "array":
-			if (!Array.isArray(value)) return value;
-			return value.map((entry, index) => walk(node.inner, entry, [...path, String(index)], secrets));
-		default: return value;
-	}
-}
-/** Whether a value is a plain data object (not an array, null, or class instance). */
-function isPlainObject(value) {
-	if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-	const proto = Object.getPrototypeOf(value);
-	return proto === Object.prototype || proto === null;
-}
-/** Apply one path op to a detached section, returning the next section. */
-function applyPathOp(section, op) {
-	const [head, ...rest] = op.path;
-	if (head === void 0) {
-		if (op.op === "unset") return {};
-		if (!isPlainObject(op.value)) throw new TypeError("settings mutate: setting the section root requires a plain object");
-		return { ...op.value };
-	}
-	if (rest.length === 0) {
-		if (op.op === "set") return {
-			...section,
-			[head]: op.value
-		};
-		const { [head]: _removed, ...kept } = section;
-		return kept;
-	}
-	const child = section[head];
-	if (!isPlainObject(child)) {
-		if (op.op === "unset") return section;
-		return {
-			...section,
-			[head]: applyPathOp({}, {
-				...op,
-				path: rest
-			})
-		};
-	}
-	return {
-		...section,
-		[head]: applyPathOp(child, {
-			...op,
-			path: rest
-		})
-	};
-}
-/**
-* Layer `over` onto `under`: plain objects merge recursively, every other
-* value (arrays included) replaces the lower layer wholesale. `over` never
-* carries `undefined` entries — sections come from parsed documents and write
-* snapshots pass {@link cloneJsonShaped}, which strips them so a sparse patch
-* cannot erase lower keys.
-*/
-function mergeLayers(under, over) {
-	if (over === void 0) return under;
-	if (!isPlainObject(under) || !isPlainObject(over)) return over;
-	const merged = { ...under };
-	for (const [key, value] of Object.entries(over)) merged[key] = key in merged ? mergeLayers(merged[key], value) : value;
-	return merged;
-}
-Service.init;
-/**
-* Backwards compatibility helper for plugins targeting earlier DSH releases.
-* Resolves the given namespace as a valid SettingsNamespace.
-*/
-function settingsNamespace(ns) {
-	return ns;
-}
-/**
-* Backwards compatibility helper for plugins calling `installSettingsSection(ctx, ...)`.
-* Injects the `settings` service and delegates to `settingsCtx.settings.installSection(...)`.
-*/
-function installSettingsSection(owner, ns, schema, entry, hooks) {
-	owner.inject(["settings"], (settingsCtx) => {
-		settingsCtx.settings.installSection(owner, ns, schema, entry, hooks);
 	});
 }
+/**
+* Identify references across ESM/CJS copies of the shared library.
+* @param value - a parsed config value.
+* @returns whether the value implements the shared reference protocol.
+*/
+function isVolatile(value) {
+	return typeof value === "object" && value !== null && write in value;
+}
+/** Test values using `instanceof` with a `toStringTag` fallback. */
+function is(type, value) {
+	if (arguments.length === 1) return (value) => is(type, value);
+	return type in globalThis && value instanceof globalThis[type] || Object.prototype.toString.call(value).slice(8, -1) === type;
+}
+function isArrayBufferLike(value) {
+	return is("ArrayBuffer", value) || is("SharedArrayBuffer", value);
+}
+function isArrayBufferSource(value) {
+	return isArrayBufferLike(value) || ArrayBuffer.isView(value);
+}
+/** Binary source detection and base64/hex conversion helpers. */
+var Binary;
+(function(Binary) {
+	Binary.is = isArrayBufferLike;
+	Binary.isSource = isArrayBufferSource;
+	function fromSource(source) {
+		if (ArrayBuffer.isView(source)) return source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
+		else return source;
+	}
+	Binary.fromSource = fromSource;
+	function toBase64(source) {
+		source = fromSource(source);
+		if (typeof Buffer !== "undefined") return Buffer.from(source).toString("base64");
+		let binary = "";
+		const bytes = new Uint8Array(source);
+		for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+		return btoa(binary);
+	}
+	Binary.toBase64 = toBase64;
+	function fromBase64(source) {
+		if (typeof Buffer !== "undefined") return fromSource(Buffer.from(source, "base64"));
+		return Uint8Array.from(atob(source), (c) => c.charCodeAt(0));
+	}
+	Binary.fromBase64 = fromBase64;
+	function toHex(source) {
+		source = fromSource(source);
+		if (typeof Buffer !== "undefined") return Buffer.from(source).toString("hex");
+		return Array.from(new Uint8Array(source), (byte) => byte.toString(16).padStart(2, "0")).join("");
+	}
+	Binary.toHex = toHex;
+	function fromHex(source) {
+		if (typeof Buffer !== "undefined") return fromSource(Buffer.from(source, "hex"));
+		const hex = source.length % 2 === 0 ? source : source.slice(0, source.length - 1);
+		const buffer = [];
+		for (let i = 0; i < hex.length; i += 2) buffer.push(parseInt(`${hex[i]}${hex[i + 1]}`, 16));
+		return Uint8Array.from(buffer).buffer;
+	}
+	Binary.fromHex = fromHex;
+})(Binary || (Binary = {}));
+Binary.fromBase64;
+Binary.toBase64;
+Binary.fromHex;
+Binary.toHex;
+/** Deep-clone common JavaScript values while preserving prototypes and cycles. */
+function clone(source, refs = /* @__PURE__ */ new Map()) {
+	if (!source || typeof source !== "object") return source;
+	if (is("Date", source)) return new Date(source.valueOf());
+	if (is("RegExp", source)) return new RegExp(source.source, source.flags);
+	if (isArrayBufferLike(source)) return source.slice(0);
+	if (ArrayBuffer.isView(source)) return source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
+	const cached = refs.get(source);
+	if (cached) return cached;
+	if (Array.isArray(source)) {
+		const result = [];
+		refs.set(source, result);
+		source.forEach((value, index) => {
+			result[index] = Reflect.apply(clone, null, [value, refs]);
+		});
+		return result;
+	}
+	const result = Object.create(Object.getPrototypeOf(source));
+	refs.set(source, result);
+	for (const key of Reflect.ownKeys(source)) {
+		const descriptor = { ...Reflect.getOwnPropertyDescriptor(source, key) };
+		if ("value" in descriptor) descriptor.value = Reflect.apply(clone, null, [descriptor.value, refs]);
+		Reflect.defineProperty(result, key, descriptor);
+	}
+	return result;
+}
+/**
+* Compare values recursively, treating two volatile references as equal regardless of value.
+* Strict comparison distinguishes null/undefined, treats opaque objects by identity,
+* compares URLs by normalized href, treats array holes as undefined, and considers distinct cyclic structures unequal.
+* @param a - first value.
+* @param b - second value.
+* @param strict - whether to require strict data equality outside volatile references.
+* @returns whether the values compare equal.
+*/
+function deepEqual(a, b, strict) {
+	const ancestors = /* @__PURE__ */ new Set();
+	function compare(a, b) {
+		if (a === b) return true;
+		if (isVolatile(a) || isVolatile(b)) return isVolatile(a) && isVolatile(b);
+		if (!strict && isNullable(a) && isNullable(b)) return true;
+		if (typeof a !== typeof b || typeof a !== "object" || !a || !b) return false;
+		if (ancestors.has(a)) return false;
+		function check(test, then) {
+			return test(a) ? test(b) ? then(a, b) : false : test(b) ? false : void 0;
+		}
+		ancestors.add(a);
+		try {
+			return check(Array.isArray, (a, b) => {
+				if (a.length !== b.length) return false;
+				for (let index = 0; index < a.length; index++) if (!compare(a[index], b[index])) return false;
+				return true;
+			}) ?? check(is("Date"), (a, b) => a.valueOf() === b.valueOf()) ?? check(is("URL"), (a, b) => a.href === b.href) ?? check(is("RegExp"), (a, b) => a.source === b.source && a.flags === b.flags) ?? check(isArrayBufferLike, (a, b) => {
+				if (a.byteLength !== b.byteLength) return false;
+				const viewA = new Uint8Array(a);
+				const viewB = new Uint8Array(b);
+				for (let i = 0; i < viewA.length; i++) if (viewA[i] !== viewB[i]) return false;
+				return true;
+			}) ?? ((!strict || [a, b].every((value) => Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null)) && Object.keys({
+				...a,
+				...b
+			}).every((key) => compare(a[key], b[key])));
+		} finally {
+			ancestors.delete(a);
+		}
+	}
+	return compare(a, b);
+}
+/** Time constants plus parsing and formatting helpers. */
+var Time;
+(function(Time) {
+	Time.millisecond = 1;
+	Time.second = 1e3;
+	Time.minute = Time.second * 60;
+	Time.hour = Time.minute * 60;
+	Time.day = Time.hour * 24;
+	Time.week = Time.day * 7;
+	let timezoneOffset = (/* @__PURE__ */ new Date()).getTimezoneOffset();
+	function setTimezoneOffset(offset) {
+		timezoneOffset = offset;
+	}
+	Time.setTimezoneOffset = setTimezoneOffset;
+	function getTimezoneOffset() {
+		return timezoneOffset;
+	}
+	Time.getTimezoneOffset = getTimezoneOffset;
+	function getDateNumber(date = /* @__PURE__ */ new Date(), offset) {
+		if (typeof date === "number") date = new Date(date);
+		if (offset === void 0) offset = timezoneOffset;
+		return Math.floor((date.valueOf() / Time.minute - offset) / 1440);
+	}
+	Time.getDateNumber = getDateNumber;
+	function fromDateNumber(value, offset) {
+		const date = new Date(value * Time.day);
+		if (offset === void 0) offset = timezoneOffset;
+		return new Date(+date + offset * Time.minute);
+	}
+	Time.fromDateNumber = fromDateNumber;
+	const numeric = /\d+(?:\.\d+)?/.source;
+	const timeRegExp = new RegExp(`^${[
+		"w(?:eek(?:s)?)?",
+		"d(?:ay(?:s)?)?",
+		"h(?:our(?:s)?)?",
+		"m(?:in(?:ute)?(?:s)?)?",
+		"s(?:ec(?:ond)?(?:s)?)?"
+	].map((unit) => `(${numeric}${unit})?`).join("")}$`);
+	function parseTime(source) {
+		const capture = timeRegExp.exec(source);
+		if (!capture) return 0;
+		return (parseFloat(capture[1]) * Time.week || 0) + (parseFloat(capture[2]) * Time.day || 0) + (parseFloat(capture[3]) * Time.hour || 0) + (parseFloat(capture[4]) * Time.minute || 0) + (parseFloat(capture[5]) * Time.second || 0);
+	}
+	Time.parseTime = parseTime;
+	function parseDate(date) {
+		const parsed = parseTime(date);
+		if (parsed) date = Date.now() + parsed;
+		else if (/^\d{1,2}(:\d{1,2}){1,2}$/.test(date)) date = `${(/* @__PURE__ */ new Date()).toLocaleDateString()}-${date}`;
+		else if (/^\d{1,2}-\d{1,2}-\d{1,2}(:\d{1,2}){1,2}$/.test(date)) date = `${(/* @__PURE__ */ new Date()).getFullYear()}-${date}`;
+		return date ? new Date(date) : /* @__PURE__ */ new Date();
+	}
+	Time.parseDate = parseDate;
+	function format(ms) {
+		const abs = Math.abs(ms);
+		if (abs >= Time.day - Time.hour / 2) return Math.round(ms / Time.day) + "d";
+		else if (abs >= Time.hour - Time.minute / 2) return Math.round(ms / Time.hour) + "h";
+		else if (abs >= Time.minute - Time.second / 2) return Math.round(ms / Time.minute) + "m";
+		else if (abs >= Time.second) return Math.round(ms / Time.second) + "s";
+		return ms + "ms";
+	}
+	Time.format = format;
+	function toDigits(source, length = 2) {
+		return source.toString().padStart(length, "0");
+	}
+	Time.toDigits = toDigits;
+	function template(template, time = /* @__PURE__ */ new Date()) {
+		return template.replace("yyyy", time.getFullYear().toString()).replace("yy", time.getFullYear().toString().slice(2)).replace("MM", toDigits(time.getMonth() + 1)).replace("dd", toDigits(time.getDate())).replace("hh", toDigits(time.getHours())).replace("mm", toDigits(time.getMinutes())).replace("ss", toDigits(time.getSeconds())).replace("SSS", toDigits(time.getMilliseconds(), 3));
+	}
+	Time.template = template;
+})(Time || (Time = {}));
+//#endregion
+//#region ../../../vendor/schemastery/lib/index.mjs
+const kSchema = Symbol.for("schemastery");
+const kValidationError = Symbol.for("ValidationError");
+globalThis.__schemastery_index__ ??= 0;
+globalThis.__schemastery_refs__ = void 0;
+var ValidationError = class extends TypeError {
+	options;
+	name = "ValidationError";
+	constructor(message, options) {
+		let prefix = "$";
+		for (const segment of options.path || []) if (typeof segment === "string") prefix += "." + segment;
+		else if (typeof segment === "number") prefix += "[" + segment + "]";
+		else if (typeof segment === "symbol") prefix += `[Symbol(${segment.toString()})]`;
+		if (prefix.startsWith(".")) prefix = prefix.slice(1);
+		super((prefix === "$" ? "" : `${prefix} `) + message);
+		this.options = options;
+	}
+	static is(error) {
+		return !!error?.[kValidationError];
+	}
+};
+Object.defineProperty(ValidationError.prototype, kValidationError, { value: true });
+const Schema = function(options) {
+	const schema = function(data, options = {}) {
+		return Schema.resolve(data, schema, options)[0];
+	};
+	if (options.refs) {
+		const refs = mapValues(options.refs, (options) => new Schema(options));
+		const getRef = (uid) => refs[uid];
+		for (const key in refs) {
+			const options = refs[key];
+			options.sKey = getRef(options.sKey);
+			options.inner = getRef(options.inner);
+			options.list = options.list && options.list.map(getRef);
+			options.dict = options.dict && mapValues(options.dict, getRef);
+		}
+		return refs[options.uid];
+	}
+	Object.assign(schema, options);
+	if (typeof schema.callback === "string") try {
+		schema.callback = new Function("return " + schema.callback)();
+	} catch {}
+	Object.defineProperty(schema, "uid", { value: globalThis.__schemastery_index__++ });
+	Object.setPrototypeOf(schema, Schema.prototype);
+	schema.meta ||= {};
+	schema.toString = schema.toString.bind(schema);
+	return schema;
+};
+Schema.prototype = Object.create(Function.prototype);
+Schema.prototype[kSchema] = true;
+Object.defineProperty(Schema.prototype, "~standard", { get() {
+	return {
+		version: 1,
+		vendor: "schemastery",
+		validate: (value) => {
+			try {
+				return { value: Schema.resolve(value, this, {})[0] };
+			} catch (error) {
+				if (ValidationError.is(error)) return { issues: [{
+					message: error.message,
+					path: error.options.path
+				}] };
+				throw error;
+			}
+		}
+	};
+} });
+Schema.ValidationError = ValidationError;
+Schema.prototype.toJSON = function toJSON() {
+	if (globalThis.__schemastery_refs__) {
+		globalThis.__schemastery_refs__[this.uid] ??= JSON.parse(JSON.stringify({ ...this }));
+		return this.uid;
+	}
+	globalThis.__schemastery_refs__ = { [this.uid]: { ...this } };
+	globalThis.__schemastery_refs__[this.uid] = JSON.parse(JSON.stringify({ ...this }));
+	const result = {
+		uid: this.uid,
+		refs: globalThis.__schemastery_refs__
+	};
+	globalThis.__schemastery_refs__ = void 0;
+	return result;
+};
+Schema.prototype.set = function set(key, value) {
+	this.dict[key] = value;
+	return this;
+};
+Schema.prototype.push = function push(value) {
+	this.list.push(value);
+	return this;
+};
+function mergeDesc(original, messages) {
+	const result = typeof original === "string" ? { "": original } : { ...original };
+	for (const locale in messages) {
+		const value = messages[locale];
+		if (value?.$description || value?.$desc) result[locale] = value.$description || value.$desc;
+		else if (typeof value === "string") result[locale] = value;
+	}
+	return result;
+}
+function getInner(value) {
+	return value?.$value ?? value?.$inner;
+}
+function extractKeys(data) {
+	return filterKeys(data ?? {}, (key) => !key.startsWith("$"));
+}
+Schema.prototype.i18n = function i18n(messages) {
+	const schema = Schema(this);
+	const desc = mergeDesc(schema.meta.description, messages);
+	if (Object.keys(desc).length) schema.meta.description = desc;
+	if (schema.dict) schema.dict = mapValues(schema.dict, (inner, key) => {
+		return inner.i18n(mapValues(messages, (data) => getInner(data)?.[key] ?? data?.[key]));
+	});
+	if (schema.list) schema.list = schema.list.map((inner, index) => {
+		return inner.i18n(mapValues(messages, (data = {}) => {
+			if (Array.isArray(getInner(data))) return getInner(data)[index];
+			if (Array.isArray(data)) return data[index];
+			return extractKeys(data);
+		}));
+	});
+	if (schema.inner) schema.inner = schema.inner.i18n(mapValues(messages, (data) => {
+		if (getInner(data)) return getInner(data);
+		return extractKeys(data);
+	}));
+	if (schema.sKey) schema.sKey = schema.sKey.i18n(mapValues(messages, (data) => data?.$key));
+	return schema;
+};
+Schema.prototype.extra = function extra(key, value) {
+	const schema = Schema(this);
+	schema.meta = {
+		...schema.meta,
+		[key]: value
+	};
+	return schema;
+};
+for (const key of [
+	"required",
+	"disabled",
+	"collapse",
+	"hidden",
+	"loose"
+]) Object.assign(Schema.prototype, { [key](value = true) {
+	const schema = Schema(this);
+	schema.meta = {
+		...schema.meta,
+		[key]: value
+	};
+	return schema;
+} });
+Schema.prototype.deprecated = function deprecated() {
+	const schema = Schema(this);
+	schema.meta.badges ||= [];
+	schema.meta.badges.push({
+		text: "deprecated",
+		type: "danger"
+	});
+	return schema;
+};
+Schema.prototype.experimental = function experimental() {
+	const schema = Schema(this);
+	schema.meta.badges ||= [];
+	schema.meta.badges.push({
+		text: "experimental",
+		type: "warning"
+	});
+	return schema;
+};
+Schema.prototype.pattern = function pattern(regexp) {
+	const schema = Schema(this);
+	const pattern = pick(regexp, ["source", "flags"]);
+	schema.meta = {
+		...schema.meta,
+		pattern
+	};
+	return schema;
+};
+Schema.prototype.simplify = function simplify(value) {
+	if (isVolatile(value)) value = value.get();
+	if (deepEqual(value, this.meta.default, this.type === "dict")) return null;
+	if (isNullable(value)) return value;
+	if (this.type === "object" || this.type === "dict") {
+		const result = {};
+		for (const key in value) {
+			const item = (this.type === "object" ? this.dict[key] : this.inner)?.simplify(value[key]);
+			if (this.type === "dict" || !isNullable(item)) result[key] = item;
+		}
+		if (deepEqual(result, this.meta.default, this.type === "dict")) return null;
+		return result;
+	} else if (this.type === "array" || this.type === "tuple") {
+		const result = [];
+		value.forEach((value, index) => {
+			const schema = this.type === "array" ? this.inner : this.list[index];
+			const item = schema ? schema.simplify(value) : value;
+			result.push(item);
+		});
+		return result;
+	} else if (this.type === "intersect") {
+		const result = {};
+		for (const item of this.list) Object.assign(result, item.simplify(value));
+		return result;
+	} else if (this.type === "union") for (const schema of this.list) try {
+		Schema.resolve(value, schema, {});
+		return schema.simplify(value);
+	} catch {}
+	return value;
+};
+Schema.prototype.toString = function toString(inline) {
+	return formatters[this.type]?.(this, inline) ?? `Schema<${this.type}>`;
+};
+Schema.prototype.role = function role(role, extra) {
+	const schema = Schema(this);
+	schema.meta = {
+		...schema.meta,
+		role,
+		extra
+	};
+	return schema;
+};
+for (const key of [
+	"default",
+	"link",
+	"comment",
+	"description",
+	"max",
+	"min",
+	"step"
+]) Object.assign(Schema.prototype, { [key](value) {
+	const schema = Schema(this);
+	schema.meta = {
+		...schema.meta,
+		[key]: value
+	};
+	return schema;
+} });
+Schema.prototype.volatile = function volatile() {
+	if (this.meta.volatile) throw new TypeError("volatile schema is already wrapped");
+	return this.extra("volatile", true);
+};
+const resolvers = {};
+const checkedVolatile = Symbol("checked-volatile-schema");
+function validateVolatileSchema(schema, path = [], blocked = false, seen = /* @__PURE__ */ new Map()) {
+	const states = seen.get(schema) ?? /* @__PURE__ */ new Set();
+	if (states.has(blocked)) return;
+	states.add(blocked);
+	seen.set(schema, states);
+	if (schema.meta?.volatile && blocked) throw new ValidationError("volatile fields require a fixed object path without an enclosing volatile field", { path });
+	const nested = blocked || !!schema.meta?.volatile;
+	if (schema.dict) for (const [key, child] of Object.entries(schema.dict)) validateVolatileSchema(child, [...path, key], nested, seen);
+	if (schema.sKey) validateVolatileSchema(schema.sKey, [...path, "<key>"], true, seen);
+	if (schema.inner && (schema.type !== "lazy" || schema.inner[kSchema])) validateVolatileSchema(schema.inner, [...path, "*"], true, seen);
+	if (schema.list) for (let index = 0; index < schema.list.length; index++) validateVolatileSchema(schema.list[index], [...path, String(index)], true, seen);
+}
+Schema.extend = function extend(type, resolve) {
+	resolvers[type] = resolve;
+};
+Schema.resolve = function resolve(data, schema, options = {}, strict = false) {
+	if (!schema) return [data];
+	if (!options[checkedVolatile]) {
+		validateVolatileSchema(schema, options.path);
+		options = {
+			...options,
+			[checkedVolatile]: true
+		};
+	}
+	if (schema.meta?.volatile) {
+		const inner = Schema(schema);
+		inner.meta = {
+			...schema.meta,
+			volatile: false
+		};
+		const [value, adapted] = Schema.resolve(data, inner, options, strict);
+		try {
+			return [createVolatile(value), adapted];
+		} catch (error) {
+			throw new ValidationError(error instanceof Error ? error.message : String(error), options);
+		}
+	}
+	if (options.ignore?.(data, schema)) return [data];
+	if (isNullable(data) && schema.type !== "lazy") {
+		if (schema.meta.required) throw new ValidationError(`missing required value`, options);
+		let current = schema;
+		let fallback = schema.meta.default;
+		while (current?.type === "intersect" && isNullable(fallback)) {
+			current = current.list[0];
+			fallback = current?.meta.default;
+		}
+		if (isNullable(fallback)) return [data];
+		data = clone(fallback);
+	}
+	const callback = resolvers[schema.type];
+	if (!callback) throw new ValidationError(`unsupported type "${schema.type}"`, options);
+	try {
+		return callback(data, schema, options, strict);
+	} catch (error) {
+		if (!schema.meta.loose) throw error;
+		return [schema.meta.default];
+	}
+};
+Schema.from = function from(source) {
+	if (isNullable(source)) return Schema.any();
+	else if ([
+		"string",
+		"number",
+		"boolean"
+	].includes(typeof source)) return Schema.const(source).required();
+	else if (source[kSchema]) return source;
+	else if (typeof source === "function") switch (source) {
+		case String: return Schema.string().required();
+		case Number: return Schema.number().required();
+		case Boolean: return Schema.boolean().required();
+		case Function: return Schema.function().required();
+		default: return Schema.is(source).required();
+	}
+	else throw new TypeError(`cannot infer schema from ${source}`);
+};
+Schema.lazy = function lazy(builder) {
+	const toJSON = () => {
+		if (!schema.inner[kSchema]) {
+			schema.inner = schema.builder();
+			schema.inner.meta = {
+				...schema.meta,
+				...schema.inner.meta
+			};
+		}
+		return schema.inner.toJSON();
+	};
+	const schema = new Schema({
+		type: "lazy",
+		builder,
+		inner: { toJSON }
+	});
+	return schema;
+};
+Schema.natural = function natural() {
+	return Schema.number().step(1).min(0);
+};
+Schema.percent = function percent() {
+	return Schema.number().step(.01).min(0).max(1).role("slider");
+};
+Schema.date = function date() {
+	return Schema.union([Schema.is(Date), Schema.transform(Schema.string().role("datetime"), (value, options) => {
+		const date = new Date(value);
+		if (isNaN(+date)) throw new ValidationError(`invalid date "${value}"`, options);
+		return date;
+	}, true)]);
+};
+Schema.regExp = function regExp(flag = "") {
+	return Schema.union([Schema.is(RegExp), Schema.transform(Schema.string().role("regexp", { flag }), (value, options) => {
+		try {
+			return new RegExp(value, flag);
+		} catch (e) {
+			throw new ValidationError(e.message, options);
+		}
+	}, true)]);
+};
+Schema.arrayBuffer = function arrayBuffer(encoding) {
+	return Schema.union([
+		Schema.is(ArrayBuffer),
+		Schema.is(SharedArrayBuffer),
+		Schema.transform(Schema.any(), (value, options) => {
+			if (Binary.isSource(value)) return Binary.fromSource(value);
+			throw new ValidationError(`expected ArrayBufferSource but got ${value}`, options);
+		}, true),
+		...encoding ? [Schema.transform(Schema.string(), (value, options) => {
+			try {
+				return encoding === "base64" ? Binary.fromBase64(value) : Binary.fromHex(value);
+			} catch (e) {
+				throw new ValidationError(e.message, options);
+			}
+		}, true)] : []
+	]);
+};
+Schema.extend("lazy", (data, schema, options, strict) => {
+	if (!schema.inner[kSchema]) {
+		schema.inner = schema.builder();
+		schema.inner.meta = {
+			...schema.meta,
+			...schema.inner.meta
+		};
+		validateVolatileSchema(schema.inner, options.path, true);
+	}
+	return Schema.resolve(data, schema.inner, options, strict);
+});
+Schema.extend("any", (data) => {
+	return [data];
+});
+Schema.extend("never", (data, _, options) => {
+	throw new ValidationError(`expected nullable but got ${data}`, options);
+});
+Schema.extend("const", (data, { value }, options) => {
+	if (deepEqual(data, value)) return [value];
+	throw new ValidationError(`expected ${value} but got ${data}`, options);
+});
+function checkWithinRange(data, meta, description, options, skipMin = false) {
+	const { max = Infinity, min = -Infinity } = meta;
+	if (data > max) throw new ValidationError(`expected ${description} <= ${max} but got ${data}`, options);
+	if (data < min && !skipMin) throw new ValidationError(`expected ${description} >= ${min} but got ${data}`, options);
+}
+Schema.extend("string", (data, { meta }, options) => {
+	if (typeof data !== "string") throw new ValidationError(`expected string but got ${data}`, options);
+	if (meta.pattern) {
+		const regexp = new RegExp(meta.pattern.source, meta.pattern.flags);
+		if (!regexp.test(data)) throw new ValidationError(`expect string to match regexp ${regexp}`, options);
+	}
+	checkWithinRange(data.length, meta, "string length", options);
+	return [data];
+});
+function decimalShift(data, digits) {
+	const str = data.toString();
+	if (str.includes("e")) return data * Math.pow(10, digits);
+	const index = str.indexOf(".");
+	if (index === -1) return data * Math.pow(10, digits);
+	const frac = str.slice(index + 1);
+	const integer = str.slice(0, index);
+	if (frac.length <= digits) return +(integer + frac.padEnd(digits, "0"));
+	return +(integer + frac.slice(0, digits) + "." + frac.slice(digits));
+}
+function isMultipleOf(data, min, step) {
+	step = Math.abs(step);
+	if (!/^\d+\.\d+$/.test(step.toString())) return (data - min) % step === 0;
+	const index = step.toString().indexOf(".");
+	const digits = step.toString().slice(index + 1).length;
+	return Math.abs(decimalShift(data, digits) - decimalShift(min, digits)) % decimalShift(step, digits) === 0;
+}
+Schema.extend("number", (data, { meta }, options) => {
+	if (typeof data !== "number") throw new ValidationError(`expected number but got ${data}`, options);
+	checkWithinRange(data, meta, "number", options);
+	const { step } = meta;
+	if (step && !isMultipleOf(data, meta.min ?? 0, step)) throw new ValidationError(`expected number multiple of ${step} but got ${data}`, options);
+	return [data];
+});
+Schema.extend("boolean", (data, _, options) => {
+	if (typeof data === "boolean") return [data];
+	throw new ValidationError(`expected boolean but got ${data}`, options);
+});
+Schema.extend("bitset", (data, { bits, meta }, options) => {
+	let value = 0, keys = [];
+	if (typeof data === "number") {
+		value = data;
+		for (const key in bits) if (data & bits[key]) keys.push(key);
+	} else if (Array.isArray(data)) {
+		keys = data;
+		for (const key of keys) {
+			if (typeof key !== "string") throw new ValidationError(`expected string but got ${key}`, options);
+			if (key in bits) value |= bits[key];
+		}
+	} else throw new ValidationError(`expected number or array but got ${data}`, options);
+	if (value === meta.default) return [value];
+	return [value, keys];
+});
+Schema.extend("function", (data, _, options) => {
+	if (typeof data === "function") return [data];
+	throw new ValidationError(`expected function but got ${data}`, options);
+});
+Schema.extend("is", (data, { constructor }, options) => {
+	if (typeof constructor === "function") {
+		if (data instanceof constructor) return [data];
+		throw new ValidationError(`expected ${constructor.name} but got ${data}`, options);
+	} else {
+		if (isNullable(data)) throw new ValidationError(`expected ${constructor} but got ${data}`, options);
+		let prototype = Object.getPrototypeOf(data);
+		while (prototype) {
+			if (prototype.constructor?.name === constructor) return [data];
+			prototype = Object.getPrototypeOf(prototype);
+		}
+		throw new ValidationError(`expected ${constructor} but got ${data}`, options);
+	}
+});
+function property(data, key, schema, options) {
+	try {
+		const [value, adapted] = Schema.resolve(data[key], schema, {
+			...options,
+			path: [...options.path || [], key]
+		});
+		if (adapted !== void 0) data[key] = adapted;
+		return value;
+	} catch (e) {
+		if (!options?.autofix) throw e;
+		delete data[key];
+		return schema.meta.volatile ? createVolatile(schema.meta.default) : schema.meta.default;
+	}
+}
+Schema.extend("array", (data, { inner, meta }, options) => {
+	if (!Array.isArray(data)) throw new ValidationError(`expected array but got ${data}`, options);
+	checkWithinRange(data.length, meta, "array length", options, !isNullable(inner.meta.default));
+	return [data.map((_, index) => property(data, index, inner, options))];
+});
+Schema.extend("dict", (data, { inner, sKey }, options, strict) => {
+	if (!isPlainObject(data)) throw new ValidationError(`expected object but got ${data}`, options);
+	const result = {};
+	for (const key in data) {
+		let rKey;
+		try {
+			rKey = Schema.resolve(key, sKey, options)[0];
+		} catch (error) {
+			if (strict) continue;
+			throw error;
+		}
+		result[rKey] = property(data, key, inner, options);
+		data[rKey] = data[key];
+		if (key !== rKey) delete data[key];
+	}
+	return [result];
+});
+Schema.extend("tuple", (data, { list }, options, strict) => {
+	if (!Array.isArray(data)) throw new ValidationError(`expected array but got ${data}`, options);
+	const result = list.map((inner, index) => property(data, index, inner, options));
+	if (strict) return [result];
+	result.push(...data.slice(list.length));
+	return [result];
+});
+function merge(result, data) {
+	for (const key in data) {
+		if (key in result) continue;
+		result[key] = data[key];
+	}
+}
+Schema.extend("object", (data, { dict }, options, strict) => {
+	if (!isPlainObject(data)) throw new ValidationError(`expected object but got ${data}`, options);
+	const result = {};
+	for (const key in dict) {
+		const value = property(data, key, dict[key], options);
+		if (!isNullable(value) || key in data) result[key] = value;
+	}
+	if (!strict) merge(result, data);
+	return [result];
+});
+Schema.extend("union", (data, { list, toString }, options, strict) => {
+	const messages = [];
+	for (const inner of list) try {
+		return Schema.resolve(data, inner, options, strict);
+	} catch (error) {
+		messages.push(error);
+	}
+	throw new ValidationError(`expected ${toString()} but got ${JSON.stringify(data)}`, options);
+});
+Schema.extend("intersect", (data, { list, toString }, options, strict) => {
+	if (!list.length) return [data];
+	let result;
+	for (const inner of list) {
+		const value = Schema.resolve(data, inner, options, true)[0];
+		if (isNullable(value)) continue;
+		if (isNullable(result)) result = value;
+		else if (typeof result !== typeof value) throw new ValidationError(`expected ${toString()} but got ${JSON.stringify(data)}`, options);
+		else if (typeof value === "object") merge(result ??= {}, value);
+		else if (result !== value) throw new ValidationError(`expected ${toString()} but got ${JSON.stringify(data)}`, options);
+	}
+	if (!strict && isPlainObject(data)) merge(result, data);
+	return [result];
+});
+Schema.extend("transform", (data, { inner, callback, preserve }, options) => {
+	const [result, adapted = data] = Schema.resolve(data, inner, options, true);
+	if (preserve) return [callback(result)];
+	else return [callback(result), callback(adapted)];
+});
+const formatters = {};
+function defineMethod(name, keys, format) {
+	formatters[name] = format;
+	Object.assign(Schema, { [name](...args) {
+		const schema = new Schema({ type: name });
+		keys.forEach((key, index) => {
+			switch (key) {
+				case "sKey":
+					schema.sKey = args[index] ?? Schema.string();
+					break;
+				case "inner":
+					schema.inner = Schema.from(args[index]);
+					break;
+				case "list":
+					schema.list = args[index].map(Schema.from);
+					break;
+				case "dict":
+					schema.dict = mapValues(args[index], Schema.from);
+					break;
+				case "bits":
+					schema.bits = {};
+					for (const key in args[index]) {
+						if (typeof args[index][key] !== "number") continue;
+						schema.bits[key] = args[index][key];
+					}
+					break;
+				case "callback": {
+					const callback = schema.callback = args[index];
+					callback["toJSON"] ||= () => callback.toString();
+					break;
+				}
+				case "constructor": {
+					const constructor = schema.constructor = args[index];
+					if (typeof constructor === "function") constructor["toJSON"] ||= () => constructor["name"];
+					break;
+				}
+				default: schema[key] = args[index];
+			}
+		});
+		if (name === "object" || name === "dict") schema.meta.default = {};
+		else if (name === "array" || name === "tuple") schema.meta.default = [];
+		else if (name === "bitset") schema.meta.default = 0;
+		return schema;
+	} });
+}
+defineMethod("is", ["constructor"], ({ constructor }) => {
+	if (typeof constructor === "function") return constructor.name;
+	else return constructor;
+});
+defineMethod("any", [], () => "any");
+defineMethod("never", [], () => "never");
+defineMethod("const", ["value"], ({ value }) => typeof value === "string" ? JSON.stringify(value) : value);
+defineMethod("string", [], () => "string");
+defineMethod("number", [], () => "number");
+defineMethod("boolean", [], () => "boolean");
+defineMethod("bitset", ["bits"], () => "bitset");
+defineMethod("function", [], () => "function");
+defineMethod("array", ["inner"], ({ inner }) => `${inner.toString(true)}[]`);
+defineMethod("dict", ["inner", "sKey"], ({ inner, sKey }) => `{ [key: ${sKey.toString()}]: ${inner.toString()} }`);
+defineMethod("tuple", ["list"], ({ list }) => `[${list.map((inner) => inner.toString()).join(", ")}]`);
+defineMethod("object", ["dict"], ({ dict }) => {
+	if (Object.keys(dict).length === 0) return "{}";
+	return `{ ${Object.entries(dict).map(([key, inner]) => {
+		return `${key}${inner.meta.required ? "" : "?"}: ${inner.toString()}`;
+	}).join(", ")} }`;
+});
+defineMethod("union", ["list"], ({ list }, inline) => {
+	const result = list.map(({ toString: format }) => format()).join(" | ");
+	return inline ? `(${result})` : result;
+});
+defineMethod("intersect", ["list"], ({ list }) => {
+	return `${list.map((inner) => inner.toString(true)).join(" & ")}`;
+});
+defineMethod("transform", [
+	"inner",
+	"callback",
+	"preserve"
+], ({ inner }, isInner) => inner.toString(isInner));
 //#endregion
 //#region lib/types/pairing.js
 /**
@@ -863,6 +1603,7 @@ function publicHostOf(url) {
 const COOKIE_MAX_AGE_SEC = 365 * 24 * 60 * 60;
 /** Route paths (exact matches under /api). */
 const PAIR_PATHS = {
+	landing: "/pair",
 	issue: "/api/pair/issue",
 	accept: "/api/pair/accept",
 	stop: "/api/pair/stop",
@@ -879,13 +1620,13 @@ const PAIR_PATHS = {
 * issue/accept enforce their optional/required fields. Unknown (extra) keys
 * are tolerated exactly as the previous manual reads ignored them.
 */
-const issuePayloadSchema = z$1.object({
-	workspaceId: z$1.string().min(1).optional(),
-	address: z$1.string().min(1).optional()
+const issuePayloadSchema = z.object({
+	workspaceId: z.string().min(1).optional(),
+	address: z.string().min(1).optional()
 });
-const acceptPayloadSchema = z$1.object({ token: z$1.string().default("") });
-const revokePayloadSchema = z$1.object({ deviceId: z$1.string().min(1) });
-const pairActionPayloadSchema = z$1.object({}).passthrough();
+const acceptPayloadSchema = z.object({ token: z.string().default("") });
+const revokePayloadSchema = z.object({ deviceId: z.string().min(1) });
+const pairActionPayloadSchema = z.object({}).passthrough();
 /**
 * Parse a pair request body through schema. A missing/empty or non-object
 * body is treated as an empty object (the same way the previous manual reads
@@ -1020,9 +1761,10 @@ function makeRoutes(deps) {
 			const { token, expiresAt } = service.issue(workspaceId, address);
 			const base = address === void 0 ? service.publicBaseUrl ?? service.lanBaseUrl : service.lanBaseUrlFor(address);
 			if (base === void 0) throw new Error("remote-web-ui: base unavailable");
+			const workspaceQuery = workspaceId === void 0 ? "" : `&workspace=${encodeURIComponent(workspaceId)}`;
 			writeJson(res, 200, {
 				ok: true,
-				url: `${base}/?pair=${token}${workspaceId === void 0 ? "" : `&workspace=${encodeURIComponent(workspaceId)}`}`,
+				url: `${base}${PAIR_PATHS.landing}?pair=${token}${workspaceQuery}`,
 				token,
 				expiresAt,
 				lanAddresses: service.lanAddresses,
@@ -1069,9 +1811,20 @@ function makeRoutes(deps) {
 			});
 			return;
 		}
+		let browserCookie;
+		try {
+			browserCookie = deps.browserAuthCookie(req.headers.host ?? "");
+		} catch {
+			service.revoke(result.deviceId);
+			writeJson(res, 502, {
+				ok: false,
+				code: "browser-auth-unavailable"
+			});
+			return;
+		}
 		res.writeHead(200, {
 			"content-type": "application/json; charset=utf-8",
-			"set-cookie": [`${service.config.cookieName}=${result.deviceId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${String(COOKIE_MAX_AGE_SEC)}`]
+			"set-cookie": [`${service.config.cookieName}=${result.deviceId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${String(COOKIE_MAX_AGE_SEC)}`, browserCookie]
 		});
 		res.end(JSON.stringify({
 			ok: true,
@@ -1187,6 +1940,30 @@ function makeRoutes(deps) {
 	return [
 		{
 			kind: "exact",
+			path: PAIR_PATHS.landing,
+			handler: (req, res) => {
+				if (!requireMethod(req, res, "GET")) return;
+				if (!lanFence(req)) {
+					res.writeHead(403).end();
+					return;
+				}
+				res.writeHead(200, {
+					"content-type": "text/html; charset=utf-8",
+					"cache-control": "no-store",
+					"referrer-policy": "no-referrer",
+					"content-security-policy": "default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"
+				});
+				res.end(`<!doctype html><html lang="zh-CN"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Deepseek Harness 配对</title><body style="font:16px system-ui;max-width:30rem;margin:20vh auto;padding:1rem"><p id="status">正在配对设备…</p><script>
+const token = new URLSearchParams(location.search).get('pair');
+if (!token) document.getElementById('status').textContent = '配对链接无效。';
+else fetch('/api/pair/accept', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token})})
+  .then(async response => {if (!response.ok) throw new Error(String(response.status)); const workspace = new URLSearchParams(location.search).get('workspace'); location.replace(workspace ? '/?workspace=' + encodeURIComponent(workspace) : '/');})
+  .catch(() => {document.getElementById('status').textContent = '配对失败或链接已失效，请在电脑上重新生成二维码。';});
+<\/script></body></html>`);
+			}
+		},
+		{
+			kind: "exact",
 			path: PAIR_PATHS.issue,
 			handler: handleIssue
 		},
@@ -1228,9 +2005,9 @@ function makeRoutes(deps) {
 * Loopback-shaped reverse proxy used by the remote desktop channel: after
 * the pairing cookie gate, traffic is re-issued to 127.0.0.1 so sibling
 * plugin fences (socket + Host loopback) accept it. Origin, cookies, and
-* caller-controlled Sec-Fetch markers are dropped. HTTP requests receive a
-* synthetic same-origin marker after the pairing gate so sibling loopback
-* routes that require a browser tripwire accept the authenticated proxy.
+* caller-controlled Sec-Fetch markers are dropped. The paired-device gate
+* supplies a fresh Host-signed cookie for the inner request; HTTP also gets
+* a synthetic same-origin marker for sibling browser tripwires.
 */
 /** WebSocket handshake headers forwarded to the loopback upstream. */
 const WS_FORWARD_HEADERS = [
@@ -1254,10 +2031,12 @@ const HTTP_FORWARD_RESPONSE_HEADERS = [
 * @param res - the outer response.
 * @param port - local webServer port.
 * @param upstreamPath - path + query on 127.0.0.1 (must start with `/`).
+* @param authCookie - Host-signed loopback browser cookie minted only after the paired-device gate.
 */
-function proxyLoopbackHttp(req, res, port, upstreamPath) {
+function proxyLoopbackHttp(req, res, port, upstreamPath, authCookie) {
 	const headers = {
 		host: `127.0.0.1:${String(port)}`,
+		cookie: authCookie,
 		"sec-fetch-site": "same-origin"
 	};
 	const contentType = req.headers["content-type"];
@@ -1303,11 +2082,13 @@ function proxyLoopbackHttp(req, res, port, upstreamPath) {
 * @param head - bytes already read past the handshake.
 * @param port - local webServer port.
 * @param upstreamPath - path + query on 127.0.0.1.
+* @param authCookie - Host-signed loopback browser cookie minted only after the paired-device gate.
 */
-function proxyLoopbackUpgrade(req, socket, head, port, upstreamPath) {
+function proxyLoopbackUpgrade(req, socket, head, port, upstreamPath, authCookie) {
 	const lines = [
 		`GET ${upstreamPath} HTTP/1.1`,
 		`Host: 127.0.0.1:${String(port)}`,
+		`Cookie: ${authCookie}`,
 		"Upgrade: websocket",
 		"Connection: Upgrade"
 	];
@@ -1406,9 +2187,9 @@ const LOOPBACK_ONLY_METHODS = new Set([
 * - `/api/pair/*`, `/api/update/*`, `/api/plugin-manager/*`,
 *   `/api/dsh-desktop-launcher/*` and `/api/dsh-web-ui-settings/*` stay physically local.
 * - Everything else is HTTP- or WebSocket-proxied to the local port with
-*   Host rewritten, Origin and cookies dropped, and a synthetic same-origin
-*   browser marker added after authentication. Plugin loopback fences then
-*   pass. The pairing cookie never leaves this process.
+*   Host rewritten, caller Origin and cookies dropped, and a fresh Host-signed
+*   loopback browser cookie attached only after pairing. HTTP also receives a
+*   synthetic same-origin marker. Neither cookie is sent back to the browser.
 */
 const ALLOWED_METHODS = new Set([
 	"GET",
@@ -1477,7 +2258,7 @@ function loopbackOnlyDenial(innerPath) {
 * @returns the routes to register on webServer.
 */
 function makeRemoteApiRoutes(deps) {
-	const { service, port, requirePairingForLan } = deps;
+	const { service, port, loopbackAuthCookie, requirePairingForLan } = deps;
 	const handler = (req, res) => {
 		const deviceId = readCookie(req.headers.cookie, service.config.cookieName);
 		if (!(requirePairingForLan?.() === false || deviceId !== void 0 && service.touchDevice(deviceId))) {
@@ -1504,7 +2285,15 @@ function makeRemoteApiRoutes(deps) {
 			envelopeError(res, 403, "invalid-request", "forbidden", denied);
 			return;
 		}
-		proxyLoopbackHttp(req, res, port, `${inner}${url.search}`);
+		let authCookie;
+		try {
+			authCookie = loopbackAuthCookie();
+		} catch {
+			req.resume();
+			envelopeError(res, 502, "invalid-request", "upstream-auth-failure", "desktop authentication is unavailable");
+			return;
+		}
+		proxyLoopbackHttp(req, res, port, `${inner}${url.search}`, authCookie);
 	};
 	return [{
 		kind: "prefix",
@@ -1534,7 +2323,7 @@ function upgradeInnerPath(reqUrl, fallbackPath) {
 * @returns the upgrade routes to register on webServer.
 */
 function makeRemoteApiUpgradeRoutes(deps) {
-	const { service, port, requirePairingForLan } = deps;
+	const { service, port, loopbackAuthCookie, requirePairingForLan } = deps;
 	const handlerFor = (fallbackPath) => (req, socket, head) => {
 		const deviceId = readCookie(req.headers.cookie, service.config.cookieName);
 		if (requirePairingForLan?.() !== false && (deviceId === void 0 || !service.touchDevice(deviceId))) {
@@ -1548,7 +2337,15 @@ function makeRemoteApiUpgradeRoutes(deps) {
 			socket.destroy();
 			return;
 		}
-		proxyLoopbackUpgrade(req, socket, head, port, inner);
+		let authCookie;
+		try {
+			authCookie = loopbackAuthCookie();
+		} catch {
+			socket.write("HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n");
+			socket.destroy();
+			return;
+		}
+		proxyLoopbackUpgrade(req, socket, head, port, inner, authCookie);
 	};
 	return REMOTE_UPGRADE_PATHS.map((path) => ({
 		path,
@@ -2507,25 +3304,25 @@ function mountOnce(packageName, fn) {
 /** Stable cordis plugin name. */
 const name = "remote-web-ui";
 /** Services required before the pairing surfaces can mount. */
-const inject = ["webServer"];
+const inject = ["webServer", "connection"];
 /**
 * Settings namespace of the remote-control capability — the section the web
 * settings surface edits. Spelled here rather than imported: the browser
 * half spells the same value and must not depend on a Host package.
 */
-const REMOTE_WEB_UI_SETTINGS_NAMESPACE = settingsNamespace("remote-web-ui");
-const Config = z.object({
-	tokenTtlMs: z.number().step(1).min(6e4).default(10 * 6e4),
-	offlineAfterMs: z.number().step(1).min(5e3).default(25e3),
-	maxDevices: z.number().step(1).min(1).max(64).default(4),
-	idleExpireMs: z.number().step(1).min(6e4).default(DEFAULT_IDLE_EXPIRE_MS),
-	cookieName: z.string().min(1).default("dsh_pair"),
-	requirePairingForLan: z.boolean().default(true),
-	publicBaseUrl: z.string(),
-	devicesFile: z.string(),
-	autoTunnel: z.boolean().default(false),
-	enabled: z.boolean().default(true)
-});
+const REMOTE_WEB_UI_SETTINGS_NAMESPACE = "web-ui-remote-web-ui";
+const Config = Schema.object({
+	tokenTtlMs: Schema.number().step(1).min(6e4).default(10 * 6e4),
+	offlineAfterMs: Schema.number().step(1).min(5e3).default(25e3),
+	maxDevices: Schema.number().step(1).min(1).max(64).default(4),
+	idleExpireMs: Schema.number().step(1).min(6e4).default(DEFAULT_IDLE_EXPIRE_MS),
+	cookieName: Schema.string().min(1).default("dsh_pair"),
+	requirePairingForLan: Schema.boolean().default(true),
+	publicBaseUrl: Schema.string(),
+	devicesFile: Schema.string(),
+	autoTunnel: Schema.boolean().default(false),
+	enabled: Schema.boolean().default(true)
+}).volatile();
 /** Presence sweep cadence (a stale device flips to disconnected within two sweeps). */
 const SWEEP_INTERVAL_MS = 1e4;
 /**
@@ -2567,20 +3364,40 @@ const DEFAULTS = {
 * @param config - resolved plugin config (schema defaults applied by the loader).
 */
 const apply = mountOnce("@dsh-selfuse/remote-web-ui", applyImpl);
+/** Mint an authority-bound browser cookie through the official connection service. */
+function browserCookieFor(ctx, authority) {
+	const target = new URL(ctx.connection.authenticatedUrl(`http://${authority}`));
+	let setCookie;
+	ctx.connection.authorizeIndex({
+		method: "GET",
+		url: `${target.pathname}${target.search}`,
+		headers: { host: target.host }
+	}, {
+		writeHead(_status, headers) {
+			setCookie = headers?.["set-cookie"];
+		},
+		end() {}
+	});
+	if (setCookie === void 0) throw new Error("remote-web-ui: failed to mint loopback browser credential");
+	return setCookie;
+}
 function applyImpl(ctx, config) {
-	const resolved = {
-		tokenTtlMs: config?.tokenTtlMs ?? DEFAULTS.tokenTtlMs,
-		offlineAfterMs: config?.offlineAfterMs ?? DEFAULTS.offlineAfterMs,
-		maxDevices: config?.maxDevices ?? DEFAULTS.maxDevices,
-		idleExpireMs: config?.idleExpireMs ?? DEFAULTS.idleExpireMs,
-		cookieName: config?.cookieName ?? DEFAULTS.cookieName,
-		requirePairingForLan: config?.requirePairingForLan ?? DEFAULTS.requirePairingForLan,
-		publicBaseUrl: config?.publicBaseUrl,
-		devicesFile: config?.devicesFile ?? DEFAULTS.devicesFile,
-		autoTunnel: config?.autoTunnel ?? DEFAULTS.autoTunnel,
-		enabled: config?.enabled ?? DEFAULTS.enabled
+	const current = () => {
+		return config?.get?.() ?? config ?? {};
 	};
-	let current = () => config ?? {};
+	const initial = current();
+	const resolved = {
+		tokenTtlMs: initial.tokenTtlMs ?? DEFAULTS.tokenTtlMs,
+		offlineAfterMs: initial.offlineAfterMs ?? DEFAULTS.offlineAfterMs,
+		maxDevices: initial.maxDevices ?? DEFAULTS.maxDevices,
+		idleExpireMs: initial.idleExpireMs ?? DEFAULTS.idleExpireMs,
+		cookieName: initial.cookieName ?? DEFAULTS.cookieName,
+		requirePairingForLan: initial.requirePairingForLan ?? DEFAULTS.requirePairingForLan,
+		publicBaseUrl: initial.publicBaseUrl,
+		devicesFile: initial.devicesFile ?? DEFAULTS.devicesFile,
+		autoTunnel: initial.autoTunnel ?? DEFAULTS.autoTunnel,
+		enabled: initial.enabled ?? DEFAULTS.enabled
+	};
 	const resolve = () => {
 		const value = current();
 		return {
@@ -2682,14 +3499,21 @@ function applyImpl(ctx, config) {
 			});
 		}
 	});
+	const loopbackAuthCookie = () => {
+		const cookie = browserCookieFor(ctx, `127.0.0.1:${String(ctx.webServer.port)}`).split(";", 1)[0];
+		if (cookie === void 0) throw new Error("remote-web-ui: missing browser cookie");
+		return cookie;
+	};
 	const routes = [
 		...makeRoutes({
 			service,
-			lanAddresses
+			lanAddresses,
+			browserAuthCookie: (authority) => browserCookieFor(ctx, authority)
 		}),
 		...makeRemoteApiRoutes({
 			service,
 			port: ctx.webServer.port,
+			loopbackAuthCookie,
 			requirePairingForLan: () => resolve().requirePairingForLan
 		}),
 		...updateRoutes
@@ -2697,6 +3521,7 @@ function applyImpl(ctx, config) {
 	const upgrades = makeRemoteApiUpgradeRoutes({
 		service,
 		port: ctx.webServer.port,
+		loopbackAuthCookie,
 		requirePairingForLan: () => resolve().requirePairingForLan
 	});
 	const gate = makeGateListener(service, () => resolve().requirePairingForLan, () => resolve().enabled);
@@ -2781,14 +3606,10 @@ function applyImpl(ctx, config) {
 		}
 		runPostureProbe();
 	};
-	installSettingsSection(ctx, REMOTE_WEB_UI_SETTINGS_NAMESPACE, Config, config ?? {}, {
-		setSource: (source) => {
-			current = source;
-			sync();
-		},
-		onChange: sync
-	});
 	sync();
+	ctx.effect(() => ctx.on("loader/volatile-update", () => {
+		sync();
+	}), "remote-web-ui: live configuration");
 }
 /** Whether a configured public base is a parseable http(s) URL with a host. */
 function isHttpUrl(value) {

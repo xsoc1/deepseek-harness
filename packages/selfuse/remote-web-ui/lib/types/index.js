@@ -10,8 +10,7 @@
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { setInterval as nodeSetInterval, setTimeout as nodeSetTimeout } from 'node:timers';
-import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings';
-import z from 'schemastery';
+import z from '@deepseek-ai/schemastery';
 import { DEFAULT_IDLE_EXPIRE_MS, PairingService } from "./pairing.js";
 import { dshHome } from "./dsh-home.js";
 import { isPairedDeviceRequest, makeGateListener } from "./gate.js";
@@ -27,13 +26,13 @@ import { mountOnce } from "./mount-once.js";
 /** Stable cordis plugin name. */
 export const name = 'remote-web-ui';
 /** Services required before the pairing surfaces can mount. */
-export const inject = ['webServer'];
+export const inject = ['webServer', 'connection'];
 /**
  * Settings namespace of the remote-control capability — the section the web
  * settings surface edits. Spelled here rather than imported: the browser
  * half spells the same value and must not depend on a Host package.
  */
-export const REMOTE_WEB_UI_SETTINGS_NAMESPACE = settingsNamespace('remote-web-ui');
+export const REMOTE_WEB_UI_SETTINGS_NAMESPACE = 'web-ui-remote-web-ui';
 export const Config = z.object({
     tokenTtlMs: z.number().step(1).min(60_000).default(10 * 60_000),
     offlineAfterMs: z.number().step(1).min(5_000).default(25_000),
@@ -45,7 +44,7 @@ export const Config = z.object({
     devicesFile: z.string(),
     autoTunnel: z.boolean().default(false),
     enabled: z.boolean().default(true),
-});
+}).volatile();
 /** Presence sweep cadence (a stale device flips to disconnected within two sweeps). */
 const SWEEP_INTERVAL_MS = 10_000;
 /**
@@ -87,23 +86,43 @@ const DEFAULTS = {
  * @param config - resolved plugin config (schema defaults applied by the loader).
  */
 export const apply = mountOnce('@dsh-selfuse/remote-web-ui', applyImpl);
+/** Mint an authority-bound browser cookie through the official connection service. */
+function browserCookieFor(ctx, authority) {
+    const target = new URL(ctx.connection.authenticatedUrl(`http://${authority}`));
+    let setCookie;
+    ctx.connection.authorizeIndex({
+        method: 'GET',
+        url: `${target.pathname}${target.search}`,
+        headers: { host: target.host },
+    }, {
+        writeHead(_status, headers) { setCookie = headers?.['set-cookie']; },
+        end() { },
+    });
+    if (setCookie === undefined)
+        throw new Error('remote-web-ui: failed to mint loopback browser credential');
+    return setCookie;
+}
 function applyImpl(ctx, config) {
-    const resolved = {
-        tokenTtlMs: config?.tokenTtlMs ?? DEFAULTS.tokenTtlMs,
-        offlineAfterMs: config?.offlineAfterMs ?? DEFAULTS.offlineAfterMs,
-        maxDevices: config?.maxDevices ?? DEFAULTS.maxDevices,
-        idleExpireMs: config?.idleExpireMs ?? DEFAULTS.idleExpireMs,
-        cookieName: config?.cookieName ?? DEFAULTS.cookieName,
-        requirePairingForLan: config?.requirePairingForLan ?? DEFAULTS.requirePairingForLan,
-        publicBaseUrl: config?.publicBaseUrl,
-        devicesFile: config?.devicesFile ?? DEFAULTS.devicesFile,
-        autoTunnel: config?.autoTunnel ?? DEFAULTS.autoTunnel,
-        enabled: config?.enabled ?? DEFAULTS.enabled,
+    // A root-volatile Config is supplied as a stable ref by the new Loader.
+    const current = () => {
+        const source = config;
+        return source?.get?.() ?? config ?? {};
     };
-    // The live source the pairing service and the gate read: the settings
-    // section once the web settings surface is served, the composition entry
-    // otherwise (installSettingsSection swaps it when the namespace registers).
-    let current = () => config ?? {};
+    const initial = current();
+    const resolved = {
+        tokenTtlMs: initial.tokenTtlMs ?? DEFAULTS.tokenTtlMs,
+        offlineAfterMs: initial.offlineAfterMs ?? DEFAULTS.offlineAfterMs,
+        maxDevices: initial.maxDevices ?? DEFAULTS.maxDevices,
+        idleExpireMs: initial.idleExpireMs ?? DEFAULTS.idleExpireMs,
+        cookieName: initial.cookieName ?? DEFAULTS.cookieName,
+        requirePairingForLan: initial.requirePairingForLan ?? DEFAULTS.requirePairingForLan,
+        publicBaseUrl: initial.publicBaseUrl,
+        devicesFile: initial.devicesFile ?? DEFAULTS.devicesFile,
+        autoTunnel: initial.autoTunnel ?? DEFAULTS.autoTunnel,
+        enabled: initial.enabled ?? DEFAULTS.enabled,
+    };
+    // The Loader commits edited volatile values into the same ref, so every
+    // pairing gate and route reads the current snapshot without a remount.
     const resolve = () => {
         const value = current();
         return {
@@ -234,14 +253,26 @@ function applyImpl(ctx, config) {
             });
         },
     });
+    const loopbackAuthCookie = () => {
+        const cookie = browserCookieFor(ctx, `127.0.0.1:${String(ctx.webServer.port)}`).split(';', 1)[0];
+        if (cookie === undefined)
+            throw new Error('remote-web-ui: missing browser cookie');
+        return cookie;
+    };
     const routes = [
-        ...makeRoutes({ service, lanAddresses }),
+        ...makeRoutes({ service, lanAddresses, browserAuthCookie: authority => browserCookieFor(ctx, authority) }),
         // The remote desktop channel: paired-cookie-gated `/remote` prefix that
         // re-issues fenced paths to loopback (see remote-api.ts).
-        ...makeRemoteApiRoutes({ service, port: ctx.webServer.port, requirePairingForLan: () => resolve().requirePairingForLan }),
+        ...makeRemoteApiRoutes({
+            service, port: ctx.webServer.port, loopbackAuthCookie,
+            requirePairingForLan: () => resolve().requirePairingForLan,
+        }),
         ...updateRoutes,
     ];
-    const upgrades = makeRemoteApiUpgradeRoutes({ service, port: ctx.webServer.port, requirePairingForLan: () => resolve().requirePairingForLan });
+    const upgrades = makeRemoteApiUpgradeRoutes({
+        service, port: ctx.webServer.port, loopbackAuthCookie,
+        requirePairingForLan: () => resolve().requirePairingForLan,
+    });
     const gate = makeGateListener(service, () => resolve().requirePairingForLan, () => resolve().enabled);
     ctx.effect(() => ctx.on('api/gate', gate), 'remote-web-ui: api gate');
     // ── posture probe ─────────────────────────────────────────────────────────
@@ -352,14 +383,8 @@ function applyImpl(ctx, config) {
         // re-probe unless the target set is unchanged.
         runPostureProbe();
     };
-    installSettingsSection(ctx, REMOTE_WEB_UI_SETTINGS_NAMESPACE, Config, config ?? {}, {
-        setSource: (source) => {
-            current = source;
-            sync();
-        },
-        onChange: sync,
-    });
     sync();
+    ctx.effect(() => ctx.on('loader/volatile-update', () => { sync(); }), 'remote-web-ui: live configuration');
 }
 /** Whether a configured public base is a parseable http(s) URL with a host. */
 function isHttpUrl(value) {

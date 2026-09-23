@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
-import { IconDownloadOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconDownloadOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { UpdateStatus } from '../update.ts'
 import { fetchUpdateStatus, runUpdate, UpdateStatusError } from './update-api.ts'
 import { UpdatePanel, type UpdateView } from './UpdatePanel.tsx'
@@ -127,12 +127,16 @@ export function UpdateEntry({ wide, t }: UpdateEntryProps) {
         title={updateLabel}
         onClick={openPanel}
       >
-        <IconDownloadOutline16 size={wide ? 16 : 18} />
+        <IconDownloadOutlineRegular size={wide ? 16 : 18} />
       </button>
       {open && createPortal((
         <div className={css.overlay} role="presentation">
           <div className={css.mask} aria-hidden="true" onClick={closePanel} />
-          <UpdatePanel t={t} view={view} onClose={closePanel} onRecheck={() => { void check() }} onStartUpdate={(status) => { void startUpdate(status) }} />
+          <UpdatePanel
+            t={t} view={view} onClose={closePanel}
+            onRecheck={() => { void check() }}
+            onStartUpdate={(status) => { void startUpdate(status) }}
+          />
         </div>
       ), document.body)}
     </>

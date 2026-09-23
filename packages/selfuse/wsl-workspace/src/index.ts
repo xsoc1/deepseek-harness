@@ -148,7 +148,7 @@ function hostNameOf(host: string): string {
 
 /** True when the request's `Host` header names a loopback host. */
 function isLoopbackHost(host: string | undefined): boolean {
-  return host !== undefined && (LOOPBACK_HOSTNAMES.has(hostNameOf(host).toLowerCase()) || hostNameOf(host).toLowerCase().endsWith(".ts.net"))
+  return host !== undefined && (LOOPBACK_HOSTNAMES.has(hostNameOf(host).toLowerCase()) || hostNameOf(host).toLowerCase().endsWith('.ts.net'))
 }
 
 /**
@@ -320,7 +320,7 @@ async function dispatch(method: string, params: Record<string, unknown>): Promis
 /** The `ctx.agentPresets` roster face this plugin consumes (optional service). */
 interface AgentPresetsService {
   list(): Promise<{ id: string; broken?: string; path: string }[]>
-  read(id: string): Promise<string>
+  readDocument(id: string): Promise<{ content: string }>
 }
 
 /**
@@ -362,7 +362,7 @@ async function materializeVariants(
     if (preset.broken !== undefined) continue
     if (isWslVariantId(preset.id)) continue
     const variantId = variantIdFor(preset.id)
-    const source = await agentPresets.read(preset.id)
+    const source = (await agentPresets.readDocument(preset.id)).content
     const transformed = transformPresetForWsl(source, shellPath, fsPath)
     const dir = join(userRoot, variantId)
     mkdirSync(dir, { recursive: true })
