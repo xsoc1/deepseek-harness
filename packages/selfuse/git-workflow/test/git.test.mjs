@@ -180,6 +180,8 @@ test("git execution fails closed without a DSH shell or sandbox policy", async (
 	const shell = { sandboxMode: "workspace-write" };
 	const missingPolicy = await runGitTool({ get: (name) => name === "shell" ? shell : undefined }, {}, ["status"], "/tmp/project");
 	assert.equal(missingPolicy.ok, false);
+	const unconfined = await runGitTool({ get: (name) => ({ shell: {}, sandboxPolicy: {} })[name] }, {}, ["status"], "/tmp/project");
+	assert.equal(unconfined.ok, false);
 });
 
 test("git execution reports a sandbox denial even when the process exits zero", async () => {

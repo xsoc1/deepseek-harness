@@ -63,7 +63,7 @@ async function runGitTool(ctx, exec, args, workdir, options = {}) {
 	try {
 		const shell = ctx.get("shell");
 		const policy = ctx.get("sandboxPolicy");
-		if (shell === undefined || (shell.sandboxMode !== undefined && policy === undefined)) {
+		if (shell === undefined || shell.sandboxMode === undefined || policy === undefined) {
 			return { ok: false, exitCode: null, message: "Git tool requires the DSH shell and sandbox policy" };
 		}
 		const sandboxPolicy = policy?.resolve(exec?.agent === undefined ? {} : { session: exec.agent.session });
