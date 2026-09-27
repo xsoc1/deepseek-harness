@@ -97,6 +97,7 @@ test('the generated Web profile applies managed overrides to inherited rows', as
     }
     const profilePackage = await readFile(join(dshHome, 'profiles', 'web', 'package.json'), 'utf8')
     assert.equal(profilePackage.includes('@dsh-selfuse/market'), false)
+    assert.equal(profilePackage.includes('@dsh-selfuse/wsl-workspace'), false)
     for (const nativeRow of [
       'workspace-files',
       'ui-sidebar-terminal',
@@ -141,6 +142,16 @@ test('profile regeneration retains local migrated overrides and legacy preset ma
     const patch = await readFile(patchPath, 'utf8')
     assert.equal(patch.split(local).length, 2)
     assert.match(patch, /- id: agent-preset-registry\n  config:\n    default: standard\n    selectedDefault: ptc\n    aliases:\n(?:      [^\n]+\n)*?      wsl-router-standard: standard/u)
+    for (const alias of [
+      'wsl-router-standard-v011-bak: standard',
+      'wsl-router-standard: standard',
+      'wsl-standard: standard',
+      'wsl-ptc: ptc',
+      'wsl-minimal: minimal',
+      'wsl-cordis: cordis',
+    ]) {
+      assert.equal(patch.includes(`      ${alias}\n`), true)
+    }
     assert.equal((patch.match(/- id: local-account/gu) ?? []).length, 1)
   } finally {
     await rm(dshHome, { recursive: true, force: true })

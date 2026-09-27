@@ -12,7 +12,6 @@ bundles:
   - "@dsh-selfuse/web-ui-all"
   - "@dsh-selfuse/backup"
   - "@dsh-selfuse/git-workflow"
-  - "@dsh-selfuse/wsl-workspace"
   - "@dsh-selfuse/memory-panel"
 patchPlugins:
   - "@deepseek-ai/dsh-task-notify"
@@ -32,6 +31,7 @@ disabledRows:
 # tolerates mobile Tailnet path changes without allowing an infinite half-open
 # browser stream.
 rowConfigs:
+  # Keep retired WSL preset identities for append-only session logs.
   agent-preset-registry:
     default: standard
     selectedDefault: ptc

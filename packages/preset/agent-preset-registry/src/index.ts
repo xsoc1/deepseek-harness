@@ -53,7 +53,6 @@ export class AgentPresetRegistry extends TypertRemoteService {
   static Config = z.object({
     default: z.string().required(),
     selectedDefault: z.string().volatile(),
-    modeSelectionEnabled: z.boolean().default(true).volatile(),
     aliases: z.dict(z.string()).default({}),
   })
   private readonly owner: Context
@@ -73,18 +72,13 @@ export class AgentPresetRegistry extends TypertRemoteService {
   }
 
   /** Default preset for a subsequently created session. */
-  get defaultId(): string { return this.policy().defaultId }
+  get defaultId(): string { return this.canonicalId(this.config.selectedDefault.get() ?? this.config.default) }
 
   /** An installed definition always wins; aliases only recover uninstalled legacy names. */
   private canonicalId(id: string): string {
     return this.definitions.has(id) ? id : this.config.aliases[id] ?? id
   }
 
-  private policy(): { enabled: boolean; defaultId: string } {
-    const enabled = this.config.modeSelectionEnabled.get()
-    const selected = enabled ? this.config.selectedDefault.get() ?? this.config.default : this.config.default
-    return { enabled, defaultId: this.canonicalId(selected) }
-  }
 
   /** Register and eagerly load a definition; activation failure remains visible in the roster.
    * @param definition Parsed configuration supplied by the declaring plugin.
@@ -177,14 +171,13 @@ export class AgentPresetRegistry extends TypertRemoteService {
     return rows.sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || a.id.localeCompare(b.id))
   }
 
-  /** Read the selection roster and chooser policy.
-   * @returns Current presets, default and chooser policy.
+  /** Read the selection roster.
+   * @returns Current presets, each marked when it is the default.
    */
   @Remote('list')
   async remoteExportList(): Promise<AgentPresetRoster> {
-    const policy = this.policy()
-    return { presets: (await this.list()).map(row => ({ ...row, isDefault: row.id === policy.defaultId })),
-      modeSelectionEnabled: policy.enabled }
+    const defaultId = this.defaultId
+    return { presets: (await this.list()).map(row => ({ ...row, isDefault: row.id === defaultId })) }
   }
 
   /** Resolve an identity without starting an Agent.

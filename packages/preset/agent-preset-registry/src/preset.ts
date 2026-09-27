@@ -15,8 +15,6 @@ export interface Config {
   default: string
   /** Explicit one-hop compatibility mappings for retired preset IDs. */
   aliases: Record<string, string>
-  /** User-selected default while the chooser is shown; edited through Settings. */
+  /** User-selected default; edited through Settings. */
   selectedDefault: Volatile<string | undefined>
-  /** Whether new-session surfaces expose preset selection and the saved default applies. */
-  modeSelectionEnabled: Volatile<boolean>
 }
