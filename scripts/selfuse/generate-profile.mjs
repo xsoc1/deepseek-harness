@@ -51,6 +51,17 @@ if (typeof existingDependencies !== 'object' || Array.isArray(existingDependenci
 const cliBundles = (existingPackage.dsh?.profile?.bundles ?? [])
   .filter(pkg => Object.hasOwn(existingDependencies, pkg) && !bundleList.includes(pkg))
 
+function expandDshHome(value) {
+  if (typeof value === 'string' && value.startsWith('${DSH_HOME}/')) {
+    return resolve(dshHome, value.slice('${DSH_HOME}/'.length))
+  }
+  if (Array.isArray(value)) return value.map(expandDshHome)
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, expandDshHome(nested)]))
+  }
+  return value
+}
+
 function writeIfChanged(path, content) {
   if (existsSync(path) && readFileSync(path, 'utf8') === content) return false
   if (!dryRun) writeFileSync(path, content)
@@ -73,7 +84,7 @@ const patchLines = [
   '# Managed row overrides inherited from bundle layers.',
   ...disabledRows.map(id => `- id: ${id}\n  disabled: true`),
   ...Object.entries(rowConfigs).map(([id, config]) => yaml.dump(
-    [{ id, config }],
+    [{ id, config: expandDshHome(config) }],
     { lineWidth: -1, noRefs: true },
   ).trimEnd()),
   '',

@@ -1,0 +1,46 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/git-workflow/README.md
+/:
+  en: b8f8d9984c46f830
+  zh: 56d299df378de658
+/dsh-selfuse-git-workflow:
+  en: 763ada12d5b4646f
+  zh: 674a48ca3c55742f
+/dsh-selfuse-git-workflow/summary:
+  en: ff59d5bfac81f2c4
+  zh: 01a283cf0999b96f
+/dsh-selfuse-git-workflow/table-of-contents:
+  en: 35225ddc52ccc0ec
+  zh: f8fd70f4e2d5fa03
+/dsh-selfuse-git-workflow/tools:
+  en: da9409df612dcb09
+  zh: 48c79e6ad46f5d79
+/dsh-selfuse-git-workflow/install:
+  en: f0818e969cf6d4f1
+  zh: d1d1292f29ca9a83
+/dsh-selfuse-git-workflow/safety:
+  en: abe3f55afde4777b
+  zh: d146b998b3b594c2
+/dsh-selfuse-git-workflow/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/dsh-selfuse-git-workflow/model-experience/structured-git-operations:
+  en: bad0dd172a9ace18
+  zh: 5df5e0cf43e86b2a
+/dsh-selfuse-git-workflow/model-experience/structured-git-operations/what-the-model-sees:
+  en: dc01898b3e86f015
+  zh: b87adaf199d5c948
+/dsh-selfuse-git-workflow/model-experience/structured-git-operations/token-effect:
+  en: f8754fd71c4379f6
+  zh: 5e81c51527d96a1f
+/dsh-selfuse-git-workflow/model-experience/structured-git-operations/kv-cache-effect:
+  en: bd51cc7abdabffcf
+  zh: d4c3de5ff30f9f24
+/dsh-selfuse-git-workflow/known-limitations-and-deferred-work:
+  en: f48f38d992fc45a9
+  zh: e11a59bf4bb382eb
+/dsh-selfuse-git-workflow/known-limitations-and-deferred-work/dev-note:
+  en: 4aa479e774f2bd5f
+  zh: beab3a9feeaba402

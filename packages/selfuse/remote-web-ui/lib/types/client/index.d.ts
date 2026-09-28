@@ -23,28 +23,12 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
             scope: 'root';
             owner: SidebarRemoteOwnerProps;
         };
-        /**
-         * The child slot the Web UI plugin group declares; this card registers
-         * into the group instead of the top-level `settings.plugin.item` list.
-         * Spelled here with the same shape so this package can register without
-         * depending on the sibling UI package.
-         */
-        'web-ui.plugin.item': {
-            kind: 'list';
-            scope: 'root';
-            owner: SettingsPluginItemOwnerProps;
-        };
     }
 }
 /** Owner share of the sidebar remote-control seat: the column display state the trigger renders against. */
 export interface SidebarRemoteOwnerProps {
     /** Whether the sidebar renders wide content (false = 56px rail). */
     wide: boolean;
-}
-/** Owner share of a plugin card (the section supplies nothing). */
-export interface SettingsPluginItemOwnerProps {
-    /** Marker field: card owner props are intentionally empty. */
-    children?: never;
 }
 /** Services required by this plugin. */
 export declare const inject: string[];

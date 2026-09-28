@@ -1,5 +1,7 @@
 # dsh-selfuse scripts
 
+English | [中文](README.zh.md)
+
 ## `generate-profile.mjs`
 Reads `config/selfuse/profiles.build.yml` and writes a profile under
 `$DSH_HOME/profiles/<name>` that references only `@dsh-selfuse/*` bundles.
@@ -7,6 +9,8 @@ The manifest's `disabledRows` list records stable row IDs inherited from
 official bundles that this personal profile intentionally leaves inactive,
 while `rowConfigs` records selfuse-specific configuration replacements. The
 generator writes both kinds of managed override before ordinary plugin inserts.
+In `rowConfigs`, paths beginning with `${DSH_HOME}/` resolve against the
+selected `--dsh-home`, so a disposable test home never points at live memory.
 If a profile contains local account, model, or permission rows, place them after
 `# Local instance overrides (preserved by profile generator).`; regeneration
 keeps that suffix. Do not duplicate managed row IDs in the local suffix: the
@@ -14,9 +18,9 @@ later row can replace the managed configuration. The manifest maps retired
 selfuse preset IDs to official modes for existing sessions; this restores
 loading, but cannot reproduce the retired preset's exact tool composition.
 
-Because the selfuse packages are registered in `apps/cli/package.json`, the
-running dsh installation resolves them first; the generated profile contains
-no out-of-tree npm dependencies.
+Because selfuse packages are registered in `apps/cli/package.json`, the
+running DSH installation resolves them first. Dependencies installed through
+the native `dsh plugin` CLI remain in the generated profile.
 
 ```bash
 node scripts/selfuse/generate-profile.mjs --dsh-home /home/user/.dsh

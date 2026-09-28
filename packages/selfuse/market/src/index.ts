@@ -78,11 +78,8 @@ export function apply(ctx: Context, config?: Config): void {
       return
     }
 
-    // Desktop's supported cross-environment contract guarantees that
-    // desktopProfiles exists before Loader entries mount, and prescribes this
-    // presence check plus a nested desktopPnpm injection:
-    // https://github.com/anywhere-labs/deepseek-harness-desktop/blob/4f68147091e585aaa1d815f99d30a657b3842d7c/dsh-plugin-desktop/docs/plugin-services.md#L190-L243
-    // Ordinary DSH keeps the existing CLI path above.
+    // Legacy desktop integration uses the injected desktopProfiles service
+    // and nested desktopPnpm service. Ordinary DSH takes the CLI path above.
     hostCtx.inject(['desktopPnpm'], (desktopCtx: Context) => {
       const current = desktopProfiles.current
       const service = (desktopCtx as unknown as { desktopPnpm: DesktopPnpmLike }).desktopPnpm

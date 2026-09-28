@@ -62,8 +62,16 @@ export const Config: z<Config> = z.object({
   proxyTokenEnv: z.string().min(1).default(DEFAULT_PROXY_TOKEN_ENV),
 })
 
-/** Resolve proxy access without ever placing the token value in plugin config. */
-export function resolveProxyAccess(config: Config | undefined, env: NodeJS.ProcessEnv = process.env): { trustedProxyHosts: string[]; proxyToken?: string } {
+/**
+ * Resolve proxy access without ever placing the token value in plugin config.
+ * @param config - configured trusted authorities and token-variable name, if any.
+ * @param env - server environment from which the secret is read.
+ * @returns allowed proxy hosts and their token only when access is enabled.
+ */
+export function resolveProxyAccess(
+  config: Config | undefined,
+  env: NodeJS.ProcessEnv = process.env,
+): { trustedProxyHosts: string[]; proxyToken?: string } {
   const trustedProxyHosts = config?.trustedProxyHosts ?? []
   if (trustedProxyHosts.length === 0) return { trustedProxyHosts }
   const proxyTokenEnv = config?.proxyTokenEnv ?? DEFAULT_PROXY_TOKEN_ENV

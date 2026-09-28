@@ -20,7 +20,7 @@
 ## 预览
 
 ```sh
-node scripts/gallery-build                   # 注册进 gallery 资产
+node scripts/gallery-build                   # register into gallery assets
 open gallery/preview.html?skin=cyber-night&theme=light
 ```
 

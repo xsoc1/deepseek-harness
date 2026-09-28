@@ -11,6 +11,9 @@
 /plugin-config-catalog/loadable-plugins-with-no-config:
   en: 171d45e5a8385abc
   zh: 0fc1aa514caea442
+/plugin-config-catalog/packages-without-inspectable-typescript-source:
+  en: e56057de82b301f2
+  zh: 0e41a79cf87c1748
 /plugin-config-catalog/seam-packages-not-directly-loadable:
   en: 4555f0e0510d8c80
   zh: b05727ed838f4570

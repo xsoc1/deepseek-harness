@@ -61,7 +61,10 @@ function containsNetworkMaterial(text: string): boolean {
     || serverField && (nodeType || credentialField)
 }
 
-/** Extract bounded, non-identifying facts from one locally retained result. */
+/** Extract bounded, non-identifying facts from one locally retained result.
+ * @param text result held on the local machine.
+ * @returns counts and flags without names, endpoints, links, or credentials.
+ */
 export function summarizeRiskContent(text: string): SafeNetworkFacts {
   const candidates = scanTexts(text).texts
   const normalized = candidates.find(candidate => /(?:^|\n)[ \t]*proxies:[ \t]*\n/m.test(candidate))
@@ -79,7 +82,10 @@ export function summarizeRiskContent(text: string): SafeNetworkFacts {
   }
 }
 
-/** Conservative classifier; it does not claim to predict an upstream policy verdict. */
+/** Conservative classifier; it does not claim to predict an upstream policy verdict.
+ * @param text model-bound or tool-result text to inspect.
+ * @returns true for recognized network material or an incomplete nested scan.
+ */
 export function hasSensitiveNetworkContent(text: string): boolean {
   if (!text) return false
   const scanned = scanTexts(text)

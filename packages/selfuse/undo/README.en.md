@@ -65,7 +65,7 @@ The plugin detects the active DSH profile from the launch arguments (`dsh --prof
 
 - **Config directory**: defaults to `~/.dsh/profiles/<current profile>` (previously hardcoded to `web` — under any other profile snapshots read the wrong files, the watcher missed changes, and restores wrote to the wrong place);
 - **Snapshot stores**: default to `<snapshot root>/<current profile>/{auto,manual}` (per-profile isolation); if the scoped dir does not exist but the old flat store does, the flat store is used so legacy snapshots are never hidden;
-- **Provenance**: the manifest records a `profile` field and `undo_list` shows the current profile.
+- **Profile identity**: the manifest records a `profile` field and `undo_list` shows the current profile.
 
 Offline CLI/GUI cannot see the launch arguments — set the `DSH_UNDO_PROFILE` environment variable or `profileName` in settings (default `web`).
 
@@ -124,8 +124,7 @@ The external undo tools (GUI window + CLI) are **not placed on the desktop** —
 
 **One-click desktop shortcut (recommended — open the tools straight from the desktop afterwards):**
 
-Double-click `tools\make-desktop-shortcut.bat` (it auto-locates the plugin directory) and a **DSH Undo Manager** icon appears on the desktop;
-or copy the whole block below into a PowerShell window and press Enter (no need to locate any file first):
+Double-click `tools\make-desktop-shortcut.bat` (it auto-locates the plugin directory) and a **DSH Undo Manager** icon appears on the desktop; or copy the whole block below into a PowerShell window and press Enter (no need to locate any file first):
 
 ```powershell
 $d = @("$env:USERPROFILE\.dsh\profiles\web\node_modules\@dsh-selfuse/undo", "$env:USERPROFILE\.dsh\profiles\node_modules\@dsh-selfuse/undo", "$env:USERPROFILE\node_modules\@dsh-selfuse/undo") | Where-Object { Test-Path (Join-Path $_ 'tools\@dsh-selfuse/undo-gui.bat') } | Select-Object -First 1

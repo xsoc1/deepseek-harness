@@ -7,16 +7,17 @@ kind: "package-reference"
 
 [English](README.md) | 中文
 
-## Summary
+## 概述
 
 将识别到的网络配置从模型请求中隔离，原文保留在本机私有目录。模型可凭会话句柄查看安全统计，也可在显式允许的 YAML 配置上申请审批后进行受限本地修改。含有网络原文的旧会话会在发往提供方前停止；应改用干净的新会话。本插件不是通用密钥检测器，也不能关闭提供方策略。
 
-## Table of Contents
+## 目录
 
 - [行为](#behavior)
 - [配置](#configuration)
 - [Model Experience](#model-experience)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [开发备注](#dev-note)
 
 <a id="behavior"></a>
 ## 行为
@@ -69,6 +70,11 @@ kind: "package-reference"
 
 ## Known Limitations and Deferred Work
 
-- **分类范围：**模式检测器可能漏掉未知或碎片化的格式，也可能选中无害示例。路径来源检查只覆盖直接引用；间接脚本仍可能隐藏来源。它不能预测上游策略，也不能保证所有秘密都留在本机。
+- **分类范围：**模式检测器可能漏掉未知或碎片化的格式，也可能选中无害示例。白名单文件路径匹配只覆盖直接引用；间接脚本仍可能隐藏其读取的文件。它不能预测上游策略，也不能保证所有秘密都留在本机。
 - **本地隔离：**私有文件权限不能隔离同一用户身份运行的其他进程。`inspect_local_network_result` 有意不向模型提供完整原文。
 - **配置修改：**白名单执行器只修改三个非敏感字段。它没有收集新凭据的本地界面；其他 YAML 修改仍需用户直接控制的本地工具。
+
+<a id="dev-note"></a>
+### 开发备注
+
+这是本地隐私边界，不是绕过提供方策略的手段。每次改动模型请求或工具结果管线后，应重跑清理器、本地配置和含原文旧会话测试。

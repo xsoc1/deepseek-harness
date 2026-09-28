@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   git hash-object README.md README.zh.md
-README.md: beb7bedb2cc945ba2fc3962cb9770a8b9e999071
-README.zh.md: 76770d1763d1517a8a07cde7137819e65eb6be5a
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/skin-center/skins/deep-current/README.md
+/deep-current:
+  en: eb85affec3823361
+  zh: 1cac170e1bb5de51
+/deep-current/what-it-does:
+  en: 9e7d0cb198985a6e
+  zh: 683662b05512a6ca
+/deep-current/install:
+  en: 644cc64d2357ec5b
+  zh: 8989c642df8dfb0d
+/deep-current/configuration:
+  en: e5f5d3f35f3b6582
+  zh: b453a047eddbdb0b
+/deep-current/preview:
+  en: 4806b6482b9ed32a
+  zh: 8750f7fa1af42460
+/deep-current/known-limitations:
+  en: 829309a843685c1c
+  zh: 7039f7e2aefe50c8

@@ -7,7 +7,7 @@ kind: "package-bundle"
 
 [English](README.md) | 中文
 
-## 概要
+## 概述
 
 这个 profile 层允许另一台电脑通过一次性配对链接打开完整的 dsh Web UI。主电脑可以生成二维码链接、查看设备在线状态、撤销设备，并可选择启动 Cloudflare 隧道。既可单独安装，也可通过已包含它的 `@dsh-selfuse/web-ui-all` 安装；移除该层会停用配对与远程代理路由。它不提供独立移动端界面。
 

@@ -1,52 +1,45 @@
-# dsh-memory-panel
+---
+description: "Browse and edit local Markdown memories in a human-facing DSH settings panel."
+kind: "package-bundle"
+---
 
-设置 → 插件 →「记忆」——**纯本地文件记忆**（Hindsight 云端记忆的本地替代）。
+# @dsh-selfuse/memory-panel
 
-零依赖、零模型、永远离线可用：不加云、不调 LLM、数据不出本机。所有“记忆”都是
-`~/.dsh/memory/` 下的 Markdown 文件，可以随时用编辑器直接添加/修改。
+English | [中文](README.zh.md)
 
-## 功能
+## Summary
 
-- **本地存储概览**：存储位置、知识页 / 记忆条目数量、占用空间。
-- **知识页**：浏览 `~/.dsh/memory/knowledge/*.md`（一个文件一页，可点开查看）。
-- **记忆条目**：浏览 `~/.dsh/memory/notes/*.md`（一条一文件，按时间倒序）。
-- **写一条记忆**：在条目标签页直接输入标题 + 内容保存为新条目。
-- **搜索**：在知识页与记忆条目的标题 + 内容里做子串搜索。
+This bundle adds a Web settings panel for local Markdown knowledge pages and notes under the DSH home. It does not call a model or add these files to agent context. The panel is a human editor and viewer, not a memory-retrieval system for the agent.
 
-## 存储结构
+## Table of Contents
 
-```
-~/.dsh/memory/
-  knowledge/   知识页：<名字>.md（标题取 frontmatter `title:` 或首个 # 标题，否则文件名）
-  notes/       记忆条目：<时间戳>-<名字>.md
-```
+- Storage and features
+- Install
+- Security
+- Known Limitations and Deferred Work
+- Dev Note
 
-可用环境变量 `DSH_MEMORY_ROOT` 覆盖存储根目录（测试用；默认 `~/.dsh/memory`）。
+## Storage and features
 
-## 结构
+Knowledge pages live in `~/.dsh/memory/knowledge/*.md`; notes live in `~/.dsh/memory/notes/*.md`. The panel shows counts and storage size, browses both collections, creates notes, and searches titles and content by substring. `DSH_MEMORY_ROOT` can change the root for a controlled test.
 
-```
-lib/index.js     宿主半边：/memory JSON 路由（node 内置，零第三方依赖）
-lib/client.js    浏览器半边：CJS factory，react 组件（手工构建，无打包步骤）
-cordis.patch.yml 装配行（dsh.bundle.patch）
-scripts/         冒烟测试（node scripts/smoke.mjs / smoke-client.mjs）
-```
+## Install
 
-## 安装（本工作区）
+Use the official plugin CLI for the intended Web profile:
 
-```text
-dev_install_package 指向本目录 → profile package.json 加
-link:F:/tools/dsh-memory-panel + bundles 加 dsh-memory-panel →
-node_modules junction → loader.create；重启 dsh 或浏览器硬刷新后生效。
+```sh
+dsh plugin --profile web add @dsh-selfuse/memory-panel
 ```
 
-## 安全
+## Security
 
-- 文件 id 只允许 `[A-Za-z0-9\u4e00-\u9fa5._-]`，无分隔符/路径穿越；读取限定在
-  存储根目录内。
-- 只读 + 写本地条目的 JSON 路由，与 dsh web 同源，受 webserver 绑定范围保护。
+The Host route reads and writes local files. File ids have a restricted character set and cannot contain path separators; access is scoped to the configured memory root. The route inherits the Web server's origin and network protections.
 
-## 历史
+## Known Limitations and Deferred Work
 
-由 `dsh-hindsight-panel`（Hindsight 云端记忆查看面板）替换而来；已从 web
-profile 移除 `@vectorize-io/hindsight-coding-agents` 与旧面板。
+- This panel does not inject, retrieve, rank, or summarize memories for the model.
+- The Host route must not be exposed without the deployment's Web authentication and network controls.
+
+### Dev Note
+
+The integrated package contains prebuilt Host and client entries. Verify browser rendering and a write/read round trip before using it on important notes.

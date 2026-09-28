@@ -1,3 +1,8 @@
+---
+description: "Archived browser plugin-market bundle retained as source; the active selfuse profile uses the official CLI."
+kind: "package-bundle"
+---
+
 <p align="center">
   <img src="assets/logo.svg" width="96" alt="dsh-market logo">
 </p>
@@ -6,14 +11,24 @@
 
 English | [中文](README.zh.md)
 
-[![npm](https://img.shields.io/npm/v/@dsh-selfuse/market)](https://www.npmjs.com/package/@dsh-selfuse/market)
-[![stars](https://img.shields.io/github/stars/dsh-market/dsh-market?style=flat)](https://github.com/dsh-market/dsh-market)
+## Summary
+
+This inherited browser market offers catalog browsing and installation controls, but it is not part of the active selfuse profile. The current deployment uses the official `dsh plugin` CLI instead. Its upstream README below is retained for source attribution; listed catalog counts, release compatibility, and third-party integrations have not been reverified for this checkout.
+
+## Table of Contents
+
+- Install
+- What you get
+- Security
+- Data source
+- Known Limitations and Deferred Work
+- Dev Note
+
+[![npm](https://img.shields.io/npm/v/@dsh-selfuse/market)](https://www.npmjs.com/package/@dsh-selfuse/market) [![stars](https://img.shields.io/github/stars/dsh-market/dsh-market?style=flat)](https://github.com/dsh-market/dsh-market)
 
 > `dsh-market` is independent of any particular client — it works in any host that speaks the standard DeepSeek Harness protocol. We're currently in discussions with `anywhere-labs/deepseek-harness-desktop` about future cooperation, and we'll share updates here as they happen. Use [dsh-desktop](https://github.com/dataelement/dsh-desktop) or [deepseek-harness-desktop](https://github.com/hairyf/deepseek-harness-desktop) — both ship with this plugin market built in — or another excellent third-party client.
 
 The plugin market inside DeepSeek Harness. Open Settings → **Plugin Market** → browse, search, one-click install.
-
-![dsh-market](assets/demo-en.png)
 
 One-click themes: install, switch live, no restart.
 
@@ -25,11 +40,7 @@ dsh plugin --profile web add @dsh-selfuse/market
 
 Restart `dsh web`, then open **Settings → Plugin Market**.
 
-**Requires dsh web 0.1.0-rc.6 or newer.** On an older host the market
-disables itself and says so in the browser console rather than rendering
-against primitives that are not there — if the Plugin Market entry never
-appears, that is usually why. Worth checking when a desktop build bundles
-its own dsh: it may be older than the one `npm` would give you (#139).
+**Requires dsh web 0.1.0-rc.6 or newer.** On an older host the market disables itself and says so in the browser console rather than rendering against primitives that are not there — if the Plugin Market entry never appears, that is usually why. Worth checking when a desktop build bundles its own dsh: it may be older than the one `npm` would give you (#139).
 
 ## What you get
 
@@ -121,4 +132,13 @@ dsh plugin --profile web add @liustack/modlens
 
 ## License
 
-MIT · [@dsh-selfuse/market.com](https://@dsh-selfuse/market.com)
+MIT; see the package license and upstream notices.
+
+## Known Limitations and Deferred Work
+
+- The market is intentionally absent from the active selfuse profile because the official CLI owns plugin installation.
+- Catalog counts, linked desktop integrations, and compatibility claims in the inherited body may be stale and are not validated by this upgrade.
+
+### Dev Note
+
+Do not interpret this archived README as deployment guidance. Keep the source only until the user decides whether to remove the inactive package from the integrated repository.

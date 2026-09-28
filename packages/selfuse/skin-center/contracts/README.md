@@ -1,5 +1,7 @@
 # Skin Contracts (v2) — issue #506 Phase 1
 
+English | [中文](README.zh.md)
+
 This directory is the authoritative contract surface between **skins** (pure
 asset directories) and the **skin-center** (the only loader/renderer, the only
 npm package). Skins couple to these contracts only; the skin-center absorbs

@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   node scripts/verify-docs.mjs --write <dir>
-README.md: 19ce3abe79fca287b405580bb304763bdb00a119
-README.zh.md: 984aacf0add3d4fc06b6fb81d680c0e12745de33
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/web-ui-all/README.md
+/:
+  en: c3f858cdf6bb2205
+  zh: 54cefe4f603177fe
+/dsh-selfuse-web-ui-all:
+  en: 976969fddfbe099e
+  zh: b6cd41616e824c7d
+/dsh-selfuse-web-ui-all/summary:
+  en: fb505d1df7430cb2
+  zh: 41ef46d5bf6195c0
+/dsh-selfuse-web-ui-all/table-of-contents:
+  en: 8f9e8675f26d2076
+  zh: afcaa813a88050cc
+/dsh-selfuse-web-ui-all/use-this-package:
+  en: 4c782d999592ff6a
+  zh: 6190437639aeed8a
+/dsh-selfuse-web-ui-all/known-limitations-and-deferred-work:
+  en: 36cce6204ccef40d
+  zh: 2151c416db6b5bcf
+/dsh-selfuse-web-ui-all/dev-note:
+  en: 456a1182581dad9a
+  zh: 2388b55b613d3a45

@@ -62,6 +62,20 @@ afterEach(() => {
 })
 
 describe('shared config schema catalog', () => {
+  it('labels compiled-only packages as unverified when their declared artifact exists', () => {
+    const { root, write } = fixture()
+    write('packages/test/prebuilt/package.json', JSON.stringify({ name: '@test/prebuilt', main: 'lib/index.js' }))
+    write('packages/test/prebuilt/lib/index.js', 'export default function prebuilt() {}\n')
+    const entry = collectConfigCatalog(root).find(item => item.pkg === '@test/prebuilt')
+    expect(entry).toMatchObject({ kind: 'opaque', entry: 'packages/test/prebuilt/package.json' })
+  })
+
+  it('rejects a compiled-only claim without its declared artifact', () => {
+    const { root, write } = fixture()
+    write('packages/test/missing/package.json', JSON.stringify({ name: '@test/missing', main: 'lib/index.js' }))
+    expect(() => collectConfigCatalog(root)).toThrow('no declared package artifact is present')
+  })
+
   it('collects every branch through a renamed named import from a public source subpath', () => {
     const { root } = fixture()
     const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
@@ -79,6 +93,28 @@ describe('shared config schema catalog', () => {
     const { root } = fixture(sharedSchema.replace('export const Shared = Schema.union', 'export const Shared = Base\nconst Base = Schema.union'))
     const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
     expect(new Set(provider?.schemaKeys)).toEqual(new Set(['mode', 'headless', 'endpoint']))
+  })
+
+  it('resolves a NodeNext .js specifier to the package-local .ts source', () => {
+    const { root, write } = fixture()
+    write('packages/test/provider/src/local.ts', `
+import Schema from '@deepseek-ai/schemastery'
+/** Configuration kept in this package. */
+export interface LocalConfig {
+  /** Whether local isolation is enabled. */
+  enabled: boolean
+}
+export const LocalSchema = Schema.object({ enabled: Schema.boolean() })
+`)
+    write('packages/test/provider/src/index.ts', `
+import { LocalSchema, type LocalConfig } from './local.js'
+export type Config = LocalConfig
+export const Config = LocalSchema
+export function apply(ctx: unknown, config: Config): void {}
+`)
+    const provider = collectConfigCatalog(root).find(entry => entry.pkg === '@test/provider')
+    expect(provider?.schemaKeys).toEqual(['enabled'])
+    expect(provider?.pastes?.some(paste => paste.source.startsWith('packages/test/provider/src/local.ts:'))).toBe(true)
   })
 
   it('rejects type-only imports used as runtime schemas', () => {
@@ -165,6 +201,7 @@ describe('config catalog rendering', () => {
     expect(en.map(region => region.split('\n')[0])).toEqual([
       '<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-demo -->',
       '<!-- BEGIN GENERATED config-catalog:no-config -->',
+      '<!-- BEGIN GENERATED config-catalog:opaque -->',
       '<!-- BEGIN GENERATED config-catalog:seam -->',
       '<!-- BEGIN GENERATED config-catalog:library -->',
     ])

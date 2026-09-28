@@ -1,6 +1,26 @@
+---
+description: "Run and schedule DSH tasks from a Host-owned Web task board."
+kind: "package-bundle"
+---
+
 # dsh-task-board — DSH web GUI task board plugin
 
 English | [中文](README.zh.md)
+
+## Summary
+
+This package adds a Web task board backed by a Host-owned ledger and scheduler. Task runs create ordinary DSH sessions; the browser is a view, not the execution owner. Optional idle-sleep protection keeps running sessions alive but does not wake a sleeping computer.
+
+## Table of Contents
+
+- Features
+- Architecture and protocol
+- Install
+- Configuration
+- Security model
+- Model Experience
+- Known Limitations and Deferred Work
+- Dev Note
 
 A hot-pluggable DeepSeek Harness (DSH) Web GUI plugin with a Host-authoritative task ledger, real DSH session execution, Host cron scheduling, and optional cross-platform idle-sleep protection. It is mounted through `cordis.patch.yml` and the profile mechanism and does not modify DSH source code.
 
@@ -101,7 +121,23 @@ Set `DSH_POWER_SMOKE=1` to opt into the native helper smoke test on Windows, mac
 7. Disable the setting and all schedules, stop DSH, and confirm the helper exits; on macOS, `pmset -g assertions` should show no display-sleep assertion from this plugin.
 8. On Linux, use `systemd-inhibit --list` to confirm that only an `idle`/`block` entry exists; the display should still follow desktop settings, while manual sleep and lid close remain under system policy.
 
-## Known limitations
+## Model Experience
+
+### Scheduled task and optional announcement
+
+#### What the model sees
+
+A task run sends the saved prompt as an ordinary user message to a new DSH session. If `announceToAgent` is enabled, the plugin also adds a task-board system-prompt section; it is off by default.
+
+#### Token effect
+
+The task prompt consumes ordinary user-message tokens. The optional announcement adds system-prompt tokens only when enabled; browser board state is not included wholesale.
+
+#### KV Cache effect
+
+A new task session assembles its own model context. Editing the board outside a running session does not rewrite an existing session's cached context.
+
+## Known Limitations and Deferred Work
 
 - Missed occurrences during Host downtime, system sleep, or a long pause are skipped and never queued for catch-up.
 - A task that is already running skips its due occurrence and rolls to the next cron match; task runs never overlap or queue.
@@ -112,3 +148,7 @@ Set `DSH_POWER_SMOKE=1` to opt into the native helper smoke test on Windows, mac
 - Linux requires systemd-logind and policy permission for the current user to acquire an idle block lock. Containers, WSL, hosts without a system bus, and non-systemd systems may report `unsupported` or `error`. Whether a desktop also associates a logind idle lock with display idleness is desktop policy; the plugin does not request a screensaver or display inhibitor.
 - Keeping enabled schedules armed may increase battery consumption because protection starts before their future trigger time.
 - Host execution consumes the same API quota as an ordinary DSH agent session.
+
+### Dev Note
+
+The inherited upstream checkout commands are not the integrated selfuse development path. Verify the Host ledger, scheduler, and idle-sleep behavior separately when adapting to a new DSH version.

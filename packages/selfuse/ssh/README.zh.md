@@ -1,6 +1,25 @@
+---
+description: "在 DSH Web 管理 SSH 主机，并向 Agent 提供远程操作工具。"
+kind: "package-bundle"
+---
+
 # dsh-ssh — 远程 SSH 运维插件（DSH 版 ssh-skill）
 
 [English](README.md) | 中文
+
+## 概述
+
+本包提供 Web SSH 主机管理、终端、文件传输控件和 Agent 工具。主机凭据保存在 DSH 用户目录，远程操作使用宿主进程权限。只有在信任该权限面和远程主机时才应安装。
+
+## 目录
+
+- 能力
+- 安全模型
+- 安装
+- 配置
+- 模型体验
+- 已知限制与待办
+- 开发备注
 
 基于 [badseal/ssh-skill](https://github.com/badseal/ssh-skill) 的能力清单，为 DeepSeek Harness（DSH）定制的远程 SSH 插件：Host 进程内的持久连接池 + Web GUI 主机管理面板 + Web 终端 + Agent 工具，全部通过官方 NPM SDK 实现，不修改 DSH 源码。
 
@@ -34,10 +53,10 @@
 推荐直接安装全家桶聚合包 `@dsh-selfuse/web-ui-all`（一个包装齐全部功能插件与皮肤），或单独安装本插件：
 
 ```sh
-### 从 npm 安装（推荐）
+### From npm (recommended)
 dsh plugin --profile web add @dsh-selfuse/ssh@latest
 
-### 从仓库安装（开发调试）
+### From the repository (development)
 git clone https://github.com/zhu1090093659/dsh-web-ui.git
 cd dsh-web-ui
 pnpm install && pnpm -r build
@@ -60,11 +79,27 @@ dsh plugin --profile web add link:$(pwd)/packages/dsh-ssh
 
 ```sh
 pnpm install --filter @dsh-selfuse/ssh...
-pnpm --filter @dsh-selfuse/ssh test    # 单测：store + 引擎（内嵌 ssh2 Server + 真实 sshd）
-pnpm --filter @dsh-selfuse/ssh build   # tsc 类型 + tsdown 双半区产物
+pnpm --filter @dsh-selfuse/ssh test    # unit tests: store + engine (embedded ssh2 Server + real sshd)
+pnpm --filter @dsh-selfuse/ssh build   # tsc types + tsdown dual-half artifacts
 ```
 
-## 已知限制
+## 模型体验
+
+### SSH 工具调用
+
+#### 模型看到什么
+
+启用后，Agent 接收 SSH 工具 schema，以及 `ssh_list`、`ssh_exec`、`ssh_upload`、`ssh_download`、`ssh_tunnel`、`ssh_cluster` 的调用结果文本。远程命令输出可能包含密钥，插件不会自动脱敏。
+
+#### Token 影响
+
+工具 schema 增加提示词 token；只有被调用工具的状态或输出才增加后续结果 token。Web 主机列表本身不是模型上下文。
+
+#### KV Cache 影响
+
+工具可用时，schema 留在模型上下文。调用结果会延长当前轮上下文；在工具调用之外修改保存的主机列表，不会自行刷新已缓存上下文。
+
+## 已知限制与待办
 
 - 上传的远程目标路径必须是绝对路径（相对路径会被拒绝）。
 - 下载暂不支持整个目录（逐文件下载）；上传支持目录递归（walk 本地目录逐文件传）。
@@ -72,3 +107,7 @@ pnpm --filter @dsh-selfuse/ssh build   # tsc 类型 + tsdown 双半区产物
 - 跳板机 ProxyJump 的每一跳必须是本插件已配置的主机别名。
 - 断点续传（resume）暂未实现。
 - Agent 工具的传输为宿主机器本地路径（与 ssh-skill 相同的语义）。
+
+### 开发备注
+
+上文旧版上游 checkout 命令说明插件来源，不是整合后的 selfuse 工作区。新 profile 启用前，应重跑本包测试并对可信测试主机进行真实 SSH 冒烟。

@@ -111,7 +111,3 @@ const channelActive = (): boolean => {
   node scripts/selfuse/update.mjs --check
   node scripts/selfuse/update.mjs --apply --restart
   ```
-
-## 相关提交
-
-- `5a37748c2a perf(remote): make desktop remote loading reliable on tablets`

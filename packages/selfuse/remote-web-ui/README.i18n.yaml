@@ -1,6 +1,58 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/selfuse/remote-web-ui/README.md
-README.md: 80c70680bb0c3080874ad1c4e950ea660a072854
-README.zh.md: 5469f140557eb5f2fa8a96cd0a16c9150afff962
+/:
+  en: 596c285d71871ee8
+  zh: ed737980ef63f837
+/dsh-selfuse-remote-web-ui:
+  en: 58ea7ffef6fb69e5
+  zh: 1f032fd69db825cb
+/dsh-selfuse-remote-web-ui/summary:
+  en: cfb2c36e8200a262
+  zh: c4d639f8e772dc62
+/dsh-selfuse-remote-web-ui/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: c72b311df185caf1
+/dsh-selfuse-remote-web-ui/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/dsh-selfuse-remote-web-ui/use-this-package/install-into-a-profile:
+  en: da3948c3e3d73fd6
+  zh: 707227fea4caf512
+/dsh-selfuse-remote-web-ui/use-this-package/pair-a-remote-computer:
+  en: 0bf9b7322cdea667
+  zh: 98dada4db79a985d
+/dsh-selfuse-remote-web-ui/use-this-package/choose-the-network-path:
+  en: 48afe40fe92c0e24
+  zh: 4f7227cd10df13d7
+/dsh-selfuse-remote-web-ui/use-this-package/configuration:
+  en: c8e35d888db70ac8
+  zh: 95d26968c53f6eff
+/dsh-selfuse-remote-web-ui/understand-the-implementation:
+  en: 4a45aebb4e9945dc
+  zh: 26b09f2141ba3467
+/dsh-selfuse-remote-web-ui/further-exploration:
+  en: 7ecf51ebb1c1d821
+  zh: 78f7a8a69168206f
+/dsh-selfuse-remote-web-ui/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/dsh-selfuse-remote-web-ui/model-experience/remote-desktop-transport:
+  en: 9347ad2337662d2b
+  zh: 7f7c10f5b162d5fc
+/dsh-selfuse-remote-web-ui/model-experience/remote-desktop-transport/what-the-model-sees:
+  en: 488d57ae9cd8e706
+  zh: 4d5ac693ff84d0bf
+/dsh-selfuse-remote-web-ui/model-experience/remote-desktop-transport/token-effect:
+  en: 0360cd0702ee11bb
+  zh: 34780da5e4dd1cb1
+/dsh-selfuse-remote-web-ui/model-experience/remote-desktop-transport/kv-cache-effect:
+  en: 736e0b57afa760a3
+  zh: b87c78435879576a
+/dsh-selfuse-remote-web-ui/known-limitations-and-deferred-work:
+  en: 0fa995837c28a9a9
+  zh: 27c8544daf9a3ca7
+/dsh-selfuse-remote-web-ui/known-limitations-and-deferred-work/dev-note:
+  en: b0d2cc1c97f8d5aa
+  zh: 3db7861417b5e2ff

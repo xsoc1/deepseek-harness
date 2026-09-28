@@ -10967,6 +10967,9 @@ importers:
       '@deepseek-ai/dsh-settings':
         specifier: workspace:*
         version: link:../../settings/settings
+      '@dsh-selfuse/web-ui-settings':
+        specifier: workspace:*
+        version: link:../web-ui-settings
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.2
@@ -11468,6 +11471,9 @@ importers:
       '@deepseek-ai/dsh-system-prompt':
         specifier: workspace:*
         version: link:../../core/system-prompt
+      '@dsh-selfuse/web-ui-settings':
+        specifier: workspace:*
+        version: link:../web-ui-settings
       '@types/node':
         specifier: ^22.20.0
         version: 22.20.0

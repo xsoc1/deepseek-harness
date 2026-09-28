@@ -16,7 +16,9 @@ import type {} from '@deepseek-ai/dsh-system-prompt'
 export const name = '@dsh-selfuse/skill-router'
 export const inject = ['systemPrompt']
 
+/** Deployment switch for the legacy system-prompt-only skill router. */
 export interface Config {
+  /** Whether this legacy prompt-only router contributes its skill section. */
   enabled: boolean
 }
 

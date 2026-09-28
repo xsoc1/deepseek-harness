@@ -1,9 +1,27 @@
+---
+description: "Legacy WSL workspace bundle retained for existing sessions during the native-WSL migration."
+kind: "package-bundle"
+---
+
 # @dsh-selfuse/wsl-workspace
 
 English | [中文](README.zh.md)
 
-![alt text](image-3.png)
-Add a WSL workspace from the DeepSeek Harness web GUI and run the whole agent session — bash commands and file reads/writes — inside a local WSL distribution with Linux paths. Nothing needs to be installed inside WSL. The session can reach both WSL and Windows at the same time: bash commands run inside the WSL distribution, while Windows files stay accessible via `/mnt/<drive>` (for example `/mnt/c/Users/...`).
+## Summary
+
+This legacy bundle mapped Web workspaces to a WSL distribution and routed shell and file operations there. It is retained for historical-session compatibility while the selfuse runtime moves to native WSL execution. Do not enable it for new sessions without checking the active profile and the migration status.
+
+## Table of Contents
+
+- Install
+- Usage
+- Behavior notes
+- License and attribution
+- Model Experience
+- Known Limitations and Deferred Work
+- Dev Note
+
+![alt text](image-3.png) Add a WSL workspace from the DeepSeek Harness web GUI and run the whole agent session — bash commands and file reads/writes — inside a local WSL distribution with Linux paths. Nothing needs to be installed inside WSL. The session can reach both WSL and Windows at the same time: bash commands run inside the WSL distribution, while Windows files stay accessible via `/mnt/<drive>` (for example `/mnt/c/Users/...`).
 
 ## Install
 
@@ -26,8 +44,7 @@ After restarting `dsh web`, a W button appears beside Settings at the sidebar fo
 
 Click the W button beside Settings at the sidebar foot to open the "Add WSL workspace" dialog. Pick a distribution from the list, then browse the directory tree or type an absolute Linux path (for example `/home/me/proj`) — use the Check button to verify the path exists before creating the workspace. The dialog follows the DeepSeek Harness UI language. The username field is optional: leave it empty to run commands as the distribution's default user, or name a Linux user of that distribution to run the session as that user instead (equivalent to `wsl.exe -u <username>`). The username changes the bash tool's run identity; file tools use the account running the DSH host. Each workspace's username is kept in `<dshHome>/wsl-workspaces.json`; delete the entry (or recreate the workspace from the dialog) to return to the default user.
 
-Click "Create & open" to start a new session in the workspace. In the new session the bash tool executes commands inside the chosen distribution and `read`/`write`/`edit` operate on WSL files, so every path the model sees is a Linux path. The mode picker keeps working as usual: Standard, PTC, Minimal and Creative each land on their WSL variant automatically (the WSL variant entries in the picker are bilingual, e.g. `WSL · Standard mode（标准模式）`), and Windows files stay reachable from inside the session under `/mnt/<drive>` (for example `/mnt/c/Users/...`).
-![alt text](image-2.png)
+Click "Create & open" to start a new session in the workspace. In the new session the bash tool executes commands inside the chosen distribution and `read`/`write`/`edit` operate on WSL files, so every path the model sees is a Linux path. The mode picker keeps working as usual: Standard, PTC, Minimal and Creative each land on their WSL variant automatically (the WSL variant entries in the picker are bilingual, e.g. `WSL · Standard mode（标准模式）`), and Windows files stay reachable from inside the session under `/mnt/<drive>` (for example `/mnt/c/Users/...`). ![alt text](image-2.png)
 ## Behavior notes
 
 - **bash tool**: runs inside the WSL distribution as the configured username (empty = the distro default user, often `root`), so it can read and write anywhere in the distro. The Windows ACL sandbox cannot wrap `wsl.exe` — its children run on the Linux kernel side — so WSL itself is the isolation boundary and the DSH file policy does not apply to bash.
@@ -46,3 +63,20 @@ Keep `LICENSE` and `NOTICE` when redistributing.
 ## Acknowledgments
 
 Special thanks to [dsh-deep-whale](https://github.com/Small-tailqwq/dsh-deep-whale) (DSH Web 鲸鱼娘 skin series · 深海女仆工坊 maid-atelier, CC BY-NC-SA 4.0): the whale girl skin plugin brings a full set of adorable skins to the DeepSeek Harness Web UI and makes daily use of DSH a warmer experience.
+
+## Model Experience
+
+Indirectly, through the existing shell and filesystem tools that render WSL paths and operation results.
+
+#### KV Cache effect
+
+Changing the workspace provider does not itself add model text; subsequent tool calls can add their normal result text to the current turn.
+
+## Known Limitations and Deferred Work
+
+- This legacy bundle is not the preferred path for new WSL sessions; existing session presets must be retained until their migration is verified.
+- The shell and file providers can use different accounts, so a WSL username selected for Bash does not imply the same file permissions.
+
+### Dev Note
+
+The install section is retained for historical reference. Verify the active native-WSL profile before removing the compatibility bundle from source.

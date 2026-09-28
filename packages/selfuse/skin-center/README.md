@@ -1,6 +1,25 @@
+---
+description: "Choose, preview, and apply local Web UI skins and wallpapers from the settings page."
+kind: "package-bundle"
+---
+
 # Skin Center (in-GUI skin center)
 
 English | [中文](README.zh.md)
+
+## Summary
+
+Skin Center lets the user preview and apply a Web UI skin without restarting DSH. Built-in and user skins appear in one settings page; wallpaper and background controls use the same local browser surface. Skins change presentation only and do not enter model requests. The checked-in package is currently a prebuilt snapshot: its `lib/` and assets are present, but the `src/` paths described below refer to upstream source and are not maintained in this checkout.
+
+## Table of Contents
+
+- Install
+- Configuration
+- Security model
+- Known Limitations and Deferred Work
+- Directory structure
+- Acceptance checklist
+- Dev Note
 
 `@dsh-selfuse/skin-center` (cordis plugin id `ui-skin-center`) is the single skin package of the dsh Web GUI: it puts the skin list / try-on / apply into the real GUI as a first-level settings section (settings → 皮肤中心 / Skin Center), and it is the only loader and renderer for skins. A skin is a pure asset directory — no package.json, no npm publish, no cordis wiring — that couples only to the skin-center contract (`contracts/`); the skin center absorbs every official-DSH coupling behind that contract. The card carries its own enable switch (off disables try-on, apply and the background controls).
 
@@ -18,12 +37,12 @@ English | [中文](README.zh.md)
 
 ```sh
 dsh plugin --profile web add @dsh-selfuse/skin-center
-# From the repo (dev): dsh plugin --profile web add link:$(pwd)/packages/skins/skin-center
+dsh plugin --profile web add link:$(pwd)/packages/selfuse/skin-center
 ```
 
-`$(pwd)` is your clone of the dsh-web-ui monorepo. All built-in skins ship inside this one package; community skins are plain directories dropped into `$DSH_HOME/skins/<id>/` (no install command, no restart — reopen the card or reload to pick them up).
+`$(pwd)` is the root of this repository. All built-in skins ship inside this one package; community skins are plain directories dropped into `$DSH_HOME/skins/<id>/` (no install command, no restart — reopen the card or reload to pick them up).
 
-skin-center is a self-contained bundle meeting the official DSH plugin standard (`dsh.bundle.patch` points to `cordis.patch.yml`); it can also be installed via git: `dsh plugin --profile web add github:<org>/dsh-web-ui#<sha>` (the `prepare` script builds `lib/` in place). pnpm ≥10 requires authorizing `allowBuilds` before installing a git dependency; a local `link:` install has no such requirement.
+skin-center is a self-contained bundle meeting the official DSH plugin standard (`dsh.bundle.patch` points to `cordis.patch.yml`). This selfuse tree includes its compiled `lib/`; a local `link:` install uses this package directly.
 
 ## Configuration
 
@@ -38,7 +57,9 @@ skin-center is a self-contained bundle meeting the official DSH plugin standard 
 - Skin CSS is sanitized (whitelist) before serving; `patches.css` (L3) is arbitrary CSS by design and disclosed as such — it runs with full page styling power and is not a security boundary.
 - `hooks.mjs` is trusted code that shares this repository's review and release; it is served same-origin only and its import/apply errors can never take the static skin down.
 
-## Known limitations
+## Known Limitations and Deferred Work
+
+- This workspace copy has compiled `lib/` and assets but no `src/` tree. The source-path design notes below describe its upstream origin, not editable files in this checkout; source-level changes require importing and verifying that source first.
 
 - Inline styles written by plugins at runtime can only be overridden by L3 `!important` patches.
 - Plugins that do not output semantic attributes (and have no stable DOM anchors) receive L1 token coverage only.
@@ -47,22 +68,13 @@ skin-center is a self-contained bundle meeting the official DSH plugin standard 
 ## Directory structure
 
 ```
-skins/skin-center/
-  contracts/                                # the skin-facing contract surface (schema, hooks API, semantic attrs)
-  src/core/manifest-v2/                     # manifest v2 types + fail-closed validator
-  src/core/css-safety/                      # lightningcss scoping + whitelist pipeline
-  src/index.ts                              # host entry: routes, tapIndex adapter, legacy bridge
-  src/skin-repo.ts                          # dual-source skin catalog (built-in + $DSH_HOME/skins)
-  src/routes-v2.ts                          # /api/skin-center/v2/* routes
-  src/tap-index-adapter.ts                  # the single tapIndex adapter (anti-FOUC)
-  src/active-state.ts                       # active-skin selection persistence
-  src/legacy-bridge.ts                      # one-shot v1 → v2 migration
-  src/http-utils.ts / harness-home.ts       # shared route helpers / DSH path resolution
-  src/we-library.ts / we-routes.ts / we-shim-source.ts / pkg-extract.ts   # Wallpaper Engine bridge
-  src/client/runtime/                       # effect ledger, decoration layers, semantic adapter, switch controller, boot store
-  src/client/SkinCenter.tsx                 # the settings card
-  src/client/background.ts / wallpaper.ts / WallpaperPanel.tsx            # scrim + blur / WE bridge UI
-  skins/<id>/                               # built-in skins (pure asset directories)
+packages/selfuse/skin-center/
+  package.json
+  cordis.patch.yml
+  lib/index.js
+  lib/client.js
+  contracts/
+  skins/
 ```
 
 ## Acceptance checklist
@@ -73,3 +85,7 @@ skins/skin-center/
 - [x] One-click apply switches atomically with no reload; a later page load boots straight into the skin (no FOUC)
 - [x] The Wallpaper Engine bridge, background scrim and blur controls are unaffected by skin switches
 - [x] e2e screenshots live in `docs/e2e/skin-center/`
+
+## Dev Note
+
+The acceptance checklist records earlier upstream testing; this upgrade has not independently re-run every visual item on the user's device.

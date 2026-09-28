@@ -1,0 +1,16 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/skin-center/skins/cyber-night/README.md
+/linxin666-dsh-skin-cyber-night:
+  en: 5f0ce1a1a68d88e8
+  zh: cdf9cfab8e2ae079
+/linxin666-dsh-skin-cyber-night/what-it-is:
+  en: b798b702a8916a73
+  zh: 6c530ac6866816bf
+/linxin666-dsh-skin-cyber-night/preview:
+  en: 4806b6482b9ed32a
+  zh: 8750f7fa1af42460
+/linxin666-dsh-skin-cyber-night/license:
+  en: fa25d698a22b03bc
+  zh: 47d305d62c218506

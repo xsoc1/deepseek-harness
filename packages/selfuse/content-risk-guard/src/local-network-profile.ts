@@ -11,7 +11,9 @@ const HANDLE_PATTERN = /^[a-f0-9]{32}$/
 
 /** One explicitly configured local profile; its path is never model-visible. */
 export interface LocalNetworkProfile {
+  /** Non-secret alias exposed to the model for this allowlisted profile. */
   id: string
+  /** Absolute local YAML path kept out of model-visible responses. */
   path: string
 }
 
@@ -74,12 +76,17 @@ export class LocalNetworkProfileExecutor {
     }
   }
 
-  /** Return only non-secret aliases configured by the local owner. */
+  /** Return only non-secret aliases configured by the local owner.
+   * @returns configured profile aliases, without filesystem paths.
+   */
   list(): string[] {
     return [...this.profiles.keys()]
   }
 
-  /** Recognize a direct tool reference to one allowlisted file without exposing its path. */
+  /** Recognize a direct tool reference to one allowlisted file without exposing its path.
+   * @param argumentsValue tool arguments to inspect for an exact configured path.
+   * @returns whether an allowlisted profile path appears in those arguments.
+   */
   referencesConfiguredPath(argumentsValue: unknown): boolean {
     if (this.profiles.size === 0) return false
     const serialized = JSON.stringify(argumentsValue)
@@ -101,7 +108,10 @@ export class LocalNetworkProfileExecutor {
     }
   }
 
-  /** Inspect one allowlisted YAML file without revealing its values. */
+  /** Inspect one allowlisted YAML file without revealing its values.
+   * @param id non-secret alias configured by the local owner.
+   * @returns a digest and bounded, non-identifying facts.
+   */
   async inspect(id: string): Promise<NetworkProfileOutcome> {
     const text = await readRegularFile(this.pathFor(id), this.maxBytes, false)
     parseProfile(text)
@@ -126,7 +136,11 @@ export class LocalNetworkProfileExecutor {
     return handle
   }
 
-  /** Apply an approved non-secret edit after backing up the complete original. */
+  /** Apply an approved non-secret edit after backing up the complete original.
+   * @param id alias of the allowlisted YAML file.
+   * @param change constrained edit approved by the human-approval channel.
+   * @returns facts about the resulting file and a rollback handle when changed.
+   */
   async apply(id: string, change: NetworkProfileChange): Promise<NetworkProfileOutcome> {
     const path = this.pathFor(id)
     return withFileLock(path, async () => {
@@ -149,7 +163,11 @@ export class LocalNetworkProfileExecutor {
     })
   }
 
-  /** Restore an approved backup belonging to the same configured profile. */
+  /** Restore an approved backup belonging to the same configured profile.
+   * @param id alias of the allowlisted YAML file.
+   * @param handle opaque handle for a backup belonging to that profile.
+   * @returns facts about the restored file and a backup of the replaced state when changed.
+   */
   async restore(id: string, handle: string): Promise<NetworkProfileOutcome> {
     if (!HANDLE_PATTERN.test(handle)) throw new Error('invalid local network backup handle')
     const path = this.pathFor(id)

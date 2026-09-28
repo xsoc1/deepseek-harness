@@ -150,6 +150,8 @@ export type Config = PresetDefinition
 export interface Config {
   /** Deployment default when the caller omits a preset. */
   default: string
+  /** Explicit one-hop compatibility mappings for retired preset IDs. */
+  aliases: Record<string, string>
   /** User-selected default; edited through Settings. */
   selectedDefault: Volatile<string | undefined>
 }
@@ -2211,7 +2213,9 @@ export interface Config {
    * complete `{{…}}` groups interpolate strictly against registered prompt
    * variables. Empty text drops the section at render, matching the registry.
    */
-  prefix: string
+  prefix?: string
+  /** Legacy alias for prefix from earlier presets. */
+  text?: string
   /**
    * Persona suffix template rendered after first-party guidance. Omitted or empty
    * text shadows the deployment suffix away; interpolation is strict.
@@ -4303,6 +4307,100 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-workspace-changes -->
 
+<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/content-risk-guard -->
+<a id="dsh-selfusecontent-risk-guard"></a>
+
+## `@dsh-selfuse/content-risk-guard`
+
+- `inject`: `tools`
+- `source`: [`packages/selfuse/content-risk-guard/src/index.ts:16`](../packages/selfuse/content-risk-guard/src/index.ts)
+
+```ts config-catalog
+/** Local-only isolation settings; profile paths and retained text never enter model output. */
+export interface Config {
+  /** Disable local isolation only when an owner intentionally removes this guard. */
+  enabled?: boolean
+  /** Absolute, owner-only directory for retained results and profile backups. */
+  privateRoot?: string
+  /** Maximum age of a locally retained result before it expires. */
+  retentionHours?: number
+  /** Maximum UTF-8 byte size of a retained result or allowlisted profile. */
+  maxStoredBytes?: number
+  /** Allowlisted local YAML profiles addressable only by non-secret aliases. */
+  profiles?: LocalNetworkProfile[]
+}
+
+/** One explicitly configured local profile; its path is never model-visible. */
+export interface LocalNetworkProfile {
+  /** Non-secret alias exposed to the model for this allowlisted profile. */
+  id: string
+  /** Absolute local YAML path kept out of model-visible responses. */
+  path: string
+}
+```
+<!-- END GENERATED config-catalog:@dsh-selfuse/content-risk-guard -->
+
+<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/market -->
+<a id="dsh-selfusemarket"></a>
+
+## `@dsh-selfuse/market`
+
+- `source`: [`packages/selfuse/market/src/index.ts:15`](../packages/selfuse/market/src/index.ts)
+
+```ts config-catalog
+/** Optional cordis.yml configuration; profile defaults to `web`. */
+export type Config = Partial<Pick<MarketConfig, 'profile' | 'allowRestart'>>
+
+export interface MarketConfig {
+  /** Profile the market installs into; matches the profile serving this UI. */
+  profile: string
+  /** Host-authoritative profile directory; ordinary DSH derives it from DSH_HOME. */
+  profileDirectory?: string
+  /** Detached self-restart is unsafe under systemd/launchd/pm2; operators can disable it (#14). */
+  allowRestart?: boolean
+  /** Which release channel the market offers ITSELF from; other plugins never follow it. */
+  channel?: Channel
+}
+
+/** A channel the market can follow. */
+export type Channel = 'stable' | 'beta' | 'dev'
+```
+<!-- END GENERATED config-catalog:@dsh-selfuse/market -->
+
+<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/skill-router -->
+<a id="dsh-selfuseskill-router"></a>
+
+## `@dsh-selfuse/skill-router`
+
+- `inject`: `systemPrompt`
+- `source`: [`packages/selfuse/skill-router/src/index.ts:20`](../packages/selfuse/skill-router/src/index.ts)
+
+```ts config-catalog
+/** Deployment switch for the legacy system-prompt-only skill router. */
+export interface Config {
+  /** Whether this legacy prompt-only router contributes its skill section. */
+  enabled: boolean
+}
+```
+<!-- END GENERATED config-catalog:@dsh-selfuse/skill-router -->
+
+<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/wsl-workspace -->
+<a id="dsh-selfusewsl-workspace"></a>
+
+## `@dsh-selfuse/wsl-workspace`
+
+- `inject`: `webServer`
+- `source`: [`packages/selfuse/wsl-workspace/src/index.ts:81`](../packages/selfuse/wsl-workspace/src/index.ts)
+
+```ts config-catalog
+/** Plugin config. */
+export interface Config {
+  /** The route under which the dialog data API is served. */
+  route?: string
+}
+```
+<!-- END GENERATED config-catalog:@dsh-selfuse/wsl-workspace -->
+
 ## 无配置的可加载插件
 
 这些插件通过 `cordis.yml` 中不含 `config:` 块的条目加载；它们未声明任何配置接口。
@@ -4410,6 +4508,35 @@ export interface Config {
 | `@deepseek-ai/dsh-workspace` | `storageDomain` · `sessionPersistence` | [`packages/workspace/workspace/src/index.ts`](../packages/workspace/workspace/src/index.ts) |
 <!-- END GENERATED config-catalog:no-config -->
 
+## 缺少可检查 TypeScript 源码的包
+
+这些包有可验证的编译入口、bundle patch 或原生 GUI 源码，但没有 `src/index.ts`。本目录**未验证**其配置和服务注入；更改部署前需检查包清单和运行时 bundle。
+
+<!-- BEGIN GENERATED config-catalog:opaque -->
+| `package` | `inject` | `source` |
+| --- | --- | --- |
+| `@deepseek-ai/dsh-client-file-changes` | unknown | [`packages/selfuse/eac-client-file-changes/package.json`](../packages/selfuse/eac-client-file-changes/package.json) |
+| `@deepseek-ai/dsh-client-runtime` | unknown | [`packages/client/runtime/package.json`](../packages/client/runtime/package.json) |
+| `@deepseek-ai/dsh-easy-setup` | unknown | [`packages/selfuse/eac-easy-setup/package.json`](../packages/selfuse/eac-easy-setup/package.json) |
+| `@deepseek-ai/dsh-file-changes` | unknown | [`packages/selfuse/eac-file-changes/package.json`](../packages/selfuse/eac-file-changes/package.json) |
+| `@deepseek-ai/dsh-host-apiproxy` | unknown | [`packages/host/apiproxy/package.json`](../packages/host/apiproxy/package.json) |
+| `@deepseek-ai/dsh-shell-terminal` | unknown | [`packages/selfuse/eac-shell-terminal/package.json`](../packages/selfuse/eac-shell-terminal/package.json) |
+| `@deepseek-ai/dsh-task-notify` | unknown | [`packages/selfuse/eac-task-notify/package.json`](../packages/selfuse/eac-task-notify/package.json) |
+| `@deepseek-ai/dsh-web-shell-bridge` | unknown | [`packages/selfuse/eac-web-shell-bridge/package.json`](../packages/selfuse/eac-web-shell-bridge/package.json) |
+| `@dsh-selfuse/backup` | unknown | [`packages/selfuse/backup/package.json`](../packages/selfuse/backup/package.json) |
+| `@dsh-selfuse/control-gui` | unknown | [`packages/selfuse/control-gui/package.json`](../packages/selfuse/control-gui/package.json) |
+| `@dsh-selfuse/git-workflow` | unknown | [`packages/selfuse/git-workflow/package.json`](../packages/selfuse/git-workflow/package.json) |
+| `@dsh-selfuse/memory-panel` | unknown | [`packages/selfuse/memory-panel/package.json`](../packages/selfuse/memory-panel/package.json) |
+| `@dsh-selfuse/mineru` | unknown | [`packages/selfuse/mineru/package.json`](../packages/selfuse/mineru/package.json) |
+| `@dsh-selfuse/skin-center` | unknown | [`packages/selfuse/skin-center/package.json`](../packages/selfuse/skin-center/package.json) |
+| `@dsh-selfuse/skins` | unknown | [`packages/selfuse/skins/package.json`](../packages/selfuse/skins/package.json) |
+| `@dsh-selfuse/soul-md` | unknown | [`packages/selfuse/soul-md/package.json`](../packages/selfuse/soul-md/package.json) |
+| `@dsh-selfuse/undo` | unknown | [`packages/selfuse/undo/package.json`](../packages/selfuse/undo/package.json) |
+| `@dsh-selfuse/web-ui-all` | unknown | [`packages/selfuse/web-ui-all/package.json`](../packages/selfuse/web-ui-all/package.json) |
+| `@dsh-selfuse/web-ui-community-plugins` | unknown | [`packages/selfuse/web-ui-community-plugins/package.json`](../packages/selfuse/web-ui-community-plugins/package.json) |
+| `@dsh-selfuse/web-ui-settings` | unknown | [`packages/selfuse/web-ui-settings/package.json`](../packages/selfuse/web-ui-settings/package.json) |
+<!-- END GENERATED config-catalog:opaque -->
+
 ## Seam 包（不可直接加载）
 
 抽象服务类——部署时应改为加载具体的实现包（参见[能力 seam](../.agents/notes/implemented/architecture/2026-06-13-capability-seams.zh.md)）。
@@ -4500,4 +4627,8 @@ export interface Config {
 | `@deepseek-ai/dsh-util-values` | — | [`packages/util/values/src/index.ts`](../packages/util/values/src/index.ts) |
 | `@deepseek-ai/dsh-util-workspace-path` | — | [`packages/util/workspace-path/src/index.ts`](../packages/util/workspace-path/src/index.ts) |
 | `@deepseek-ai/dsh-win32-process` | — | [`packages/subprocess/win32-process/src/index.ts`](../packages/subprocess/win32-process/src/index.ts) |
+| `@dsh-selfuse/remote-web-ui` | — | [`packages/selfuse/remote-web-ui/src/index.ts`](../packages/selfuse/remote-web-ui/src/index.ts) |
+| `@dsh-selfuse/ssh` | — | [`packages/selfuse/ssh/src/index.ts`](../packages/selfuse/ssh/src/index.ts) |
+| `@dsh-selfuse/web-ui-git-graph` | — | [`packages/selfuse/web-ui-git-graph/src/index.ts`](../packages/selfuse/web-ui-git-graph/src/index.ts) |
+| `@dsh-selfuse/web-ui-task-board` | — | [`packages/selfuse/web-ui-task-board/src/index.ts`](../packages/selfuse/web-ui-task-board/src/index.ts) |
 <!-- END GENERATED config-catalog:library -->

@@ -138,7 +138,7 @@ it('writes only after the approval service grants the model-requested change', a
   }
 })
 
-it('isolates a partial read by allowlisted file provenance even without a proxies header', async () => {
+it('isolates a partial read that directly names an allowlisted file even without a proxies header', async () => {
   const root = await mkdtemp(join(tmpdir(), 'dsh-risk-path-'))
   const path = join(root, 'profile.yaml')
   const privateRoot = join(root, 'private')

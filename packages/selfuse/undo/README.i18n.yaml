@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/undo/README.md
+/:
+  en: c4177f34df37d46f
+  zh: fcf8db02dbaf0573
+/dsh-selfuse-undo:
+  en: d9f5a01c04bafd68
+  zh: ff2ee2e0f8d68674
+/dsh-selfuse-undo/summary:
+  en: a63705095213ff37
+  zh: 337b8171a5bb2a00
+/dsh-selfuse-undo/table-of-contents:
+  en: 8cc78e190099c057
+  zh: d1f2cf0cbc8d22f0
+/dsh-selfuse-undo/use-the-bundle:
+  en: 30c88aece1f60fa2
+  zh: 0eae00f7f88b502f
+/dsh-selfuse-undo/recovery-scope:
+  en: dd3f8b1981cceb76
+  zh: 1fb4623e264cda7c
+/dsh-selfuse-undo/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/dsh-selfuse-undo/model-experience/configuration-recovery-tools:
+  en: d99957f9ceba2959
+  zh: 091b50dbf482e739
+/dsh-selfuse-undo/model-experience/configuration-recovery-tools/what-the-model-sees:
+  en: 9c0fbbf1a31fe6c8
+  zh: dc74b5d8ccb849d1
+/dsh-selfuse-undo/model-experience/configuration-recovery-tools/token-effect:
+  en: cf2fcb11bbcb1cbd
+  zh: c0c278213d9b8ab0
+/dsh-selfuse-undo/model-experience/configuration-recovery-tools/kv-cache-effect:
+  en: f825123f6611365d
+  zh: 81f6181ac1b0f149
+/dsh-selfuse-undo/known-limitations-and-deferred-work:
+  en: 0f958bf52bee649e
+  zh: 9bf0314ba07e416c
+/dsh-selfuse-undo/known-limitations-and-deferred-work/dev-note:
+  en: c13289daff90e80f
+  zh: 07e076c1345c8902

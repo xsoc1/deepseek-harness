@@ -1,6 +1,25 @@
+---
+description: "在 DSH Web 客户端显示分支选择器和 Git 图谱。"
+kind: "package-bundle"
+---
+
 # dsh-git-graph
 
 [English](README.md) | 中文
+
+## 概述
+
+此 bundle 为 Web 空白会话增加分支选择器和 Git 图谱面板。切换分支前会检查冲突与其他 worktree 的占用，工作区选择仍由官方入口负责。它不增加模型工具或提示词上下文。自用 profile 通过 `web-ui-all` 加载此包。
+
+## 目录
+
+- 仓库布局与构建
+- 激活
+- 卸载
+- 设计说明
+- 检查链
+- 已知限制与待完成工作
+- 开发备注
 
 外部 dsh Web GUI 插件：**git 分支选择器**与**Git 图谱**面板。分支选择器只在空白会话显示，挂在官方输入选择器行的 context 洞（`conversation.input.selector.context`，session-maybe list 槽位）中，与官方工作区选择胶囊并排。若运行 shell 未声明该槽位（npm SDK rc.6 删除了它），等待 `CONTEXT_FALLBACK_MS` 后回退到 `conversation.input.dock`；在其空白会话 hero 相位，chip 会提升进官方 hero 行，紧贴 agent-preset 座位右侧，采用与官方工作区/预设胶囊一致的透明 28px 胶囊配方和 `--dsw-*` 主题 token。active 会话不提供分支选择控件。git 能力在 host 进程执行（磁盘工作树 `git switch`），UI 在浏览器 React；工作区选择保留官方入口。
 
@@ -8,25 +27,25 @@
 
 ## 仓库布局与构建
 
-与 DeepSeek Harness 主仓保持同级（sibling checkout，turtle-ui 同款布局；路径任意，以下仅为示例）：
+此包已经整合到当前工作区，而不是放在同级的独立 checkout 中：
 
 ```text
-~/code/deepseek-harness   # deepseek-harness checkout（sibling）
-~/code/dsh-git-graph      # 本仓库
+packages/selfuse/web-ui-git-graph/   # integrated package
+packages/client/                    # official Web client packages
 ```
 
-peer APIs 全部来自 sibling checkout 的源码（tsconfig 通过 `../deepseek-harness/tsconfig.base.json` 的 paths 解析；sibling 目录名不同时把 tsconfig 各文件里的 `../deepseek-harness` 相对路径换成实际目录即可），类型门是 `pnpm run typecheck`（`tsc -b`，会连带构建 references 指向的 sibling 包，向 sibling 的 `lib/` 写声明产物——与 turtle-ui 相同的设计）。
+工作区依赖由当前 monorepo 解析。从此包目录运行时，manifest 提供以下检查命令：
 
 ```sh
 pnpm install
-pnpm run typecheck   # tsc -b（含 sibling 引用项目）
-pnpm test            # vitest（core 纯函数 / 真实 git 服务 / jsdom 组件）
-pnpm run build       # tsc -b && tsdown（lib/index.js + lib/invariant.js + lib/client.js）
+pnpm run typecheck
+pnpm test
+pnpm run build
 ```
 
 `lib/client.js` 是浏览器 bundle（闭包工厂产物，`window.__ModuleLoader__.load`），由 host 的 client-modules 按 `/plugins/<id>/client.js` 伺服；构建预设 `build/tsdown.client.ts` + `build/web/src/platform.ts` 是从主仓 `packages/client/tsdown.client.ts` / `packages/client/web/src/platform.ts` 复制的副本，主仓版本变更时需同步。
 
-git 安装（无 sibling checkout 的消费者机器）走 `prepare` 脚本：`tsdown --config tsdown.prepare.config.ts` 从 src 直接 transpile，不做类型检查（`tsconfig.prepare.json` 自包含）。
+自用 profile 使用工作区包。此整合树尚未验证独立 Git 安装或其 prepare 路径。
 
 ## 激活
 
@@ -69,7 +88,7 @@ dsh plugin --profile web remove @dsh-selfuse/web-ui-git-graph
 
 ## 设计要点
 
-- 边界与加载链调研、关键决策见 [docs/ADR-001-plugin-boundary.md](docs/ADR-001-plugin-boundary.md)。
+- 插件边界与加载链的关键决策概述如下；旧 ADR 文件未随本包提供。
 - host half 的 `/git/*` 只接受已注册 workspace 的路径（realpath 校验）与受信任客户端（loopback socket + loopback Host，与 dsh-ssh 相同的 fence，同时装了 `dsh-remote-web-ui` 时有效的已配对设备 cookie 也是放行路径）；浏览器无法对任意目录执行 git，LAN 暴露的 dsh web 对未配对的非 loopback 客户端返回 403。
 - 切换语义是工作区级：`git switch --no-guess <branch>` 作用于 repoRoot 磁盘树，影响该工作区所有会话；项目切换 = 激活目标工作区并打开其（复用或新建的）空白会话，不给既有会话换 cwd。
 - 挂载 seam：`conversation.input.selector.context`（官方声明的 session-maybe list 槽位）是输入选择器行的 context 洞，与官方工作区胶囊并排。分支胶囊只在空白会话显示；无会话 cwd 或非 Git 工作区时自行隐藏。声明感知回退会等待该槽位声明 `CONTEXT_FALLBACK_MS`（npm SDK rc.6 的 shell 已删除此声明）；超时未声明时，改在 `conversation.input.dock` 的空白会话 hero 相位挂载。此时 chip 重新定位到官方 hero 行 agent-preset 座位右侧（官方 2px 行间距、垂直居中，胶囊尺寸与 token 对齐官方工作区/预设胶囊），弹层向下打开、对齐官方工作区菜单。active 会话没有分支选择控件。只挂一个座位，回退后迟到的 context 声明被忽略。
@@ -83,3 +102,12 @@ pnpm run typecheck
 pnpm test
 pnpm run build
 ```
+
+## 已知限制与待完成工作
+
+- 此包切换的是整个工作区 checkout 的分支，而非单个会话的分支。
+- 旧版独立安装与同级 checkout 指令属于历史说明，不是此自用树经验证的部署路径。
+
+## 开发备注
+
+每次官方 Web 客户端更新后都需重跑浏览器交互检查；仅有包构建成功不能证明槽位视觉位置正确。

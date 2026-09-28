@@ -1,6 +1,25 @@
+---
+description: "Show a branch selector and Git graph in the DSH Web client."
+kind: "package-bundle"
+---
+
 # dsh-git-graph
 
 English | [中文](README.zh.md)
+
+## Summary
+
+This bundle adds a branch selector for blank Web sessions and a Git graph panel. It checks conflicts and worktree ownership before switching branches, while the official workspace selector remains in charge of workspace choice. It does not add model tools or prompt context. The selfuse profile loads this package through `web-ui-all`.
+
+## Table of Contents
+
+- Repository layout and build
+- Activation
+- Uninstall
+- Design notes
+- Check chain
+- Known Limitations and Deferred Work
+- Dev Note
 
 External dsh Web GUI plugin: a **git branch selector** and **Git graph** panel. The selector appears only in blank sessions, in the context hole of the official input selector row (`conversation.input.selector.context`, a session-maybe list slot) next to the official workspace selector pill. If the running shell does not declare that slot (the npm SDK rc.6 removed it), it waits `CONTEXT_FALLBACK_MS` then falls back to `conversation.input.dock`; in its blank-session hero phase the chip lifts into the official hero row immediately after the agent-preset seat, using the same transparent 28px pill recipe and `--dsw-*` theme tokens as the official workspace and preset chips. Active sessions expose no branch-selection control. Git capabilities run in the host process (checkout-tree `git switch`) and the UI is browser React; workspace selection remains the official entry.
 
@@ -8,25 +27,25 @@ Behavior aligns with ZCode's `GitBranchSwitcher`: searchable popover, a checkmar
 
 ## Repository layout and build
 
-Kept as a sibling of the DeepSeek Harness main repo (sibling checkout, same turtle-ui layout; the path is arbitrary, below is only an example):
+This package is integrated into the current workspace rather than kept in a sibling checkout:
 
 ```text
-~/code/deepseek-harness   # deepseek-harness checkout (sibling)
-~/code/dsh-git-graph      # this repository
+packages/selfuse/web-ui-git-graph/   # integrated package
+packages/client/                    # official Web client packages
 ```
 
-All peer APIs come from the sibling checkout's source (tsconfig resolves via the paths of `../deepseek-harness/tsconfig.base.json`; when the sibling directory has a different name, replace the `../deepseek-harness` relative path in the tsconfig files with the actual directory). The type gate is `pnpm run typecheck` (`tsc -b`, which also builds the sibling packages referenced by `references`, writing declaration artifacts into the sibling's `lib/` — the same design as turtle-ui).
+Workspace dependencies resolve through the current monorepo. From this package directory, its manifest exposes the following checks:
 
 ```sh
 pnpm install
-pnpm run typecheck   # tsc -b (including sibling referenced projects)
-pnpm test            # vitest (core pure functions / real git service / jsdom components)
-pnpm run build       # tsc -b && tsdown (lib/index.js + lib/invariant.js + lib/client.js)
+pnpm run typecheck
+pnpm test
+pnpm run build
 ```
 
 `lib/client.js` is the browser bundle (a closure-factory artifact, `window.__ModuleLoader__.load`), served by the host's client-modules at `/plugins/<id>/client.js`; the build presets `build/tsdown.client.ts` + `build/web/src/platform.ts` are copies taken from the main repo's `packages/client/tsdown.client.ts` / `packages/client/web/src/platform.ts`, and must be kept in sync when the main repo changes.
 
-Git installs (consumer machines without a sibling checkout) go through the `prepare` script: `tsdown --config tsdown.prepare.config.ts` transpiles directly from src without type checking (`tsconfig.prepare.json` is self-contained).
+The selfuse profile uses the workspace package. A standalone Git install or its prepare path has not been verified against this integrated tree.
 
 ## Activation
 
@@ -69,7 +88,7 @@ dsh plugin --profile web remove @dsh-selfuse/web-ui-git-graph
 
 ## Design notes
 
-- Boundary and load-chain research and key decisions: see [docs/ADR-001-plugin-boundary.md](docs/ADR-001-plugin-boundary.md).
+- The plugin boundary and load-chain decisions are summarized below; the former ADR file is not part of this package.
 - The host half's `/git/*` only accepts paths of registered workspaces (realpath check) and trusted clients (loopback socket + loopback Host, the same fence as dsh-ssh, plus a live paired-device cookie when `dsh-remote-web-ui` is loaded); the browser cannot run git against arbitrary directories, and a LAN-exposed dsh web answers unpaired non-loopback clients with 403.
 - The switch semantics are workspace-level: `git switch --no-guess <branch>` operates on the repoRoot checkout tree and affects all sessions of that workspace; project switch = activate the target workspace and open its (reused or newly created) blank session, without changing the cwd of existing sessions.
 - Mount seam: `conversation.input.selector.context` (the officially declared session-maybe list slot) is the context hole of the input selector row beside the official workspace pill. The branch pill renders only for blank sessions and hides when there is no session cwd or the workspace is not a Git repository. Declaration-aware fallback waits `CONTEXT_FALLBACK_MS` for that slot (the npm SDK rc.6 shell removed its declaration); if no declaration arrives, it mounts on `conversation.input.dock` for the blank-session hero phase. There the chip re-anchors into the official hero row after the agent-preset seat (2px row gap, vertically centered, with matching workspace/preset chip metrics and tokens) and opens its picker downward like the official workspace menu. Active sessions have no branch-selection control. Only one seat is mounted, and late context declarations after the fallback are ignored.
@@ -83,3 +102,12 @@ pnpm run typecheck
 pnpm test
 pnpm run build
 ```
+
+## Known Limitations and Deferred Work
+
+- This package changes the checkout branch for the whole workspace, not just one session.
+- The old standalone installation and sibling-checkout instructions are historical and are not a verified deployment path for this selfuse tree.
+
+## Dev Note
+
+Re-run the browser interaction checks after each official Web client update; a successful package build alone does not verify the slot's visual placement.

@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/skin-center/contracts/README.md
+/skin-contracts-v2-issue-506-phase-1:
+  en: 938f8f63b964f4f8
+  zh: d6657063cc5a0718
+/skin-contracts-v2-issue-506-phase-1/files:
+  en: 29be44c9a42e923c
+  zh: 80766773289d6018
+/skin-contracts-v2-issue-506-phase-1/versioning-axes-do-not-conflate:
+  en: 7a39037fa00f9427
+  zh: ed0d2510359af987
+/skin-contracts-v2-issue-506-phase-1/fail-closed-with-a-deprecated-allowlist:
+  en: 85706fa6d2523930
+  zh: 9d0321ae08f67e27
+/skin-contracts-v2-issue-506-phase-1/loader-side-rules-pinned-here-enforced-in-m2:
+  en: 7359048a3f3dcb89
+  zh: 8f1033e4d2a1255d
+/skin-contracts-v2-issue-506-phase-1/automatic-token-fallbacks:
+  en: 8d76ce1948f875ad
+  zh: 733331d783d161bb

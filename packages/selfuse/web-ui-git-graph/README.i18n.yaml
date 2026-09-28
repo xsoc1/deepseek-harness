@@ -1,6 +1,43 @@
-# Bilingual-pair consistency record (docs/i18n.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   node scripts/verify-docs.mjs --write <dir>
-README.md: d3d2549f1d7039ceb3f345d60f803a5eb270b518
-README.zh.md: ca0b31cff53f8ceedc10e11017ac55d0984a7af2
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/web-ui-git-graph/README.md
+/:
+  en: 5175d2f62e7fca8d
+  zh: 0bac3ecced251f73
+/dsh-git-graph:
+  en: 504a40cf3aa20929
+  zh: a9a23955dbd279c7
+/dsh-git-graph/summary:
+  en: ab948b8d63b19473
+  zh: b654b2e1e3354cdc
+/dsh-git-graph/table-of-contents:
+  en: 10d162f5609ed15a
+  zh: 58ccf22f27a78d7a
+/dsh-git-graph/repository-layout-and-build:
+  en: aaf6b9e8e064aba6
+  zh: d2ce89c95a088899
+/dsh-git-graph/activation:
+  en: e4b453e1ee2fe855
+  zh: 063fe73815991563
+/dsh-git-graph/activation/generic-install-any-machine:
+  en: 8aa19574928cc972
+  zh: cac9cab39de72158
+/dsh-git-graph/activation/local-development-loop-this-repo-checkout:
+  en: 9631a960bb2753f8
+  zh: 83e71d07b79d645d
+/dsh-git-graph/uninstall:
+  en: 88db734dbc3426ae
+  zh: 560d3734ee9de3a8
+/dsh-git-graph/design-notes:
+  en: 34711de5bb3434a2
+  zh: 4040ebf863b2c37f
+/dsh-git-graph/check-chain:
+  en: 67ad385b278b1bbc
+  zh: d4aa13a46c662c76
+/dsh-git-graph/known-limitations-and-deferred-work:
+  en: cc3ea5a73096469f
+  zh: 9324bdc324ea5b35
+/dsh-git-graph/dev-note:
+  en: d24f39f0b2514350
+  zh: b119c9be048c5a33

@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/soul-md/README.md
+/:
+  en: c68475cc3e4af3b9
+  zh: eb00f7076b47f39c
+/dsh-selfuse-soul-md:
+  en: 7f0dbd04c30ae877
+  zh: 28281df9038e5cbb
+/dsh-selfuse-soul-md/summary:
+  en: 8ac759b8e21baba6
+  zh: 647a6f6862e70c5d
+/dsh-selfuse-soul-md/table-of-contents:
+  en: 595b69c299f4386e
+  zh: 435adcb4577484cc
+/dsh-selfuse-soul-md/configuration:
+  en: e6ee65f1181f5879
+  zh: e9b808ff61efddfc
+/dsh-selfuse-soul-md/prompt-behavior:
+  en: d0d58f94573aac88
+  zh: b69c594741ce412f
+/dsh-selfuse-soul-md/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/dsh-selfuse-soul-md/model-experience/persona-card-section:
+  en: edabe2e34cf3cc10
+  zh: 9ff83c25a803cceb
+/dsh-selfuse-soul-md/model-experience/persona-card-section/what-the-model-sees:
+  en: bfab0f3418007f5e
+  zh: 461842079ab414b3
+/dsh-selfuse-soul-md/model-experience/persona-card-section/token-effect:
+  en: 7b3a71af0d3b3e19
+  zh: d7ba1b60e5bcae3b
+/dsh-selfuse-soul-md/model-experience/persona-card-section/kv-cache-effect:
+  en: 2e499f0ed6387e33
+  zh: 9b49fff61019eabf
+/dsh-selfuse-soul-md/known-limitations-and-deferred-work:
+  en: 61db0a1f997814f4
+  zh: 981098563c17da98
+/dsh-selfuse-soul-md/known-limitations-and-deferred-work/dev-note:
+  en: 2280b14ae906deaa
+  zh: 3d26c949fa4eeb66

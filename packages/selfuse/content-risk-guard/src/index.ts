@@ -12,11 +12,17 @@ import { LocalNetworkProfileExecutor, type LocalNetworkProfile, type NetworkProf
 export const name = '@dsh-selfuse/content-risk-guard'
 export const inject = ['tools']
 
+/** Local-only isolation settings; profile paths and retained text never enter model output. */
 export interface Config {
+  /** Disable local isolation only when an owner intentionally removes this guard. */
   enabled?: boolean
+  /** Absolute, owner-only directory for retained results and profile backups. */
   privateRoot?: string
+  /** Maximum age of a locally retained result before it expires. */
   retentionHours?: number
+  /** Maximum UTF-8 byte size of a retained result or allowlisted profile. */
   maxStoredBytes?: number
+  /** Allowlisted local YAML profiles addressable only by non-secret aliases. */
   profiles?: LocalNetworkProfile[]
 }
 

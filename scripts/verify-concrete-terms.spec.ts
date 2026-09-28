@@ -58,6 +58,8 @@ describe('concrete terminology policy', () => {
       `.agents/notes/archived/process/${blockedTerm}.md`,
       blockedTerm,
     )).toEqual([])
+    expect(findConcreteTermViolations(`config/selfuse/skills/copied/${blockedTerm}.md`, blockedTerm)).toEqual([])
+    expect(findConcreteTermViolations('packages/selfuse/copied/lib/index.js', blockedTerm)).toEqual([])
     expect(findConcreteTermViolations(
       '.agents/notes/implemented/process/current.md',
       blockedTerm,

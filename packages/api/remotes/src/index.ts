@@ -166,5 +166,3 @@ function assertJsonArgs(event: string, args: readonly unknown[]): JsonValue[] {
   }
   return args as JsonValue[]
 }
-
-export * from './agent-lookup.ts'

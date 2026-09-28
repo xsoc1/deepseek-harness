@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-16-tailnet-host-offline-boot.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-16-tailnet-host-offline-boot.md
-2026-09-16-tailnet-host-offline-boot.md: d19e3b87297195b7ed8c64bfaac0b5a47b5b3c4d
-2026-09-16-tailnet-host-offline-boot.zh.md: 8b4aff4133ac0888a01bbf94bb61caf5dee0ed09
+/agent-note-trust-the-configured-tailnet-host-after-an-offline-boot:
+  en: 68c74d3b7cc17670
+  zh: e4787a42fc53bf1e
+/agent-note-trust-the-configured-tailnet-host-after-an-offline-boot/problem:
+  en: 058237ee5be892d7
+  zh: 5e0b1d58037cfe8a
+/agent-note-trust-the-configured-tailnet-host-after-an-offline-boot/decision:
+  en: 8ecd14bb75ea58d6
+  zh: 10adaeda78152588
+/agent-note-trust-the-configured-tailnet-host-after-an-offline-boot/alternatives-considered:
+  en: adb20ca95a9b1f47
+  zh: fa3ed25a9ef940d3
+/agent-note-trust-the-configured-tailnet-host-after-an-offline-boot/consequences:
+  en: 0378efc04bc0bb76
+  zh: de374e0e675c37f8

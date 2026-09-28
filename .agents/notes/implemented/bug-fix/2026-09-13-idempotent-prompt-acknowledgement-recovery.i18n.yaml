@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-13-idempotent-prompt-acknowledgement-recovery.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-13-idempotent-prompt-acknowledgement-recovery.md
-2026-09-13-idempotent-prompt-acknowledgement-recovery.md: 933a8c0bc09ef647ddd3d4ca786f61f460f8a417
-2026-09-13-idempotent-prompt-acknowledgement-recovery.zh.md: 6f8b386cf1886485cb20e6aa24c2d277fb835f54
+/agent-note-idempotent-prompt-acknowledgement-recovery:
+  en: f35e94a645a981c0
+  zh: 7719b20842973659
+/agent-note-idempotent-prompt-acknowledgement-recovery/problem:
+  en: 73d417882865ce3f
+  zh: f2209055f13a825a
+/agent-note-idempotent-prompt-acknowledgement-recovery/decision:
+  en: fc173bbceaff8dd1
+  zh: e5ff555502248fff
+/agent-note-idempotent-prompt-acknowledgement-recovery/alternatives-considered:
+  en: 94d456a4de7bf989
+  zh: 6bba5bb2747db721
+/agent-note-idempotent-prompt-acknowledgement-recovery/consequences:
+  en: 3b3fd4ad0be38cd3
+  zh: f422cad11e46733d
+/agent-note-idempotent-prompt-acknowledgement-recovery/testing:
+  en: 50b8ad2b14dc37eb
+  zh: 99708fe3554254d9

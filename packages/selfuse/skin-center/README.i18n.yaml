@@ -1,6 +1,37 @@
-# Bilingual-pair consistency record (docs/i18n.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   node scripts/verify-docs.mjs --write <dir>
-README.md: dc22b09df41c042fcdecb0045b097402f60e353f
-README.zh.md: 51e7b34e8ef34f5e09e33cb24459d2e556711d03
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/skin-center/README.md
+/:
+  en: abf9a5cf28b34a6e
+  zh: b1275db82c6928c6
+/skin-center-in-gui-skin-center:
+  en: 680d06c1e84ea9b0
+  zh: c534d78a19d65781
+/skin-center-in-gui-skin-center/summary:
+  en: 313e10b767c18d95
+  zh: 0708871d465a5896
+/skin-center-in-gui-skin-center/table-of-contents:
+  en: 202c51c1b9a23d4d
+  zh: c4c7180a7831aeae
+/skin-center-in-gui-skin-center/install:
+  en: b995adcea29ed961
+  zh: 4a17932593b3643e
+/skin-center-in-gui-skin-center/configuration:
+  en: 632ec89f57e9d064
+  zh: 774e0c204e637440
+/skin-center-in-gui-skin-center/security-model:
+  en: ef145db6d66bf9e9
+  zh: b33c90120ffaea4b
+/skin-center-in-gui-skin-center/known-limitations-and-deferred-work:
+  en: 3dcf62f773f9a077
+  zh: 6aa1f1250ab0470c
+/skin-center-in-gui-skin-center/directory-structure:
+  en: 7643416ab7e7e34f
+  zh: c5295d9510d025f5
+/skin-center-in-gui-skin-center/acceptance-checklist:
+  en: 99da9d5054e6ec3a
+  zh: 4a186721ebfc5063
+/skin-center-in-gui-skin-center/dev-note:
+  en: fa202be01bc9e090
+  zh: bbfc5081375086b2

@@ -45,7 +45,7 @@ const GLOBAL_TYPES = new Set([
 ])
 
 /** How a package classifies for the catalog. */
-type Kind = 'config' | 'no-config' | 'seam' | 'library'
+type Kind = 'config' | 'no-config' | 'seam' | 'library' | 'opaque'
 
 /** One name a pasted declaration references but the paste does not contain. */
 interface TypeRef {
@@ -71,7 +71,7 @@ export interface CatalogEntry {
   pkg: string
   /** Repo-relative package dir, e.g. `packages/core/agent-loop`. */
   dir: string
-  /** Repo-relative entry file, `<dir>/src/index.ts`. */
+  /** Repo-relative source entry, or package manifest for an opaque package. */
   entry: string
   kind: Kind
   /** Service keys the plugin `inject`s (empty when none declared). */
@@ -170,20 +170,28 @@ function resolveTypeName(
   const imp = ctx.imports.get(name)
   if (!imp) return null
   if (imp.specifier.startsWith('.')) {
-    if (!imp.specifier.endsWith('.ts')) {
-      violations.push(`${ctx.rel}: relative import '${imp.specifier}' lacks the explicit .ts extension the repo convention requires.`)
+    const source = relativeTypeScriptSource(imp.specifier)
+    if (source === null) {
+      violations.push(`${ctx.rel}: relative import '${imp.specifier}' must name a .ts source or a .js output with a matching .ts source.`)
       return null
     }
     if (imp.imported !== name) {
       violations.push(`${ctx.rel}: '${name}' aliases '${imp.imported}' across a package-local import; the catalog pastes declarations verbatim, so keep package-local config types unaliased.`)
       return null
     }
-    const abs = resolve(dirname(ctx.abs), imp.specifier)
-    const rel = ctx.rel.slice(0, ctx.rel.lastIndexOf('/') + 1) + imp.specifier.replace(/^\.\//, '')
+    const abs = resolve(dirname(ctx.abs), source)
+    const rel = ctx.rel.slice(0, ctx.rel.lastIndexOf('/') + 1) + source.replace(/^\.\//, '')
     const target = loadFile(abs, rel, cache)
     return resolveTypeName(target, imp.imported, cache, violations)
   }
   return { ref: { alias: name, imported: imp.imported, specifier: imp.specifier } }
+}
+
+/** Resolve NodeNext's .js runtime specifier to the TypeScript source it emits. */
+function relativeTypeScriptSource(specifier: string): string | null {
+  if (specifier.endsWith('.ts')) return specifier
+  if (specifier.endsWith('.js')) return `${specifier.slice(0, -3)}.ts`
+  return null
 }
 
 /** Collect every type NAME referenced in type positions under a node. */
@@ -293,7 +301,9 @@ function schemaAlias(world: World, ctx: FileCtx, name: string): { ctx: FileCtx; 
   if (imported === undefined || imported.typeOnly || imported.imported === '*' || imported.imported === 'default') {
     throw new Error(`schema alias '${name}' must name a const or named value import`)
   }
-  const target = loadWorkspaceSource(world, ctx, imported.specifier)
+  const target = imported.specifier.startsWith('.')
+    ? loadRelative(world, ctx, imported.specifier)
+    : loadWorkspaceSource(world, ctx, imported.specifier)
   const expr = schemaConst(target, imported.imported, true)
   if (expr === null) throw new Error(`schema import '${imported.specifier}' has no exported const '${imported.imported}'`)
   return { ctx: target, expr }
@@ -325,8 +335,10 @@ function parsePath(path: string): PathStep[] {
 
 /** Load a package-relative import target as a FileCtx. */
 function loadRelative(world: World, from: FileCtx, specifier: string): FileCtx {
-  const abs = resolve(dirname(from.abs), specifier)
-  const rel = from.rel.slice(0, from.rel.lastIndexOf('/') + 1) + specifier.replace(/^\.\//, '')
+  const source = relativeTypeScriptSource(specifier)
+  if (source === null) throw new Error(`unsupported TypeScript source import: ${specifier}`)
+  const abs = resolve(dirname(from.abs), source)
+  const rel = from.rel.slice(0, from.rel.lastIndexOf('/') + 1) + source.replace(/^\.\//, '')
   return loadFile(abs, rel, world.cache)
 }
 
@@ -341,7 +353,7 @@ function findExportedTypeDecl(world: World, ctx: FileCtx, name: string, seen = n
   for (const stmt of ctx.sf.statements) {
     if (!ts.isExportDeclaration(stmt) || !stmt.moduleSpecifier || !ts.isStringLiteral(stmt.moduleSpecifier)) continue
     const spec = stmt.moduleSpecifier.text
-    if (!spec.startsWith('.') || !spec.endsWith('.ts')) continue
+    if (!spec.startsWith('.') || relativeTypeScriptSource(spec) === null) continue
     let lookFor: string | null = null
     if (!stmt.exportClause) {
       lookFor = name // export * from './x.ts'
@@ -365,7 +377,7 @@ function declForTypeName(world: World, ctx: FileCtx, name: string): { decl: Type
   const imp = ctx.imports.get(name)
   if (!imp) return 'unknown'
   if (imp.specifier.startsWith('.')) {
-    if (!imp.specifier.endsWith('.ts')) return 'unknown'
+    if (relativeTypeScriptSource(imp.specifier) === null) return 'unknown'
     return findExportedTypeDecl(world, loadRelative(world, ctx, imp.specifier), imp.imported) ?? 'unknown'
   }
   const dir = world.pkgDirByName.get(imp.specifier)
@@ -690,10 +702,17 @@ export function collectConfigCatalog(scanRoot: string = root): CatalogEntry[] {
   // workspace-package imports while individual packages are still being walked.
   const pkgDirByName = new Map<string, string>()
   const pkgExportsByName = new Map<string, unknown>()
-  const manifests: { dir: string; pkg: string }[] = []
+  const manifests: { dir: string; pkg: string; main?: string; patch?: string }[] = []
   for (const manifestRel of globSync('packages/*/*/package.json', { cwd: scanRoot }).map(path => path.split(sep).join('/')).sort()) {
     const dir = manifestRel.slice(0, -'/package.json'.length)
-    const manifest = JSON.parse(readFileSync(resolve(scanRoot, manifestRel), 'utf8')) as { name?: string; os?: string[]; cpu?: string[]; exports?: unknown }
+    const manifest = JSON.parse(readFileSync(resolve(scanRoot, manifestRel), 'utf8')) as {
+      name?: string
+      os?: string[]
+      cpu?: string[]
+      exports?: unknown
+      main?: string
+      dsh?: { bundle?: { patch?: string } }
+    }
     const pkg = manifest.name
     if (!pkg) {
       violations.push(`${manifestRel} has no "name".`)
@@ -706,12 +725,32 @@ export function collectConfigCatalog(scanRoot: string = root): CatalogEntry[] {
     }
     pkgDirByName.set(pkg, dir)
     pkgExportsByName.set(pkg, manifest.exports)
-    manifests.push({ dir, pkg })
+    manifests.push({
+      dir,
+      pkg,
+      ...manifest.main !== undefined ? { main: manifest.main } : {},
+      ...manifest.dsh?.bundle?.patch !== undefined ? { patch: manifest.dsh.bundle.patch } : {},
+    })
   }
   const world: World = { scanRoot, cache, pkgDirByName, pkgExportsByName }
 
-  for (const { dir, pkg } of manifests) {
+  for (const { dir, pkg, main, patch } of manifests) {
     const entryRel = `${dir}/src/index.ts`
+    if (!existsSync(resolve(scanRoot, entryRel))) {
+      // Some selfuse compatibility bundles ship only compiled JavaScript or
+      // deployment assets. Their config cannot be inferred from absent source.
+      // Admit only a verifiable package artifact; otherwise fail closed.
+      const hasMain = main !== undefined && existsSync(resolve(scanRoot, dir, main))
+      const hasPatch = patch !== undefined && existsSync(resolve(scanRoot, dir, patch))
+      const isControlGui = pkg === '@dsh-selfuse/control-gui'
+        && existsSync(resolve(scanRoot, dir, 'gui-src'))
+      if (!hasMain && !hasPatch && !isControlGui) {
+        violations.push(`${pkg}: entry ${entryRel} is missing and no declared package artifact is present.`)
+        continue
+      }
+      entries.push({ pkg, dir, entry: `${dir}/package.json`, kind: 'opaque', inject: [] })
+      continue
+    }
     let ctx: FileCtx
     try {
       ctx = loadFile(resolve(scanRoot, entryRel), entryRel, cache)
@@ -899,6 +938,7 @@ const TEXT: Record<Locale, {
   switcher: string[]
   intro: string[]
   noConfig: [string, string]
+  opaque: [string, string]
   seam: [string, string]
   library: [string, string]
 }> = {
@@ -917,6 +957,10 @@ const TEXT: Record<Locale, {
     noConfig: [
       '## Loadable plugins with no config',
       'These load from a `cordis.yml` entry with no `config:` block; they declare no configuration API.',
+    ],
+    opaque: [
+      '## Packages without inspectable TypeScript source',
+      'These packages have a verified compiled entry, bundle patch, or native GUI source, but no `src/index.ts`. Their configuration and service injections are **not verified by this catalog**; inspect the package manifest and runtime bundle before changing a deployment.',
     ],
     seam: [
       '## Seam packages (not directly loadable)',
@@ -942,6 +986,10 @@ const TEXT: Record<Locale, {
     noConfig: [
       '## 无配置的可加载插件',
       '这些插件通过 `cordis.yml` 中不含 `config:` 块的条目加载；它们未声明任何配置接口。',
+    ],
+    opaque: [
+      '## 缺少可检查 TypeScript 源码的包',
+      '这些包有可验证的编译入口、bundle patch 或原生 GUI 源码，但没有 `src/index.ts`。本目录**未验证**其配置和服务注入；更改部署前需检查包清单和运行时 bundle。',
     ],
     seam: [
       '## Seam 包（不可直接加载）',
@@ -991,7 +1039,7 @@ function renderTable(slug: string, entries: readonly CatalogEntry[], withClass: 
     ...entries.map(entry => `| ${[
       `\`${entry.pkg}\``,
       ...(withClass ? [`\`${entry.className ?? ''}\``] : []),
-      entry.inject.length > 0 ? codeList(entry.inject) : '—',
+      entry.kind === 'opaque' ? 'unknown' : entry.inject.length > 0 ? codeList(entry.inject) : '—',
       sourceLink(entry.entry),
     ].join(' | ')} |`),
   ].join('\n'))
@@ -1016,6 +1064,7 @@ export function render(entries: CatalogEntry[], locale: Locale = 'en'): string {
     ...text.intro.flatMap(paragraph => [paragraph, '']),
     ...entries.filter(e => e.kind === 'config').flatMap(entry => [renderConfigEntry(entry, byName), '']),
     ...section(text.noConfig, renderTable('no-config', entries.filter(e => e.kind === 'no-config'), false)),
+    ...section(text.opaque, renderTable('opaque', entries.filter(e => e.kind === 'opaque'), false)),
     ...section(text.seam, renderTable('seam', entries.filter(e => e.kind === 'seam'), true)),
     ...section(text.library, renderTable('library', entries.filter(e => e.kind === 'library'), false)),
   ].join('\n')

@@ -1,6 +1,25 @@
+---
+description: "在设置页选择、试穿和应用本地 Web UI 皮肤与壁纸。"
+kind: "package-bundle"
+---
+
 # 皮肤中心（GUI 内置皮肤中心）
 
 [English](README.md) | 中文
+
+## 概述
+
+皮肤中心允许用户在不重启 DSH 的情况下试穿和应用 Web UI 皮肤。内置和用户皮肤出现在同一个设置页面，壁纸与背景控制也由本地浏览器界面提供。皮肤只改变呈现，不进入模型请求。当前入库的包是预编译快照：`lib/` 与资产存在，但下文的 `src/` 路径指向上游源码，本 checkout 不维护这些文件。
+
+## 目录
+
+- 安装
+- 配置
+- 安全模型
+- 已知限制与待完成工作
+- 目录结构
+- 验收清单
+- 开发备注
 
 `@dsh-selfuse/skin-center`（cordis 插件 id `ui-skin-center`）是 dsh Web GUI 唯一的皮肤包：它把皮肤列表 / 试穿 / 应用做成设置里的一级页面（设置 → 皮肤中心），并且是所有皮肤的唯一加载器与渲染器。皮肤是纯资产目录——没有 package.json、不发 npm、不接 cordis 接线——只与皮肤中心契约（`contracts/`）耦合；皮肤中心把对官方 DSH 的全部耦合吸收在契约之后。卡片自带总开关（关闭即停用试穿、应用与背景控制）。
 
@@ -18,12 +37,12 @@
 
 ```sh
 dsh plugin --profile web add @dsh-selfuse/skin-center
-# 仓库开发：dsh plugin --profile web add link:$(pwd)/packages/skins/skin-center
+dsh plugin --profile web add link:$(pwd)/packages/selfuse/skin-center
 ```
 
-`$(pwd)` 是 dsh-web-ui monorepo 的本地克隆。全部内置皮肤随这一个包发布；社区皮肤就是普通目录，放进 `$DSH_HOME/skins/<id>/` 即可（无安装命令、无需重启——重开卡片或刷新页面即收录）。
+`$(pwd)` 是本仓库根目录。全部内置皮肤随这一个包发布；社区皮肤就是普通目录，放进 `$DSH_HOME/skins/<id>/` 即可（无安装命令、无需重启——重开卡片或刷新页面即收录）。
 
-皮肤中心是符合官方 DSH 插件标准的自包含 bundle（`dsh.bundle.patch` 指向 `cordis.patch.yml`）；也可经 git 安装：`dsh plugin --profile web add github:<org>/dsh-web-ui#<sha>`（`prepare` 脚本就地构建 `lib/`）。pnpm ≥10 安装 git 依赖前需授权 `allowBuilds`；本地 `link:` 安装无此要求。
+皮肤中心是符合官方 DSH 插件标准的自包含 bundle（`dsh.bundle.patch` 指向 `cordis.patch.yml`）。此自用层已包含编译后的 `lib/`；本地 `link:` 安装直接使用该包。
 
 ## 配置
 
@@ -38,7 +57,9 @@ dsh plugin --profile web add @dsh-selfuse/skin-center
 - 皮肤 CSS 在服务前经白名单净化；`patches.css`（L3）按设计就是任意 CSS 并如实公示——它拥有完整页面样式能力，不构成安全边界。
 - `hooks.mjs` 是与本仓库同审同发的受信代码，仅同源 serve，其 import/apply 错误永远不会拖垮静态皮肤。
 
-## 已知限制
+## 已知限制与待完成工作
+
+- 此工作区副本包含编译后的 `lib/` 与资产，但没有 `src/` 树。下文的源码路径设计说明描述的是上游来源，而不是本 checkout 中可编辑的文件；源码级改动必须先导入并验证对应源码。
 
 - 插件运行时写入的内联样式只能经 L3 `!important` 补丁覆盖。
 - 不输出语义属性（且无稳定 DOM 锚点）的插件只享受 L1 token 覆盖。
@@ -47,22 +68,13 @@ dsh plugin --profile web add @dsh-selfuse/skin-center
 ## 目录结构
 
 ```
-skins/skin-center/
-  contracts/                                # 面向皮肤的契约面（schema、hooks API、语义属性）
-  src/core/manifest-v2/                     # manifest v2 类型 + fail-closed 校验器
-  src/core/css-safety/                      # lightningcss 作用域限定 + 白名单管线
-  src/index.ts                              # host 入口：路由、tapIndex 适配器、旧版迁移桥
-  src/skin-repo.ts                          # 双来源皮肤目录册（内置 + $DSH_HOME/skins）
-  src/routes-v2.ts                          # /api/skin-center/v2/* 路由
-  src/tap-index-adapter.ts                  # 单一 tapIndex 适配器（防 FOUC）
-  src/active-state.ts                       # 活动皮肤选择持久化
-  src/legacy-bridge.ts                      # 一次性 v1 → v2 迁移
-  src/http-utils.ts / harness-home.ts       # 路由共享助手 / DSH 路径解析
-  src/we-library.ts / we-routes.ts / we-shim-source.ts / pkg-extract.ts   # Wallpaper Engine 桥
-  src/client/runtime/                       # 效果账本、装饰层、语义适配器、切换控制器、启动存储
-  src/client/SkinCenter.tsx                 # 设置卡片
-  src/client/background.ts / wallpaper.ts / WallpaperPanel.tsx            # 遮罩 + 模糊 / WE 桥 UI
-  skins/<id>/                               # 内置皮肤（纯资产目录）
+packages/selfuse/skin-center/
+  package.json
+  cordis.patch.yml
+  lib/index.js
+  lib/client.js
+  contracts/
+  skins/
 ```
 
 ## 验收清单
@@ -73,3 +85,7 @@ skins/skin-center/
 - [x] 一键应用原子切换、无需刷新；后续页面加载直接以该皮肤启动（无 FOUC）
 - [x] Wallpaper Engine 桥、背景遮罩与模糊控制不受换肤影响
 - [x] e2e 截图在 `docs/e2e/skin-center/`
+
+## 开发备注
+
+验收清单记录的是早先的上游测试；本次升级尚未在用户设备上独立重跑每项视觉检查。

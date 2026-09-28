@@ -180,3 +180,11 @@ Docs accompany every code change: update affected README and JSDoc contracts tog
 ## Vendoring policy
 
 `vendor/` packages are pinned source copies (manifest with upstream SHAs in [vendor/README.md](vendor/README.md)). Update via the sync procedure there; re-apply or retire the logged local modifications; rerun `pnpm run test && pnpm run build`.
+
+## Selfuse maintenance record
+
+For local selfuse upgrades, keep the active runtime, the candidate checkout, and the published `xsoc1/dsh-selfuse` configuration distinct. Record the exact upstream revision and package sources, inspect the active profile and installed third-party artifacts, preserve unrelated worktree changes and credentials, run focused behavior checks plus the full documentation gate before publishing, and verify the launched application separately from a successful build. Do not describe local private-content isolation as a bypass of a provider's upstream safety policy.
+
+The root documentation ceiling increases because this user-required record belongs in `AGENTS.md`; upstream operating rules remain intact.
+
+- 2026-09-29 conversation: the user requested the newest official DSH, plugin compatibility (especially local content-risk isolation), and deployment instructions in `xsoc1/dsh-selfuse`. On learning of 19 documentation failures, the user chose “修完全部门禁再发布”. The isolated candidate is based on official `0.2.0-rc.1`; `doc-sync` passed 42/42 and the build passed. The active service remains on the older checkout; publication and cutover remain pending runtime and third-party checks. Upstream prompt optimizer 0.7.6 and memory 0.6.0 were tested in a disposable profile. One first-run memory test still referenced the live memory index through an absolute manifest path; startup logged one index reconciliation, then the process was stopped. A regression test now requires `${DSH_HOME}` expansion so disposable profiles use disposable memory storage. Do not claim that check cleans up or reverses the first index reconciliation.

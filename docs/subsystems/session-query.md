@@ -24,6 +24,10 @@ interface SessionRecord {
   live: boolean
   /** Whether the active persistence backend currently lists the id, including a created-but-unmaterialized session it already observes. */
   persisted: boolean
+  /** Physical artifact size in bytes, when reported by persistence listing. */
+  sizeBytes?: number
+  /** Stored event count, when reported by persistence listing. */
+  eventCount?: number
 }
 ```
 

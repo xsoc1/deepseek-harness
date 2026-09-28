@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-13-retire-remote-mobile-client.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/simplification/2026-09-13-retire-remote-mobile-client.md
-2026-09-13-retire-remote-mobile-client.md: 016c06877fb46adaaa5c65d58b58aeda77f77fb5
-2026-09-13-retire-remote-mobile-client.zh.md: 8b292cb8874d549e87d0d429006ff9abb338735b
+/agent-note-retire-the-remote-mobile-client:
+  en: 6e8d106fefbf4598
+  zh: 273999232a3cdd1f
+/agent-note-retire-the-remote-mobile-client/problem:
+  en: b5891163f7a72901
+  zh: 9d33c3671fdccee6
+/agent-note-retire-the-remote-mobile-client/decision:
+  en: 89653fa17efa6349
+  zh: 1340958b4eab38db
+/agent-note-retire-the-remote-mobile-client/alternatives-considered:
+  en: 0336a8fd928b399d
+  zh: 09704560d6499b9e
+/agent-note-retire-the-remote-mobile-client/consequences:
+  en: f723016ce16c749f
+  zh: d2809765956b8655

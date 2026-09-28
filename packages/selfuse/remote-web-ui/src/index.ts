@@ -150,6 +150,8 @@ type ResolvedConfig = Required<Omit<Config, 'publicBaseUrl' | 'devicesFile'>> & 
  * config. Both the constructed service and every live settings sync reuse
  * it, so no field can be silently dropped when the web settings surface
  * pushes a new value into the running service.
+ * @param resolved - validated runtime fields shared by construction and live settings sync.
+ * @returns the complete pairing-service configuration for this revision.
  */
 export function pairingConfigOf(resolved: Pick<
   ResolvedConfig,
@@ -165,7 +167,11 @@ export function pairingConfigOf(resolved: Pick<
   }
 }
 
-/** Default paired-session store: `$DSH_HOME/remote-web-ui-devices.json`. */
+/**
+ * Default paired-session store: `$DSH_HOME/remote-web-ui-devices.json`.
+ * @param home - harness home containing the device ledger.
+ * @returns absolute path of the device ledger in that home.
+ */
 export function defaultDevicesFile(home: string = dshHome()): string {
   return join(home, 'remote-web-ui-devices.json')
 }

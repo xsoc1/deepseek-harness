@@ -1,8 +1,24 @@
+---
+description: "在 Web 设置页浏览打包的社区插件索引。"
+kind: "package-bundle"
+---
+
 # @dsh-selfuse/web-ui-community-plugins
 
 [English](README.md) | 中文
 
-面向 dsh web GUI 设置页的社区插件市场分区：作为一级菜单项（与 Web UI 插件、皮肤中心、宠物同级）直接展开，以插件市场风格网格展示社区贡献的插件（搜索框、分类筛选胶囊、卡片），并配有自己的启用开关。当安装了配套的「插件管理器」插件（`@linxin666/dsh-client-ui-plugin-manager`）且浏览器为本机访问时，卡片可直接在界面内安装与卸载条目；否则分区退化为只读索引，每张卡片保留一键复制安装命令按钮。
+## 概述
+
+这个可选 bundle 在 Web 设置页增加可搜索的社区插件索引。它不运行模型工具，也不改变提示词上下文。存在兼容的插件管理器且浏览器是本机访问时，卡片可请求安装；否则只显示可复制的 CLI 命令。当前自用 profile 不加载此 bundle，而使用官方 CLI。
+
+## 目录
+
+- 功能
+- 安装
+- 配置
+- 已知限制与待完成工作
+- 许可
+- 开发备注
 
 ## 功能
 
@@ -37,7 +53,7 @@ dsh plugin --profile web add link:$(pwd)/packages/dsh-community-plugins
 - **分类筛选**：条目可在 community.json 中带 `category`（固定市场分类之一：`ui`、`agent`、`tools`、`knowledge`、`integration`、`security` 或 `utility`），卡片将它们渲染为带计数的筛选胶囊，并提供按名称 / 简介 / 作者搜索的搜索框；每张卡片上的「npm 已发布 / 仓库安装」标记来自 `npm` 字段。
 - **运行已登记的插件**：已安装插件管理器插件且使用本机（回环）浏览器时，直接点击卡片上的「安装」——条目已发布 npm 时用包名，否则用贡献者仓库地址。未安装时，复制卡片上的安装命令到终端执行，如 `dsh plugin --profile web add <包名>`。两种方式都在重启 `dsh web` 后生效，随后插件自带的开关与配置（若有）出现在插件配置区。从卡片卸载同样需要确认，同样在重启后生效。
 
-## 已知限制
+## 已知限制与待完成工作
 
 - 仅当依赖的 `@deepseek-ai/dsh-client-ui-settings` 存在时，该卡片才会出现在 dsh 设置页。
 - 界面内安装 / 卸载依赖插件管理器插件（`@linxin666/dsh-client-ui-plugin-manager`）与本机浏览器；远程浏览器只能得到只读的复制命令索引。
@@ -47,3 +63,7 @@ dsh plugin --profile web add link:$(pwd)/packages/dsh-community-plugins
 ## License
 
 BSD-3-Clause。
+
+## 开发备注
+
+上述目录快照与上游管理器兼容性尚未针对当前官方 DSH 版本重新验证；在完成验证前，应继续停用此 bundle。

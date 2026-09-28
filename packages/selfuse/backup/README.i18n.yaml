@@ -1,0 +1,67 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/backup/README.md
+/:
+  en: ecd08041ef37c807
+  zh: d48e0dc6974515b7
+/dsh-selfuse-backup:
+  en: 4514ecd4388c3274
+  zh: 7648513bd7b00afb
+/dsh-selfuse-backup/summary:
+  en: 5378908e746c30a7
+  zh: b82f6a151cbd91d5
+/dsh-selfuse-backup/table-of-contents:
+  en: 32d54e80ed5f3566
+  zh: 0a03c40e6559219d
+/dsh-selfuse-backup/commands:
+  en: bb07b1b10fcff917
+  zh: c336950f6ff6e797
+/dsh-selfuse-backup/github-sync:
+  en: 33a803a7e9e7d99c
+  zh: f06362d0f713d79b
+/dsh-selfuse-backup/settings-panel-web:
+  en: a5d5b8dbb230a3ac
+  zh: 0084a7bdc994b2d9
+/dsh-selfuse-backup/how-restore-works:
+  en: 99b0586d0834fad5
+  zh: 903f255efe9beb30
+/dsh-selfuse-backup/configuration-optional:
+  en: 9b9fabeb278d1207
+  zh: 237c2aa01a6ae1da
+/dsh-selfuse-backup/security-note:
+  en: 036a87ae6ed3afb7
+  zh: 2b2c86b1ca6015b2
+/dsh-selfuse-backup/install:
+  en: 9123fd09e8caac69
+  zh: a3de6276768d228b
+/dsh-selfuse-backup/requirements:
+  en: b1d26446fd178c77
+  zh: f40ae663cc3109b7
+/dsh-selfuse-backup/development:
+  en: 29485b0ea7e86c0a
+  zh: 9b39d1c9bd3614d3
+/dsh-selfuse-backup/license:
+  en: aad9b93c8b488fac
+  zh: 0a553bf347728a12
+/dsh-selfuse-backup/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/dsh-selfuse-backup/model-experience/backup-tool-result:
+  en: 1222f6e653c181c2
+  zh: 680d864cae006df6
+/dsh-selfuse-backup/model-experience/backup-tool-result/what-the-model-sees:
+  en: a3b83200bd2cebde
+  zh: 39ac129976da5609
+/dsh-selfuse-backup/model-experience/backup-tool-result/token-effect:
+  en: 27c0da53dd0a353e
+  zh: ab6b89319fdd717a
+/dsh-selfuse-backup/model-experience/backup-tool-result/kv-cache-effect:
+  en: 65c3a5c37c59707c
+  zh: 484de112aadcdfd9
+/dsh-selfuse-backup/known-limitations-and-deferred-work:
+  en: 3e760f22cf83c854
+  zh: fd505fe98226c274
+/dsh-selfuse-backup/known-limitations-and-deferred-work/dev-note:
+  en: 4e1daa52f1baee49
+  zh: 93124e3979b5cd83

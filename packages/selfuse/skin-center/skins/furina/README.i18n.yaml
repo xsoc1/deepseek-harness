@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/skin-center/skins/furina/README.md
+/linxin666-dsh-client-ui-skin-furina:
+  en: 5fb71e18ee0fa8df
+  zh: bae17ee2a4f8ea1c
+/linxin666-dsh-client-ui-skin-furina/installation-official-bundle-method:
+  en: 10558890cdda70b2
+  zh: f8992e7b66604a4e
+/linxin666-dsh-client-ui-skin-furina/background-image:
+  en: 22a4531b0045ffb0
+  zh: 85de61a46f361c89
+/linxin666-dsh-client-ui-skin-furina/preview:
+  en: 3002755c0b6022ef
+  zh: 4c4de8bdc5b3d9ef
+/linxin666-dsh-client-ui-skin-furina/requirements:
+  en: f258e7ae56acb3f0
+  zh: 77757cf1038518a4
+/linxin666-dsh-client-ui-skin-furina/model-experience:
+  en: 55f7e0be9e20051d
+  zh: c3285ee3e56e6460
+/linxin666-dsh-client-ui-skin-furina/model-experience/kv-cache-impact:
+  en: 54a821144bef6079
+  zh: 86503f26a8212408
+/linxin666-dsh-client-ui-skin-furina/copyright-notice:
+  en: 058d0e1b0786c38b
+  zh: bfd26440082c3bcc

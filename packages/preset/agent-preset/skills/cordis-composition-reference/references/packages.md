@@ -347,6 +347,15 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-sdk-jsonrpc-server` | yes | Stdio JSON-RPC server plugin for out-of-process DeepSeek Harness SDK clients |
 
+## selfuse
+
+| Package | Config | Description |
+|---|---|---|
+| `@dsh-selfuse/content-risk-guard` | yes | Keep detected sensitive network tool output local and expose only session-scoped safe facts to the model |
+| `@dsh-selfuse/market` | yes | Visual plugin market inside DeepSeek Harness — browse, search, and one-click install community plugins. · DSH 可视化插件市场：逛一逛，点一下，装好。 |
+| `@dsh-selfuse/skill-router` | yes | 全局技能路由提示段：按任务桶 + 中文触发词路由到 mattpocock 技能与数学技能 |
+| `@dsh-selfuse/wsl-workspace` | yes | WSL workspace support for DeepSeek Harness: add a WSL workspace from the web GUI and run the whole agent session (bash + file tools) inside the WSL distribution, VS Code Remote-WSL style. No toolchain install inside WSL required. |
+
 ## session
 
 | Package | Config | Description |

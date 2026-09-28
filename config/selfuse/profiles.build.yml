@@ -54,7 +54,7 @@ rowConfigs:
       autoRecall: false
     mdcg:
       enabled: true
-      root: /home/huangzy/.dsh/lingshu/mdcg
+      root: '${DSH_HOME}/lingshu/mdcg'
       actor: dsh-memory
       tenant: default
       clearance: internal

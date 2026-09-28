@@ -1,6 +1,40 @@
-# Bilingual-pair consistency record (docs/i18n.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
-#   node scripts/verify-docs.mjs --write <dir>
-README.md: 68af65134032e141366d53b6e498de0735c6107f
-README.zh.md: d118eccba8dadd4c45fbc0b77806f21c528513af
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/web-ui-community-plugins/README.md
+/:
+  en: 8da147eb8d52a8f1
+  zh: 796edb56645f5af8
+/dsh-selfuse-web-ui-community-plugins:
+  en: ad6f2808a538e4ed
+  zh: 39ad026f492c214c
+/dsh-selfuse-web-ui-community-plugins/summary:
+  en: 5863ec3b21a0d718
+  zh: ba7d74678a660b9d
+/dsh-selfuse-web-ui-community-plugins/table-of-contents:
+  en: e273459717c1a418
+  zh: dfec176ae54c9b8f
+/dsh-selfuse-web-ui-community-plugins/what-it-does:
+  en: 54df363dd6001473
+  zh: d73e7d71aeee16de
+/dsh-selfuse-web-ui-community-plugins/install:
+  en: 98304b8243bd9f26
+  zh: 50ca82df59e0bc52
+/dsh-selfuse-web-ui-community-plugins/install/from-npm-recommended:
+  en: ccf13345c192da39
+  zh: 00989c2b0ad6828f
+/dsh-selfuse-web-ui-community-plugins/install/from-the-repository-development:
+  en: 00281589992ce51d
+  zh: 636ed37357bf47ca
+/dsh-selfuse-web-ui-community-plugins/config:
+  en: 97a93678ed221902
+  zh: a0f405a30fa99a69
+/dsh-selfuse-web-ui-community-plugins/known-limitations-and-deferred-work:
+  en: 82954e2f698fbdb4
+  zh: 5c6e2460cd269267
+/dsh-selfuse-web-ui-community-plugins/license:
+  en: 15e9219b96e7e5b6
+  zh: 4d2764b3c98ce34c
+/dsh-selfuse-web-ui-community-plugins/dev-note:
+  en: f8dfa82161d23f61
+  zh: 160a3b921bd91b15

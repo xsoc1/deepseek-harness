@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-16-selfuse-control-gui-daily-controls.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/simplification/2026-09-16-selfuse-control-gui-daily-controls.md
-2026-09-16-selfuse-control-gui-daily-controls.md: 90bca93ed0e71aa4b3a65e5ef84382031267b44a
-2026-09-16-selfuse-control-gui-daily-controls.zh.md: db9d1cb9267ca8d06243ee4c4ac8cbcb2bef40c3
+/agent-note-keep-the-self-use-control-gui-to-daily-local-controls:
+  en: 230ae87739b1d036
+  zh: 05e51bd0af91ca60
+/agent-note-keep-the-self-use-control-gui-to-daily-local-controls/problem:
+  en: 000b093c8554ebaa
+  zh: 5f10fcea6a917795
+/agent-note-keep-the-self-use-control-gui-to-daily-local-controls/decision:
+  en: 8574acedfc572bda
+  zh: 2d22d189f68a2145
+/agent-note-keep-the-self-use-control-gui-to-daily-local-controls/alternatives-considered:
+  en: f83efc7cc0ca518c
+  zh: 5abc82c1b9c09893
+/agent-note-keep-the-self-use-control-gui-to-daily-local-controls/consequences:
+  en: a64a78f36d4d6492
+  zh: 09ac6703419550e1

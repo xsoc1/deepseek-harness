@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-13-remote-cold-boot-payload.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-13-remote-cold-boot-payload.md
-2026-09-13-remote-cold-boot-payload.md: 6c7a78a3ff328be1899d3a29ef55a723d9e9639f
-2026-09-13-remote-cold-boot-payload.zh.md: c286f5453de0bce31d592c303d9f4d182932e641
+/agent-note-bound-the-self-use-remote-cold-boot-payload:
+  en: 02e33f86a6926418
+  zh: fc4692b279dd7f0f
+/agent-note-bound-the-self-use-remote-cold-boot-payload/problem:
+  en: 9ddec498742f6649
+  zh: 1a0c74dddb58ceea
+/agent-note-bound-the-self-use-remote-cold-boot-payload/decision:
+  en: 153450459c1ed292
+  zh: 87b481a4df9725d2
+/agent-note-bound-the-self-use-remote-cold-boot-payload/alternatives-considered:
+  en: d8ce04eb315ff12d
+  zh: ec40666e12fae8b7
+/agent-note-bound-the-self-use-remote-cold-boot-payload/consequences:
+  en: 6930adabd088383e
+  zh: 758763cc09e42806

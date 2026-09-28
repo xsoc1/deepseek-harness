@@ -1,8 +1,22 @@
+---
+description: "迁移至皮肤中心期间，让旧皮肤包标识仍可解析。"
+kind: "package-bundle"
+---
+
 # @dsh-selfuse/skins
 
 [English](README.md) | 中文
 
-已退役的兼容载具（保留一个发布周期）：皮肤已全部内置进 `@dsh-selfuse/skin-center`。本包带入皮肤中心，并发布不含资产的空叶包，让遗留 v1 profile junction 在旧版 bridge 清理前仍可解析。
+## 概述
+
+这个已退役的兼容 bundle 让旧皮肤包标识在一个迁移周期内仍可解析。新 profile 应直接安装 `@dsh-selfuse/skin-center`：所有皮肤都在该包中，本包只提供空的旧版叶包，不贡献模型上下文。
+
+## 目录
+
+- 是什么
+- 安装
+- 已知限制与待完成工作
+- 开发备注
 
 ## 是什么
 
@@ -24,14 +38,18 @@ dsh plugin --profile web add @dsh-selfuse/skin-center
 git clone https://github.com/zhu1090093659/dsh-web-ui.git
 cd dsh-web-ui
 pnpm install && pnpm -r build
-dsh plugin --profile web add link:$(pwd)/packages/skins/skin-center
+dsh plugin --profile web add link:$(pwd)/packages/selfuse/skin-center
 ```
 
 在 GUI 一级菜单「皮肤中心」里切换皮肤，或用 `dsh-skin use <id>`；同一时刻只激活一个皮肤。
 
-## 已知限制
+## 已知限制与待完成工作
 
 - 浏览器 bundle 仅面向 Web，作用域限定在 dsh web GUI。
 - 皮肤只做呈现：只改浏览器 DOM，不触及模型请求。
 - 已经是非法 YAML 的 profile overlay 会在此兼容包加载前由 DSH 报错，需先修复 overlay 再启动。
 - Maid Atelier 单独采用 CC BY-NC-SA 4.0，仅限非商业使用；完整许可与署名随皮肤中心包内的皮肤目录分发。
+
+## 开发备注
+
+兼容周期只是历史约定；确认所有已部署 profile 都不再引用旧 v1 皮肤包后，才能移除此载具。

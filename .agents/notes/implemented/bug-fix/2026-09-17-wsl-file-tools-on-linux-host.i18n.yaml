@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-17-wsl-file-tools-on-linux-host.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-17-wsl-file-tools-on-linux-host.md
-2026-09-17-wsl-file-tools-on-linux-host.md: ac5ec2febdca1c54bbf9514a9b50d6896088fbd8
-2026-09-17-wsl-file-tools-on-linux-host.zh.md: 7c78dd7542efaf6e46953936f3d4f88692948fbe
+/agent-note-wsl-file-tools-use-host-native-coordinates:
+  en: e8d0fa0104a9b3d6
+  zh: bccb30d5eee36f87
+/agent-note-wsl-file-tools-use-host-native-coordinates/problem:
+  en: 8c150f1c6a6101ab
+  zh: 496010105ce270e4
+/agent-note-wsl-file-tools-use-host-native-coordinates/decision:
+  en: f2ec9b7cec8b1f87
+  zh: 928b2d804ce2d2b9
+/agent-note-wsl-file-tools-use-host-native-coordinates/alternatives-considered:
+  en: e5c97acbc0944dba
+  zh: b41f9e1f104a1c53
+/agent-note-wsl-file-tools-use-host-native-coordinates/consequences:
+  en: 1964e60398969ebf
+  zh: 887020123e49e308

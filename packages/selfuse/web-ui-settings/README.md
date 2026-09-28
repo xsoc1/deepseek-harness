@@ -1,8 +1,25 @@
+---
+description: "Group the selfuse Web UI settings cards in one browser settings section."
+kind: "package-bundle"
+---
+
 # @dsh-selfuse/web-ui-settings
 
 English | [中文](README.zh.md)
 
-The dsh web UI plugin group for the DSH settings page: it adds a first-level settings section (a sibling nav item of General / Models / Plugins / Agent presets) that hosts the enable switches and configuration forms of the family plugins.
+## Summary
+
+This bundle adds a Web UI settings section for the selfuse plugin family. It groups each installed plugin's enable switch and configuration card in one place; it does not itself change model context or turn on an absent plugin. The active selfuse profile loads it through `web-ui-all`.
+
+## Table of Contents
+
+- What it is
+- Install
+- Config
+- Security model
+- Troubleshooting
+- Known Limitations and Deferred Work
+- Dev Note
 
 ## What it is
 
@@ -73,8 +90,12 @@ The registration moved to the first-level `settings.section` slot (a list slot a
 
 See [issue #513](https://github.com/zhu1090093659/dsh-web-ui/issues/513).
 
-## Known limitations
+## Known Limitations and Deferred Work
 
 - The section shows on the dsh settings page only when its prerequisite (`@deepseek-ai/dsh-client-ui-settings`) is present.
 - Authenticated-proxy mode does not provide authentication itself; a deployment without a correctly ordered authentication proxy must leave `trustedProxyHosts` empty.
 - The compatibility bridge serves dsh-web-ui family settings only. It does not make the official DSH settings or credentials plane remotely available.
+
+## Dev Note
+
+The original upstream package naming in the troubleshooting section is historical; validate the active selfuse profile before using those migration commands.

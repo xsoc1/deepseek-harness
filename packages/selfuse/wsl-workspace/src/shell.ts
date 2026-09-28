@@ -359,7 +359,11 @@ export class WslShellExecutor extends ShellExecutor {
     return { stdout, stderr }
   }
 
-  /** Run one command in the foreground. */
+  /**
+   * Run one command in the foreground and collect bounded output.
+   * @param spec - command, working directory, deadline, and output limits.
+   * @returns exit outcome and collected stdout/stderr with timeout state.
+   */
   async run(spec: ShellExecSpec): Promise<ShellRunResult> {
     const plan = this.plan(spec)
     using d = deadline(spec.signal, spec.timeoutMs, 'WSL_BASH_TIMEOUT')
@@ -379,7 +383,11 @@ export class WslShellExecutor extends ShellExecutor {
     }
   }
 
-  /** Start one command in the background and return its live handle. */
+  /**
+   * Start one command in the background under the caller's cancellation signal.
+   * @param spec - command and process options; its timeout is not used for a background run.
+   * @returns live process handle for reads, waiting, and termination.
+   */
   start(spec: ShellExecSpec): ShellProcess {
     const plan = this.plan(spec)
     // Background runs ignore timeoutMs; callers stop them through kill() or spec.signal.

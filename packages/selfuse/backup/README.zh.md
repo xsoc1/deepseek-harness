@@ -1,10 +1,30 @@
+---
+description: "备份、校验及恢复本地 DSH 用户目录，并支持定时备份。"
+kind: "package-bundle"
+---
+
 # @dsh-selfuse/backup
+
+[English](README.md) | 中文
+
+## 概述
+
+本插件提供本地 DSH 用户目录的备份、校验、恢复、轮换与可选 Web 设置面板。归档包含凭据，存储位置应视为私有。当前 selfuse profile 未显式安装时，本插件不会自动生效。
+
+## 目录
+
+- 命令
+- GitHub 同步
+- 设置面板
+- 配置
+- 安全说明
+- 模型体验
+- 已知限制与待办
+- 开发备注
 
 [![dsh-plugin](https://img.shields.io/badge/ecosystem-dsh--plugin-8b5cf6)](https://github.com/topics/dsh-plugin)
 
-一键备份**与恢复** DeepSeek Harness 用户数据——`~/.dsh` 下的会话、设置、凭据、
-技能与插件配置（排除可重装的 node_modules），自动生成 sha256 校验和、完整性
-校验、自动轮换，定时自动备份状态落盘、重启续跑。支持 macOS / Linux / Windows。
+一键备份**与恢复** DeepSeek Harness 用户数据——`~/.dsh` 下的会话、设置、凭据、 技能与插件配置（排除可重装的 node_modules），自动生成 sha256 校验和、完整性 校验、自动轮换，定时自动备份状态落盘、重启续跑。支持 macOS / Linux / Windows。
 
 ## 命令
 
@@ -19,32 +39,20 @@
 
 ## GitHub 同步
 
-配置 `config.githubRepo` 后，每次备份（手动 / 定时 / 面板）都会把归档、校验
-边车与轮换删除一并推送到 Git 仓库：
+配置 `config.githubRepo` 后，每次备份（手动 / 定时 / 面板）都会把归档、校验 边车与轮换删除一并推送到 Git 仓库：
 
 ```yaml
 - id: @dsh-selfuse/backup
   name: '@dsh-selfuse/backup'
   config:
-    githubRepo: '你的账号/@dsh-selfuse/backups'   # owner/repo、完整 URL 或本地路径
+    githubRepo: 'your-name/@dsh-selfuse/backups'   # owner/repo, full URL, or a local path
 ```
 
-**请使用私有仓库**——归档含明文凭据。https 远端需要环境变量 token
-（`DSH_BACKUP_GITHUB_TOKEN` 或 `GITHUB_TOKEN`），token 只写入同步工作树的
-credential 文件（不进进程参数）。推送为 `HEAD:main --force-with-lease`；
-超过 90MB 的归档会跳过并提示。同步状态（上次推送 / 错误）存于
-`<destination>/auto.json`，面板与 `/backup github status` 可见。
+**请使用私有仓库**——归档含明文凭据。https 远端需要环境变量 token （`DSH_BACKUP_GITHUB_TOKEN` 或 `GITHUB_TOKEN`），token 只写入同步工作树的 credential 文件（不进进程参数）。推送为 `HEAD:main --force-with-lease`； 超过 90MB 的归档会跳过并提示。同步状态（上次推送 / 错误）存于 `<destination>/auto.json`，面板与 `/backup github status` 可见。
 
 ## Settings 可视面板（Web）
 
-同样的能力在 `dsh web` 的 **Settings → Plugins → 备份** 标签页有可视化入口：
-显示备份目录、自动备份状态、GitHub 同步状态和每份归档的大小，支持一键立即
-备份、逐份校验、**下载**、带 dry-run 预览与二次确认的恢复。下载走仅限本机的
-`GET /backup-download/<归档名>` 路由。面板经 `backupPanel` Typert Remote
-命名空间（`/api` RPC）与宿主通信；浏览器 bundle 预构建在 `lib/client.js`，
-安装时无需构建。
-客户端 Remote 的 strict codec 使用 `create()` schema 工厂；改动描述符后需
-重新构建 `lib/client.js`。
+同样的能力在 `dsh web` 的 **Settings → Plugins → 备份** 标签页有可视化入口： 显示备份目录、自动备份状态、GitHub 同步状态和每份归档的大小，支持一键立即 备份、逐份校验、**下载**、带 dry-run 预览与二次确认的恢复。下载走仅限本机的 `GET /backup-download/<归档名>` 路由。面板经 `backupPanel` Typert Remote 命名空间（`/api` RPC）与宿主通信；浏览器 bundle 预构建在 `lib/client.js`， 安装时无需构建。 客户端 Remote 的 strict codec 使用 `create()` schema 工厂；改动描述符后需 重新构建 `lib/client.js`。
 
 ## 恢复的工作方式
 
@@ -65,24 +73,20 @@ credential 文件（不进进程参数）。推送为 `HEAD:main --force-with-le
 - id: @dsh-selfuse/backup
   name: '@dsh-selfuse/backup'
   config:
-    destination: '~/Backups/dsh'   # 默认 ~/Desktop/@dsh-selfuse/backups
-    keep: 10                       # 默认轮换保留份数
-    exclude:                       # 额外的 tar --exclude 模式
+    destination: '~/Backups/dsh'   # default ~/Desktop/@dsh-selfuse/backups
+    keep: 10                       # default rotation count
+    exclude:                       # extra tar --exclude patterns
       - '*cache*'
-    githubRepo: '账号/@dsh-selfuse/backups' # 可选 GitHub 同步（见下文）
+    githubRepo: 'name/@dsh-selfuse/backups' # optional GitHub sync (see below)
 ```
 
 自动备份状态保存在 `<destination>/auto.json`，重启后续跑。
 
 ## 安全说明
 
-备份包含明文凭据（`.credentials.yaml`、`qq-bridge/config.json`）。归档与校验
-文件在 POSIX 上为 `chmod 600`（Windows 依赖用户目录 ACL），但请**不要**把备份
-目录同步到不受信的位置，并像对待 API key 一样对待备份文件。
+备份包含明文凭据（`.credentials.yaml`、`qq-bridge/config.json`）。归档与校验 文件在 POSIX 上为 `chmod 600`（Windows 依赖用户目录 ACL），但请**不要**把备份 目录同步到不受信的位置，并像对待 API key 一样对待备份文件。
 
-存储说明：插件自有数据（归档、校验和、`auto.json`）直接经 `node:fs` 写入，
-与 DSH 自身的会话持久化同一模式——`ctx.fs` 能力是模型面的沙箱 surface，
-不适用于宿主插件的自有存储。
+存储说明：插件自有数据（归档、校验和、`auto.json`）直接经 `node:fs` 写入， 与 DSH 自身的会话持久化同一模式——`ctx.fs` 能力是模型面的沙箱 surface， 不适用于宿主插件的自有存储。
 
 ## 安装
 
@@ -90,28 +94,48 @@ credential 文件（不进进程参数）。推送为 `HEAD:main --force-with-le
 dsh plugin --profile web add @dsh-selfuse/backup
 ```
 
-然后重启 `dsh web`（插件发现按进程缓存），输入 `/backup` 或打开
-Settings → Plugins → 备份。
+然后重启 `dsh web`（插件发现按进程缓存），输入 `/backup` 或打开 Settings → Plugins → 备份。
 
 ## 依赖
 
-- macOS、Linux 或 Windows 10+，PATH 中有 `tar`（Windows 自带 System32 的
-  bsdtar，Git Bash 的 GNU tar 也可以；校验和优先 `sha256sum`/`shasum`，
-  Windows 上回退进程内哈希）
+- macOS、Linux 或 Windows 10+，PATH 中有 `tar`（Windows 自带 System32 的 bsdtar，Git Bash 的 GNU tar 也可以；校验和优先 `sha256sum`/`shasum`， Windows 上回退进程内哈希）
 - DSH `0.1.0-rc.6` 或兼容版本
 
 ## 开发
 
-运行时零依赖——宿主插件就是 `lib/index.js`。浏览器半边源码在 `src/`，
-打包（zod 内联、React/Cordis 保持 external）产物 `lib/client.js` 提交进仓库，
-git 安装无需构建：
+运行时零依赖——宿主插件就是 `lib/index.js`。浏览器半边源码在 `src/`， 打包（zod 内联、React/Cordis 保持 external）产物 `lib/client.js` 提交进仓库， git 安装无需构建：
 
 ```sh
-node scripts/build-client.mjs   # 改 src/ 后重新打包客户端
-node scripts/smoke.mjs          # 宿主冒烟（真实临时目录 + 模拟 DSH 服务）
-node scripts/smoke-client.mjs   # 客户端 bundle：握手/schema/标签页注册/SSR
+node scripts/build-client.mjs   # rebuild the client bundle after editing src/
+node scripts/smoke.mjs          # host smoke suite (real temp dir, mocked DSH services)
+node scripts/smoke-client.mjs   # client bundle: handshake, schemas, tab registration, SSR
 ```
 
 ## 许可证
 
 MIT
+
+## 模型体验
+
+### 备份工具结果
+
+#### 模型看到什么
+
+Agent 调用 `backup_dsh` 时收到操作结果，包括归档名称或错误。插件不会把归档内容放进模型请求。
+
+#### Token 影响
+
+工具可用或被调用时，只有工具 schema 和返回的状态文本增加模型 token；备份数据仍留在磁盘。
+
+#### KV Cache 影响
+
+schema 和返回的工具结果参与当前轮上下文；未调用工具而只改变本地归档，不会改变已缓存的模型上下文。
+
+## 已知限制与待办
+
+- 恢复会替换 DSH 用户目录，需要重启 DSH；应先用 `--dry-run` 预览，不能当作在线会话迁移。
+- GitHub 同步会把含明文凭据的归档发送到选定的私有仓库，并依赖单独配置的 token。
+
+### 开发备注
+
+版本兼容性以当前整合工作区为准，不以本继承 README 的旧版声明为准。DSH 升级后应重新运行本包冒烟测试。

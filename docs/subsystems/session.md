@@ -557,6 +557,11 @@ declare class Session {
     toSeqExclusive: SessionLogOffset = this.seq,
     ): readonly SessionEvent[];
   /**
+   * Materialize an immutable snapshot of all events currently in this session.
+   * Preserved for compatibility with presets, plugins, and inspection tools.
+   */
+  get events(): readonly SessionEvent[];
+  /**
    * Return this Session's events after its fork-inherited prefix.
    * @deprecated Existing logic may remain unmigrated for now, but new calls are prohibited.
    * See the [Agent Note](../../../../.agents/notes/implemented/architecture/2026-09-09-deprecate-synchronous-session-event-reads.md).

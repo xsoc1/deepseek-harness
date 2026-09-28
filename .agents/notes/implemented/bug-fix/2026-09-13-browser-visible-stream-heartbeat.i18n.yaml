@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-13-browser-visible-stream-heartbeat.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-13-browser-visible-stream-heartbeat.md
-2026-09-13-browser-visible-stream-heartbeat.md: 51cbbc08b44740181caba7f66dfd05dc2879e118
-2026-09-13-browser-visible-stream-heartbeat.zh.md: 09ca95623458cbcc31d7ee007fe4afff96b9c38c
+/agent-note-browser-visible-remote-stream-heartbeat-experiment:
+  en: 759a0c42a0eb9881
+  zh: e740864d0bdcb3e8
+/agent-note-browser-visible-remote-stream-heartbeat-experiment/problem:
+  en: 6db2e7701b103d86
+  zh: 23269cf9246aa6a8
+/agent-note-browser-visible-remote-stream-heartbeat-experiment/decision:
+  en: b6c88ecb90fe3c6f
+  zh: c1152890d75417ac
+/agent-note-browser-visible-remote-stream-heartbeat-experiment/production-rollback:
+  en: eac471e4d872b06d
+  zh: 6727e2abc5090ca5
+/agent-note-browser-visible-remote-stream-heartbeat-experiment/alternatives-considered:
+  en: 49bf967ac39059f2
+  zh: d9ed12e846742416
+/agent-note-browser-visible-remote-stream-heartbeat-experiment/consequences:
+  en: 4d4c9d5a48296a6f
+  zh: 0622f2456baf26dd
+/agent-note-browser-visible-remote-stream-heartbeat-experiment/testing:
+  en: 1c72911ae93f361c
+  zh: 33fe8f95dc0983de

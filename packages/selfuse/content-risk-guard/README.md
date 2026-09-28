@@ -17,6 +17,7 @@ Keep recognized network configurations out of model requests while retaining the
 - [Configuration](#configuration)
 - [Model Experience](#model-experience)
 - [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
 <a id="behavior"></a>
 ## Behavior
@@ -69,6 +70,10 @@ Each new tool result appends a notice rather than the original text. The handle 
 
 ## Known Limitations and Deferred Work
 
-- **Classifier coverage:** The pattern detector can miss unknown or fragmented formats and can select harmless examples. Path provenance covers direct references only; indirect scripts can still hide their source. This does not predict an upstream provider's policy decision or guarantee that every secret stays local.
+- **Classifier coverage:** The pattern detector can miss unknown or fragmented formats and can select harmless examples. Matching an allowlisted file path covers direct references only; indirect scripts can still hide the file they read. This does not predict an upstream provider's policy decision or guarantee that every secret stays local.
 - **Local isolation:** Private file permissions do not isolate other processes running as the same user. `inspect_local_network_result` deliberately cannot provide the full original to the model.
 - **Profile edits:** The allowlisted executor changes three non-secret fields only. It does not collect new credentials in a local UI, and other YAML edits still require user-controlled local tooling.
+
+### Dev Note
+
+This is a local privacy boundary, not a provider-policy bypass. Re-run the sanitizer, local-profile, and contaminated-session tests after every model-request or tool-result pipeline change.

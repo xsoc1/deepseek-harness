@@ -1,12 +1,30 @@
+---
+description: "Back up and restore the local DSH home, with archive verification and optional scheduled copies."
+kind: "package-bundle"
+---
+
 # @dsh-selfuse/backup
+
+English | [中文](README.zh.md)
+
+## Summary
+
+This plugin provides local DSH-home backup, verification, restore, retention, and an optional Web settings panel. Archives contain credentials, so their destination must be treated as private. It is not active in the current selfuse profile unless explicitly installed.
+
+## Table of Contents
+
+- Commands
+- GitHub sync
+- Settings panel
+- Configuration
+- Security note
+- Model Experience
+- Known Limitations and Deferred Work
+- Dev Note
 
 [![dsh-plugin](https://img.shields.io/badge/ecosystem-dsh--plugin-8b5cf6)](https://github.com/topics/dsh-plugin)
 
-One-command backup **and restore** for DeepSeek Harness user data — sessions,
-settings, credentials, skills, and plugin config under `~/.dsh`, excluding
-reinstallable `node_modules` — with sha256 checksums, integrity verification,
-automatic rotation, and scheduled auto-backup that survives restarts. Works on
-macOS, Linux, and Windows.
+One-command backup **and restore** for DeepSeek Harness user data — sessions, settings, credentials, skills, and plugin config under `~/.dsh`, excluding reinstallable `node_modules` — with sha256 checksums, integrity verification, automatic rotation, and scheduled auto-backup that survives restarts. Works on macOS, Linux, and Windows.
 
 ## Commands
 
@@ -21,9 +39,7 @@ macOS, Linux, and Windows.
 
 ## GitHub sync
 
-With `config.githubRepo` set, every backup (manual, automatic, or panel) is
-also pushed to a Git repository — archives, checksum sidecars, and rotation
-deletions stay in sync:
+With `config.githubRepo` set, every backup (manual, automatic, or panel) is also pushed to a Git repository — archives, checksum sidecars, and rotation deletions stay in sync:
 
 ```yaml
 - id: @dsh-selfuse/backup
@@ -32,25 +48,11 @@ deletions stay in sync:
     githubRepo: 'your-name/@dsh-selfuse/backups'   # owner/repo, full URL, or a local path
 ```
 
-Use a **private** repository — archives contain plaintext credentials. For an
-`https` remote, set the token in the environment (`DSH_BACKUP_GITHUB_TOKEN` or
-`GITHUB_TOKEN`); it is only written into the sync worktree's credential file
-(never process args). Push is `HEAD:main --force-with-lease`; archives over
-90 MB are skipped with a notice. State (last push, last error) lives in
-`<destination>/auto.json` and shows in the panel and `/backup github status`.
+Use a **private** repository — archives contain plaintext credentials. For an `https` remote, set the token in the environment (`DSH_BACKUP_GITHUB_TOKEN` or `GITHUB_TOKEN`); it is only written into the sync worktree's credential file (never process args). Push is `HEAD:main --force-with-lease`; archives over 90 MB are skipped with a notice. State (last push, last error) lives in `<destination>/auto.json` and shows in the panel and `/backup github status`.
 
 ## Settings panel (Web)
 
-The same controls have a visual entry: a **Backup** tab inside Settings → Plugins
-(`dsh web`). It shows the destination, auto-backup state, GitHub sync status, and
-every archive with its size, and offers one-click back-up-now, per-archive
-verify, download, and restore with a dry-run preview plus explicit confirmation.
-Downloads stream from the loopback-only route `GET /backup-download/<name>`.
-The tab talks to the host through the `backupPanel` Typert Remote namespace
-(`/api` RPC); the browser bundle ships prebuilt in `lib/client.js` — no build
-step at install time.
-Client Remote strict codecs provide `create()` schema factories; rebuild
-`lib/client.js` after changing their descriptors.
+The same controls have a visual entry: a **Backup** tab inside Settings → Plugins (`dsh web`). It shows the destination, auto-backup state, GitHub sync status, and every archive with its size, and offers one-click back-up-now, per-archive verify, download, and restore with a dry-run preview plus explicit confirmation. Downloads stream from the loopback-only route `GET /backup-download/<name>`. The tab talks to the host through the `backupPanel` Typert Remote namespace (`/api` RPC); the browser bundle ships prebuilt in `lib/client.js` — no build step at install time. Client Remote strict codecs provide `create()` schema factories; rebuild `lib/client.js` after changing their descriptors.
 
 ## How restore works
 
@@ -82,15 +84,9 @@ Auto-backup state lives in `<destination>/auto.json` and resumes after restart.
 
 ## Security note
 
-Backups contain plaintext credentials (`.credentials.yaml`, `qq-bridge/config.json`).
-Archives and checksum sidecars are chmod 600 on POSIX (Windows relies on
-per-user profile ACLs), but do **not** sync the backup directory to untrusted
-locations, and treat archives as sensitive as your API keys.
+Backups contain plaintext credentials (`.credentials.yaml`, `qq-bridge/config.json`). Archives and checksum sidecars are chmod 600 on POSIX (Windows relies on per-user profile ACLs), but do **not** sync the backup directory to untrusted locations, and treat archives as sensitive as your API keys.
 
-Storage note: the plugin writes its own data (archives, checksum sidecars,
-`auto.json`) directly through `node:fs`, the same pattern as DSH's own session
-persistence — the `ctx.fs` capability is the model-facing sandboxed surface and
-does not apply to host-owned storage.
+Storage note: the plugin writes its own data (archives, checksum sidecars, `auto.json`) directly through `node:fs`, the same pattern as DSH's own session persistence — the `ctx.fs` capability is the model-facing sandboxed surface and does not apply to host-owned storage.
 
 ## Install
 
@@ -98,21 +94,16 @@ does not apply to host-owned storage.
 dsh plugin --profile web add @dsh-selfuse/backup
 ```
 
-Then restart `dsh web` (plugin discovery is cached per process) and run `/backup`,
-or open Settings → Plugins → Backup.
+Then restart `dsh web` (plugin discovery is cached per process) and run `/backup`, or open Settings → Plugins → Backup.
 
 ## Requirements
 
-- macOS, Linux, or Windows 10+ with `tar` in PATH (Windows ships bsdtar in
-  System32; Git Bash's GNU tar also works — checksums prefer `sha256sum`/`shasum`
-  and fall back to an in-process hash on Windows)
+- macOS, Linux, or Windows 10+ with `tar` in PATH (Windows ships bsdtar in System32; Git Bash's GNU tar also works — checksums prefer `sha256sum`/`shasum` and fall back to an in-process hash on Windows)
 - DSH `0.1.0-rc.6` or compatible
 
 ## Development
 
-Zero runtime dependencies — the host plugin is `lib/index.js`. The browser half
-lives in `src/` and is bundled (zod inlined, React/Cordis external) into
-`lib/client.js`, which is committed so git installs never build:
+Zero runtime dependencies — the host plugin is `lib/index.js`. The browser half lives in `src/` and is bundled (zod inlined, React/Cordis external) into `lib/client.js`, which is committed so git installs never build:
 
 ```sh
 node scripts/build-client.mjs   # rebuild the client bundle after editing src/
@@ -123,3 +114,28 @@ node scripts/smoke-client.mjs   # client bundle: handshake, schemas, tab registr
 ## License
 
 MIT
+
+## Model Experience
+
+### Backup tool result
+
+#### What the model sees
+
+When the agent calls `backup_dsh`, it receives the operation result, including an archive name or an error. Archive contents are not placed in the model request by this plugin.
+
+#### Token effect
+
+Only the tool schema and returned status text add model tokens when the tool is available or called; the backup data itself stays on disk.
+
+#### KV Cache effect
+
+The schema and any emitted tool result participate in the current turn's context; changing local archives without a tool call does not alter cached model context.
+
+## Known Limitations and Deferred Work
+
+- Restore replaces the DSH home and requires a DSH restart; it should be previewed with `--dry-run` and is not a live session migration.
+- GitHub synchronization exposes plaintext credential archives to the chosen private repository and depends on a separately configured token.
+
+### Dev Note
+
+The current integrated checkout, not this inherited README's older compatibility claim, is the authority for version support. Re-run the package smoke tests after a DSH upgrade.

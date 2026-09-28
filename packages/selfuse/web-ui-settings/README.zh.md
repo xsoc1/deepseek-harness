@@ -1,8 +1,25 @@
+---
+description: "把自用 Web UI 插件的设置卡片归入同一个浏览器设置分区。"
+kind: "package-bundle"
+---
+
 # @dsh-selfuse/web-ui-settings
 
 [English](README.md) | 中文
 
-面向 DSH 设置页的 dsh web UI 设置插件组：在 DSH 设置页注册一个一级菜单项（与通用设置 / 模式 / 插件 / Agent 预设同级），归组全家桶插件的启用开关与配置表单。
+## 概述
+
+此 bundle 为自用插件家族增加一个 Web UI 设置分区，把已安装插件的启用开关和配置卡片集中呈现；它本身不修改模型上下文，也不会启用尚未安装的插件。当前自用 profile 通过 `web-ui-all` 加载它。
+
+## 目录
+
+- 是什么
+- 安装
+- 配置
+- 安全模型
+- 排障
+- 已知限制与待完成工作
+- 开发备注
 
 ## 是什么
 
@@ -73,8 +90,12 @@ reverse_proxy 127.0.0.1:3080 {
 
 参见 [issue #513](https://github.com/zhu1090093659/dsh-web-ui/issues/513)。
 
-## 已知限制
+## 已知限制与待完成工作
 
 - 仅当依赖的 `@deepseek-ai/dsh-client-ui-settings` 存在时，该菜单项才会出现在 dsh 设置页。
 - 认证代理模式本身不提供认证；没有正确配置并排序认证代理的部署必须让 `trustedProxyHosts` 保持为空。
 - 兼容桥只服务 dsh-web-ui 全家桶设置，不会让 DSH 官方设置或凭据平面可被远程访问。
+
+## 开发备注
+
+排障段落中的原上游包名属于历史记录；使用这些迁移命令前，应先核对当前自用 profile。

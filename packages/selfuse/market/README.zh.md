@@ -1,3 +1,8 @@
+---
+description: "保留源码的旧版浏览器插件市场 bundle；当前 selfuse profile 使用官方 CLI。"
+kind: "package-bundle"
+---
+
 <p align="center">
   <img src="assets/logo.svg" width="96" alt="dsh-market logo">
 </p>
@@ -6,14 +11,24 @@
 
 [English](README.md) | 中文
 
-[![npm](https://img.shields.io/npm/v/@dsh-selfuse/market)](https://www.npmjs.com/package/@dsh-selfuse/market)
-[![stars](https://img.shields.io/github/stars/dsh-market/dsh-market?style=flat)](https://github.com/dsh-market/dsh-market)
+## 概述
+
+这个继承的浏览器市场提供目录浏览和安装控件，但未纳入当前 selfuse profile。当前部署改用官方 `dsh plugin` CLI。下文继承的上游 README 仅为源码出处保留；目录数量、版本兼容性和第三方集成尚未在本工作区重新验证。
+
+## 目录
+
+- 安装
+- 你会得到
+- 安全
+- 数据源
+- 已知限制与待办
+- 开发备注
+
+[![npm](https://img.shields.io/npm/v/@dsh-selfuse/market)](https://www.npmjs.com/package/@dsh-selfuse/market) [![stars](https://img.shields.io/github/stars/dsh-market/dsh-market?style=flat)](https://github.com/dsh-market/dsh-market)
 
 > `dsh-market` 本身不依赖任何特定客户端，装在任意兼容 DeepSeek Harness 协议的宿主里都能用。我们正在与 `anywhere-labs/deepseek-harness-desktop` 沟通后续合作事宜，有进展会在这里同步。推荐使用已内嵌本插件市场的 [dsh-desktop](https://github.com/dataelement/dsh-desktop)、[deepseek-harness-desktop](https://github.com/hairyf/deepseek-harness-desktop)，以及其他优秀第三方客户端。
 
 装在 DeepSeek Harness 里的插件市场。打开设置 → **插件市场** → 逛一逛，点一下，装好。
-
-![dsh-market](assets/demo-zh.png)
 
 主题一键换：装完即生效，点一下切换，不用重启。
 
@@ -25,9 +40,7 @@ dsh plugin --profile web add @dsh-selfuse/market
 
 重启 `dsh web`，打开 **设置 → 插件市场**。
 
-**需要 dsh web 0.1.0-rc.6 或更新版本。** 宿主太旧时市场会自我禁用，并在浏览器
-控制台说明原因，而不是拿缺失的原语去渲染——如果设置里根本没出现「插件市场」这
-一项，通常就是这个原因。桌面端要留意：它可能内置了比 `npm` 装到的更旧的 dsh（#139）。
+**需要 dsh web 0.1.0-rc.6 或更新版本。** 宿主太旧时市场会自我禁用，并在浏览器 控制台说明原因，而不是拿缺失的原语去渲染——如果设置里根本没出现「插件市场」这 一项，通常就是这个原因。桌面端要留意：它可能内置了比 `npm` 装到的更旧的 dsh（#139）。
 
 ## 你会得到
 
@@ -65,7 +78,7 @@ dsh plugin --profile web add @dsh-selfuse/market
   - id: dsh-market
     name: @dsh-selfuse/market
     config:
-      allowRestart: false   # 不要和 `name:` 并排写在顶层
+      allowRestart: false   # NOT at the top level beside `name:`
   ```
 
   生效后 `GET /dsh-market/status` 会返回 `"restart": false`。
@@ -118,4 +131,13 @@ dsh plugin --profile web add @liustack/modlens
 
 ## 许可
 
-MIT · [@dsh-selfuse/market.com](https://@dsh-selfuse/market.com)
+MIT；参见本包许可证与上游声明。
+
+## 已知限制与待办
+
+- 市场有意从当前 selfuse profile 移除，因为插件安装由官方 CLI 负责。
+- 继承正文中的目录数量、桌面集成链接和兼容性声明可能已过时，本次升级没有验证。
+
+### 开发备注
+
+不要把这份归档 README 视作部署指引。用户决定是否从整合仓库移除未启用包之前，仅保留其源码。

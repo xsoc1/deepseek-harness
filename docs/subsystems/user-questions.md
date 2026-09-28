@@ -149,6 +149,14 @@ Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnp
  *   that live agent is owned by another agent.
  */
 async ask(request: AskUserQuestionRequest): Promise<AskUserQuestionAnswer>
+
+/**
+ * Backwards compatibility helper for UI answerer providers calling `registerProvider`.
+ * Wires the provider into the `user-questions/request` waterfall.
+ * @param provider UI answerer that handles user-question requests.
+ * @returns Function that unregisters the provider.
+ */
+registerProvider(provider: { ask(request: AskUserQuestionRequest): Promise<AskUserQuestionAnswer> }): () => void
 ```
 
 Source: [`packages/interaction/user-questions/src/index.ts`](../../packages/interaction/user-questions/src/index.ts)

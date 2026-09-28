@@ -132,9 +132,10 @@ export function apply(ctx: MarketClientContext): void {
     inject(services: string[], callback: (scoped: SettingsScopeHost) => void): void
   }
   settingsCtx.inject(['settingsScope'], (scoped) => {
-    scoped.slots.inject('settings.plugin.item', () => scoped.slots.register({
-      name: 'settings.plugin.item',
-      key: NS,
+    scoped.slots.inject('settings.plugins.tab', () => scoped.slots.register({
+      name: 'settings.plugins.tab',
+      id: NS,
+      label: () => t('nav'),
       locale: NS,
       inject: () => ({ t }),
     }, () => h(SettingsCard, { t, onRemoved: () => { const off = retireSection; retireSection = null; off?.() } })))

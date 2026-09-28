@@ -38,7 +38,12 @@ export class LocalResultStore {
                 await unlink(path);
         }
     }
-    /** Save text under an unpredictable handle; the handle contains no path or secret. */
+    /** Save text under an unpredictable handle; the handle contains no path or secret.
+     * @param sessionId session permitted to retrieve this retained result.
+     * @param callId tool call that produced the result.
+     * @param raw complete private result retained on the local filesystem.
+     * @returns an opaque handle bound to the owning session.
+     */
     async save(sessionId, callId, raw) {
         const value = { sessionId, callId, createdAt: Date.now(), raw };
         const payload = JSON.stringify(value);
@@ -58,7 +63,11 @@ export class LocalResultStore {
         }
         return handle;
     }
-    /** Return only the owning session's locally stored text to the in-process classifier. */
+    /** Return only the owning session's locally stored text to the in-process classifier.
+     * @param sessionId session requesting its retained result.
+     * @param handle opaque handle previously returned by save.
+     * @returns original text when ownership, file mode, and retention checks pass.
+     */
     async load(sessionId, handle) {
         if (!HANDLE_PATTERN.test(handle))
             throw new Error('invalid local result handle');

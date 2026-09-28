@@ -1,6 +1,25 @@
+---
+description: "Manage SSH hosts from DSH Web and expose remote operations as agent tools."
+kind: "package-bundle"
+---
+
 # dsh-ssh — Remote SSH operations plugin for DSH
 
 English | [中文](README.zh.md)
+
+## Summary
+
+This package adds a Web SSH host manager, terminal, transfer controls, and agent tools. It stores host credentials in the DSH home and runs remote operations with host-process privileges. Install only when those privileges and the remote hosts are trusted.
+
+## Table of Contents
+
+- Capabilities
+- Security model
+- Install
+- Configuration
+- Model Experience
+- Known Limitations and Deferred Work
+- Dev Note
 
 Built on the capability list of [badseal/ssh-skill](https://github.com/badseal/ssh-skill), a remote SSH plugin tailored for DeepSeek Harness (DSH): a persistent connection pool inside the Host process + a Web GUI host-management panel + a Web terminal + Agent tools, all implemented through the official NPM SDK without modifying DSH source.
 
@@ -64,7 +83,23 @@ pnpm --filter @dsh-selfuse/ssh test    # unit tests: store + engine (embedded ss
 pnpm --filter @dsh-selfuse/ssh build   # tsc types + tsdown dual-half artifacts
 ```
 
-## Known limitations
+## Model Experience
+
+### SSH tool calls
+
+#### What the model sees
+
+When enabled, the agent receives SSH tool schemas and result text from `ssh_list`, `ssh_exec`, `ssh_upload`, `ssh_download`, `ssh_tunnel`, or `ssh_cluster`. Remote command output can include secrets and is returned without automatic redaction.
+
+#### Token effect
+
+Tool schemas add prompt tokens; only a called tool's returned status or output adds subsequent result tokens. The Web host list alone is not model context.
+
+#### KV Cache effect
+
+Tool schemas remain in model context while available. Results from a call extend the active turn's context; changing the saved host list outside a call does not itself refresh cached context.
+
+## Known Limitations and Deferred Work
 
 - The remote target path of an upload must be an absolute path (relative paths are rejected).
 - Download does not support a whole directory yet (download files individually); upload supports recursive directories (walks the local directory and transfers file by file).
@@ -72,3 +107,7 @@ pnpm --filter @dsh-selfuse/ssh build   # tsc types + tsdown dual-half artifacts
 - Every hop of a ProxyJump jump host must be a host alias already configured in this plugin.
 - Resume (broken-transfer continuation) is not implemented yet.
 - The transfer of Agent tools is a host-machine local path (same semantics as ssh-skill).
+
+### Dev Note
+
+The old upstream checkout commands above describe the origin of the plugin, not the integrated selfuse checkout. Re-run package tests and a real SSH smoke against a trusted test host before enabling it in a new profile.

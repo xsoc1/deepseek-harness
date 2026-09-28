@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/host/apiproxy/README.md
+/:
+  en: 72279c0a2c7fd310
+  zh: 52f0523a1cbf66d1
+/deepseek-ai-dsh-host-apiproxy:
+  en: e85f51ea85ca19b8
+  zh: 5f72b78b8a56ff39
+/deepseek-ai-dsh-host-apiproxy/summary:
+  en: 0dc87bf3ba89e70a
+  zh: 4c674fa1b17941c7
+/deepseek-ai-dsh-host-apiproxy/table-of-contents:
+  en: 61d8fb388a974a41
+  zh: 75b12dccc4f28150
+/deepseek-ai-dsh-host-apiproxy/compatibility-role:
+  en: 19ceec41b93e7670
+  zh: 8b98be0b0b604e02
+/deepseek-ai-dsh-host-apiproxy/known-limitations-and-deferred-work:
+  en: 57f3bb5f990d9b3d
+  zh: 13050ee6fe3a943b
+/deepseek-ai-dsh-host-apiproxy/known-limitations-and-deferred-work/dev-note:
+  en: 36e693c9d11841a8
+  zh: f8c7244008e06af7

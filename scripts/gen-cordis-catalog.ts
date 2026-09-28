@@ -201,6 +201,7 @@ export const SERVICE_WALK_EXEMPTIONS: Record<string, string> = {
   sidebarRight: 'client-side right-Sidebar navigation face — packages/client/ui-sidebar-right/README.md owns the API',
   sidebarRightTabs: 'client-side right-Sidebar tab-type registry — packages/client/ui-sidebar-right/README.md owns the API',
   documentPreviews: 'client-side document renderer registry — docs/subsystems/sidebar-right.md owns the API',
+  webUiSettings: 'optional client-side compatibility binder for the self-use SSH panel — packages/selfuse/ssh/README.md owns the API',
 }
 
 /**
@@ -266,6 +267,8 @@ export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
   'slash/input-insert-text': 'client-face slash-input protocol — packages/client/ui-input-trigger/README.md owns the API',
   'slots/changed': 'client-face slot invalidation signal — packages/client/ui-renderer/README.md owns the API',
   'theme/change': 'client-face theme switch signal — packages/client/ui-theme/README.md owns the API',
+  'loader/volatile-update': 'self-use remote pairing refresh after Loader settings change — packages/selfuse/remote-web-ui/README.md owns the event',
+  'api/gate': 'self-use request authorization hook before API proxying — packages/selfuse/remote-web-ui/README.md owns the event',
 }
 
 /**

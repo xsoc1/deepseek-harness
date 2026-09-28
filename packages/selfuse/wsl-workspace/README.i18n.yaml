@@ -1,6 +1,43 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/selfuse/wsl-workspace/README.md
-README.md: 3aa3c457590ab74adccc6a9a2c14fe47c13980d0
-README.zh.md: 5b4e816330be1482d50c1f1e2975c78d893e3be5
+/:
+  en: 34d61e2b25165644
+  zh: a8ea549582e566df
+/dsh-selfuse-wsl-workspace:
+  en: 8e73bfa07d06193b
+  zh: 04d8181e501b6885
+/dsh-selfuse-wsl-workspace/summary:
+  en: 39bd10e2b9c79650
+  zh: 8f14437f7c102891
+/dsh-selfuse-wsl-workspace/table-of-contents:
+  en: 2f08a24bbaadc52d
+  zh: a5ab5c32d73c2ce5
+/dsh-selfuse-wsl-workspace/install:
+  en: c199b31f62d95b91
+  zh: eec28b22b84501c1
+/dsh-selfuse-wsl-workspace/usage:
+  en: 9dfffbc2e4f00e07
+  zh: 8ea2c1da35149c70
+/dsh-selfuse-wsl-workspace/behavior-notes:
+  en: a451b2a666bd51ae
+  zh: 8f76903600afc34b
+/dsh-selfuse-wsl-workspace/license-attribution:
+  en: 634aa465a07b48a5
+  zh: 10d170e9546a1c9e
+/dsh-selfuse-wsl-workspace/acknowledgments:
+  en: 1fab65781f15d0c0
+  zh: b84ee88e05f8856a
+/dsh-selfuse-wsl-workspace/model-experience:
+  en: f2aa0a3cd5539ab4
+  zh: d14c2ecea9ba9534
+/dsh-selfuse-wsl-workspace/model-experience/kv-cache-effect:
+  en: 4b937201d77d0565
+  zh: 0c84cc234b916a05
+/dsh-selfuse-wsl-workspace/known-limitations-and-deferred-work:
+  en: f20c6c796bade5f8
+  zh: 89238a72448d64dc
+/dsh-selfuse-wsl-workspace/known-limitations-and-deferred-work/dev-note:
+  en: 1a107dccce0927e0
+  zh: 25cc62686d9130e4

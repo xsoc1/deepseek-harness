@@ -1,6 +1,26 @@
+---
+description: "通过宿主维护的 Web 任务看板运行和定时安排 DSH 任务。"
+kind: "package-bundle"
+---
+
 # dsh-task-board — DSH web GUI 任务看板插件
 
 [English](README.md) | 中文
+
+## 概述
+
+本包提供由宿主维护账本和调度器的 Web 任务看板。任务运行时创建普通 DSH 会话；浏览器只负责展示，不负责执行。可选的空闲睡眠保护能够维持正在运行的会话，但不能唤醒已经睡眠的电脑。
+
+## 目录
+
+- 功能
+- 架构与协议
+- 安装
+- 配置
+- 安全模型
+- 模型体验
+- 已知限制与待办
+- 开发备注
 
 一个可热插拔的 DeepSeek Harness (DSH) Web GUI 插件，提供 Host 权威任务账本、真实 DSH 会话执行、Host cron 调度和可选的跨平台空闲睡眠保护。插件只通过 `cordis.patch.yml` 与 profile 机制挂载，不修改 DSH 源码。
 
@@ -101,7 +121,23 @@ pnpm --filter @dsh-selfuse/web-ui-task-board build
 7. 关闭设置并禁用所有计划，再停止 DSH，确认 helper 退出；macOS 可用 `pmset -g assertions` 辅助确认插件没有 display-sleep assertion。
 8. Linux 可用 `systemd-inhibit --list` 确认只存在 `idle`/`block` 条目；显示器仍按桌面设置关闭，手动睡眠和合盖仍由系统策略处理。
 
-## 已知限制
+## 模型体验
+
+### 定时任务及可选宣告
+
+#### 模型看到什么
+
+任务运行时把保存的提示词作为普通用户消息发送到新的 DSH 会话。启用 `announceToAgent` 后，插件还会增加任务看板系统提示段；默认关闭。
+
+#### Token 影响
+
+任务提示词消耗普通用户消息 token。只有启用可选宣告时才会增加系统提示 token；浏览器看板状态不会整体送入模型。
+
+#### KV Cache 影响
+
+新任务会话自行组装模型上下文。在运行会话之外编辑看板，不会改写该会话已缓存的上下文。
+
+## 已知限制与待办
 
 - Host 停止、系统睡眠或长暂停期间错过的触发点会跳过，绝不排队补跑。
 - 同一任务已在运行时会跳过到期出现并滚动到下一 cron 匹配点；任务运行不并发、不排队。
@@ -112,3 +148,7 @@ pnpm --filter @dsh-selfuse/web-ui-task-board build
 - Linux 需要 systemd-logind 及允许当前用户取得 idle block lock 的策略；容器、WSL、无 system bus 或非 systemd 系统可能显示 `unsupported` 或 `error`。桌面环境是否把 logind idle lock 与显示器空闲联动属于其自身策略，插件不请求屏保或显示器 inhibitor。
 - 已启用计划会从未来触发点之前持续持锁，因此可能增加电池消耗。
 - Host 执行消耗与普通 DSH agent 会话相同的 API 额度。
+
+### 开发备注
+
+继承的上游 checkout 命令不是整合后的 selfuse 开发路径。适配新版 DSH 时，应分别验证宿主账本、调度器和空闲睡眠保护。

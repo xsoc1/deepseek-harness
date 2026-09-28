@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-13-established-stream-socket-recovery.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-13-established-stream-socket-recovery.md
-2026-09-13-established-stream-socket-recovery.md: c70eb5aabcaea53dbfc0e2121b164849757e834f
-2026-09-13-established-stream-socket-recovery.zh.md: cb5eaab607f5a1aaa4704470abdc772f825ce237
+/agent-note-recover-an-established-remote-stream-socket-once:
+  en: 6dc3ce61360b013c
+  zh: 5dc01dc3406c1a0a
+/agent-note-recover-an-established-remote-stream-socket-once/problem:
+  en: b518167eec6a461f
+  zh: 05632628eb3939ee
+/agent-note-recover-an-established-remote-stream-socket-once/decision:
+  en: 1dcc0c5240184f6e
+  zh: 34d853d576235376
+/agent-note-recover-an-established-remote-stream-socket-once/alternatives-considered:
+  en: 21a9c02cfc8c171c
+  zh: 3df78e698b4071e8
+/agent-note-recover-an-established-remote-stream-socket-once/consequences:
+  en: 0d704b4795db7a43
+  zh: bd58802a70633554
+/agent-note-recover-an-established-remote-stream-socket-once/testing:
+  en: 1f96526fee2d8fb3
+  zh: bec3c3bcf6bb4682

@@ -19,6 +19,7 @@ export const GROUPS_WITHOUT_SUBSYSTEM_PAGE: Readonly<Record<string, string>> = {
   bundle: 'Composition patch carriers whose mounted packages own all runtime contracts.',
   hooks: 'External hook-protocol bridges over existing interception points, not a new Harness service.',
   sdk: 'Out-of-process protocol and client packages whose package READMEs own the SDK contracts.',
+  selfuse: 'Deployment composition and compatibility packages span several subsystems; each package README owns its local behavior, while the generated profile declares activation.',
   util: 'Low-level primitives whose business semantics remain with their consuming subsystems.',
 }
 

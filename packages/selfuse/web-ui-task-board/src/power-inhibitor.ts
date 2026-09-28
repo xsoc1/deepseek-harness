@@ -6,6 +6,7 @@ import type { PowerPhase, TaskBoardPowerSnapshot } from './protocol.ts'
 const RETRY_DELAYS = [1_000, 2_000, 5_000, 10_000, 30_000] as const
 const DARWIN_STABLE_MS = 30_000
 
+/** PowerShell child process that holds a Windows execution-state request until stdin closes. */
 const WINDOWS_HELPER = String.raw`
 $source = @'
 using System;
@@ -29,11 +30,13 @@ try {
 }
 `
 
+/** Node child process that holds an inherited systemd inhibitor until stdin closes. */
 const LINUX_HELPER = String.raw`
 process.stdout.write('READY\n')
 process.stdin.resume()
 `
 
+/** Approved systemd-inhibit executable locations probed without shell lookup. */
 const LINUX_INHIBIT_PATHS = ['/usr/bin/systemd-inhibit', '/bin/systemd-inhibit'] as const
 
 export interface PowerReasons {

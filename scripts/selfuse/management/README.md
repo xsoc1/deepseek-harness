@@ -1,5 +1,7 @@
 # scripts
 
+English | [中文](README.zh.md)
+
 管理脚本规范源（从 `F:\tools\deepseek-harness\` 复制而来）。
 
 | 文件 | 作用 |

@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write scripts/selfuse/README.md
+/dsh-selfuse-scripts:
+  en: 074cd8edc882b99b
+  zh: 3dc6f57f86989661
+/dsh-selfuse-scripts/generate-profile-mjs:
+  en: 3452c5346ded6f85
+  zh: 49657cce0290fdfb
+/dsh-selfuse-scripts/install-mjs:
+  en: d74cfa959bed2ff9
+  zh: 800b035e3c3a1cdb
+/dsh-selfuse-scripts/update-mjs:
+  en: f212ebe552742371
+  zh: 12fb0767c7255cbc
+/dsh-selfuse-scripts/section:
+  en: 0a3729c30ad6a9f4
+  zh: 0a3729c30ad6a9f4
+/dsh-selfuse-scripts/windows:
+  en: fe451816670f1dca
+  zh: 4fc1df1c9e43ec7f

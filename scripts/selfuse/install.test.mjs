@@ -111,6 +111,18 @@ test('the generated Web profile applies managed overrides to inherited rows', as
   }
 })
 
+test('the generated memory root follows the selected DSH home', async () => {
+  const dshHome = await mkdtemp(join(tmpdir(), 'dsh-selfuse-memory-root-'))
+  try {
+    await execFileAsync(process.execPath, [generator, '--dsh-home', dshHome])
+    const patch = await readFile(join(dshHome, 'profiles', 'web', 'cordis.patch.yml'), 'utf8')
+    assert.equal(patch.includes(`root: ${join(dshHome, 'lingshu', 'mdcg')}`), true)
+    assert.equal(patch.includes('root: /home/huangzy/.dsh/lingshu/mdcg'), false)
+  } finally {
+    await rm(dshHome, { recursive: true, force: true })
+  }
+})
+
 test('profile regeneration preserves plugins installed through the native CLI', async () => {
   const dshHome = await mkdtemp(join(tmpdir(), 'dsh-selfuse-cli-plugin-'))
   try {

@@ -9,12 +9,12 @@
 推荐先装皮肤全家桶聚合包 `@dsh-selfuse/skins` 一次到位；只装本皮肤时用下列 link 命令。
 
 ```sh
-# 装全部皮肤（推荐）
+# Install all skins (recommended)
 dsh plugin --profile web add @dsh-selfuse/skins
-# 或单独装本皮肤
+# Or install only this skin
 dsh plugin --profile web add @linxin666/dsh-client-ui-skin-furina
-# 皮肤启用：dsh-skin use furina
-# 从仓库安装（开发调试）：dsh plugin --profile web add link:$(pwd)/packages/skins/furina
+# Enable the skin: dsh-skin use furina
+# Install from repository (for development/debugging): dsh plugin --profile web add link:$(pwd)/packages/skins/furina
 ```
 
 `$(pwd)` 指克隆全家桶仓库后的目录。
@@ -47,6 +47,6 @@ pnpm 打印的包键加入相应 profile 的 `pnpm-workspace.yaml` 的 `allowBui
 
 无；本包不组装也不发送任何 provider 请求。
 
-### 版权声明
+## 版权声明
 
 本主题所使用的背景图片及装饰素材，部分系从互联网公开渠道搜集所得，其版权（包括著作权、肖像权等）均归原权利人所有，我们仅作合理展示之用。若您认为任何素材侵犯了您的合法权益，请通过下述联系方式向我们提交有效的权利证明及侵权材料，我们承诺在收到通知后 3个工作日内核实并采取删除、屏蔽或断开链接等必要处理措施；因网络信息繁杂，若无法追溯原始作者，敬请谅解，并欢迎权利人主动与我们沟通以便标注来源或协商授权。联系邮箱：`gino0922@163.com`。本声明自发布之日起生效，并保留最终解释权。

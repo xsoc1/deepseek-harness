@@ -15,6 +15,7 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: pulls the settings-surface SlotMap merge (the 'settings.section'
 // entry) and the ctx.configForms Context merge.
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
+import type {} from '@dsh-selfuse/web-ui-settings/client/slot-contract'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client'
 import { FooterRemoteEntry } from './FooterRemoteEntry.tsx'
@@ -48,13 +49,6 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * passes only its column display state.
      */
     'sidebar.remote': { kind: 'single'; scope: 'root'; owner: SidebarRemoteOwnerProps }
-    /**
-     * The child slot the Web UI plugin group declares; this card registers
-     * into the group instead of the top-level `settings.plugin.item` list.
-     * Spelled here with the same shape so this package can register without
-     * depending on the sibling UI package.
-     */
-    'web-ui.plugin.item': { kind: 'list'; scope: 'root'; owner: SettingsPluginItemOwnerProps }
   }
 }
 
@@ -62,12 +56,6 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 export interface SidebarRemoteOwnerProps {
   /** Whether the sidebar renders wide content (false = 56px rail). */
   wide: boolean
-}
-
-/** Owner share of a plugin card (the section supplies nothing). */
-export interface SettingsPluginItemOwnerProps {
-  /** Marker field: card owner props are intentionally empty. */
-  children?: never
 }
 
 /** Dictionary namespace owned by this plugin. */
