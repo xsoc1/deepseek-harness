@@ -8,6 +8,8 @@ Public APIs are pre-stable; update every consumer. Follow [version/status](docs/
 
 Acknowledge [declared persistence-type changes](docs/cookbook/reviewing-persistence-type-changes.md).
 
+Record each externally perceptible breaking change immediately in an [upgrade guide](.agents/skills/dsh-create-upgrade-guide/SKILL.md).
+
 **Application launch.** Only `dsh` profiles launch supported Node apps; package bins, demos, and public SDK argv escapes are forbidden ([rule](docs/architecture.md#application-launch)).
 
 ## Repository layout
@@ -187,4 +189,5 @@ For local selfuse upgrades, keep the active runtime, the candidate checkout, and
 
 The root documentation ceiling increases because this user-required record belongs in `AGENTS.md`; upstream operating rules remain intact.
 
-- 2026-09-29 conversation: the user requested the newest official DSH, plugin compatibility (especially local content-risk isolation), and deployment instructions in `xsoc1/dsh-selfuse`. On learning of 19 documentation failures, the user chose “修完全部门禁再发布”. The isolated candidate is based on official `0.2.0-rc.1`; `doc-sync` passed 42/42 and the build passed. The active service remains on the older checkout; publication and cutover remain pending runtime and third-party checks. Upstream prompt optimizer 0.7.6 and memory 0.6.0 were tested in a disposable profile. One first-run memory test still referenced the live memory index through an absolute manifest path; startup logged one index reconciliation, then the process was stopped. A regression test now requires `${DSH_HOME}` expansion so disposable profiles use disposable memory storage. Do not claim that check cleans up or reverses the first index reconciliation.
+- 2026-09-29 conversation: the user requested the newest official DSH, plugin compatibility (especially local content-risk isolation), and configuration instructions in `xsoc1/dsh-selfuse`; they required all documentation gates fixed before publication. The `0.2.0-rc.1` candidate passed 42/42 documentation checks, was published as `e3d8d21`, and became the active WSL service. Prompt optimizer 0.7.6 and memory 0.6.0-selfuse.1 were tested. An initial disposable memory test touched the live index through an absolute path; later tests use `${DSH_HOME}`. Do not claim the first reconciliation was reversed. Full lint and iPad/model-call checks remained open.
+- 2026-09-29 conversation: the user now requests the latest DSH and research on DeepSeek's official website, not GitHub, into migrating useful features to the new desktop app, followed by practical work. Research the official download and developer pages, merge upstream in an isolated checkout, validate desktop-profile separation and plugin compatibility, and preserve the working WSL/Tailnet service until a tested cutover is possible. Record verified migration results, not assumptions about cross-OS data sharing.
