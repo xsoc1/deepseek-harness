@@ -30,9 +30,13 @@ node scripts/selfuse/install.mjs --dsh-home /home/user/.dsh --presets-only
 
 Web 启动预检使用 `--presets-only`。它只修复缺失的规范 preset，不更改生成的 profile、设置或技能。安装后重启 DSH 以加载新 profile。
 
+## `build:selfuse`
+
+`pnpm run build` 会在官方库构建之后、Web 资源构建之前编译当前启用的私有 selfuse 包。只修改本地私有插件时，可运行 `pnpm run build:selfuse`，无需完整重建。选取范围来自 `config/selfuse/profiles.build.yml`；已提交 `lib/` 产物的第三方包另行同步。构建失败会使 `update.mjs` 在刷新现用 profile 前停止；`--no-build` 则明确复用已有产物。
+
 ## `update.mjs`
 
-具有 selfuse 感知的更新器通过 IP 备用路径获取上游 `deepseek-ai/deepseek-harness` master，把它合并到当前 `selfuse` 分支（不重写历史），重新安装依赖、构建已吸收包，并刷新 profile、设置与技能。
+具有 selfuse 感知的更新器通过正常 TLS 校验获取上游 `deepseek-ai/deepseek-harness` master，把它合并到当前 `selfuse` 分支（不重写历史），重新安装依赖、构建当前启用的私有包，并刷新 profile、设置与技能。若 WSL 无法从远端获取，可将 `DSH_SELFUSE_UPSTREAM_BUNDLE` 设为包含 `refs/remotes/origin/master` 的本地 Git bundle；更新器先检查文件存在，再从其中获取提交历史，不会关闭 TLS 校验。
 
 ```bash
 node scripts/selfuse/update.mjs --check

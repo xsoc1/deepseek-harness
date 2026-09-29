@@ -14,6 +14,9 @@ import {
 } from './client-build-environment.ts'
 import { pnpmInvocation } from './pnpm-invocation.ts'
 
+/** Build phases; local profile packages must finish before Web assets are bundled. */
+export const BUILD_SCRIPTS = ['build:native-system', 'build:lib', 'build:selfuse', 'build:web'] as const
+
 /** Run one package script through the package manager that invoked this build. */
 function runScript(script: string, environment: NodeJS.ProcessEnv): void {
   const invocation = pnpmInvocation(['run', script], environment)
@@ -41,9 +44,7 @@ function main(): void {
   const buildEnvironment = clientBuildProcessEnvironment(process.env, clientEnvironment)
 
   rmSync(resolve(root, CLIENT_BUILD_RECORD_PATH), { force: true })
-  runScript('build:native-system', buildEnvironment)
-  runScript('build:lib', buildEnvironment)
-  runScript('build:web', buildEnvironment)
+  for (const script of BUILD_SCRIPTS) runScript(script, buildEnvironment)
   const record = writeClientBuildRecord(root, clientEnvironment)
   console.log(
     `build: recorded ${String(record.artifacts.fileCount)} client artifact(s) with ${String(Object.keys(record.environment).length)} public value(s)`,

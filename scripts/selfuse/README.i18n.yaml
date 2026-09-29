@@ -11,9 +11,12 @@
 /dsh-selfuse-scripts/install-mjs:
   en: d74cfa959bed2ff9
   zh: 800b035e3c3a1cdb
+/dsh-selfuse-scripts/build-selfuse:
+  en: 05589cfe9d61a977
+  zh: 8bbc3a79922e2fc8
 /dsh-selfuse-scripts/update-mjs:
-  en: f212ebe552742371
-  zh: 12fb0767c7255cbc
+  en: 0ced5834c735f684
+  zh: 341bb2633512573c
 /dsh-selfuse-scripts/section:
   en: 0a3729c30ad6a9f4
   zh: 0a3729c30ad6a9f4

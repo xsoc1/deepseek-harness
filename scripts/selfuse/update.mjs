@@ -18,7 +18,7 @@
  *   - does not restart dsh unless --restart is explicitly passed
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, copyFileSync, mkdirSync, readFileSync } from 'node:fs'
+import { existsSync, copyFileSync, mkdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -53,9 +53,16 @@ function git(argsList, allowFail = false, opts = {}) {
 }
 
 function fetchUpstream() {
-  console.log('  fetching upstream master (GitHub IP fallback) ...')
-  git(['-c', 'http.sslVerify=false', '-c', "http.extraHeader=Host: github.com", 'fetch',
-    'https://140.82.112.4/deepseek-ai/deepseek-harness.git', 'master:refs/remotes/origin/master'],
+  const bundle = process.env.DSH_SELFUSE_UPSTREAM_BUNDLE
+  if (bundle !== undefined && bundle !== '') {
+    if (!existsSync(bundle)) throw new Error(`upstream bundle not found: ${bundle}`)
+    console.log('  fetching upstream master from the selected local bundle ...')
+    git(['fetch', bundle, 'refs/remotes/origin/master:refs/remotes/origin/master'],
+      false, { timeout: 60000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } })
+    return
+  }
+  console.log('  fetching upstream master from origin with TLS verification ...')
+  git(['fetch', 'origin', 'refs/heads/master:refs/remotes/origin/master'],
     false, { timeout: 60000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } })
 }
 
@@ -98,22 +105,8 @@ function buildSelfuse() {
     console.log('  skipping selfuse rebuild (--no-build)')
     return
   }
-  console.log('  rebuilding @dsh-selfuse packages ...')
-  const pkgs = []
-  for (const entry of ['backup','content-risk-guard','git-workflow','market','memory-panel','mineru','remote-web-ui','skin-center','skins','ssh','undo','web-ui-all','web-ui-community-plugins','web-ui-git-graph','web-ui-settings','web-ui-task-board','wsl-workspace']) {
-    const p = join(repoRoot, 'packages/selfuse', entry, 'package.json')
-    if (!existsSync(p)) continue
-    const pkg = JSON.parse(readFileSync(p, 'utf8'))
-    if (pkg.scripts && (pkg.scripts.build || pkg.scripts['build:fs'])) pkgs.push({ name: pkg.name, script: pkg.scripts.build ? 'build' : 'build:fs' })
-  }
-  for (const { name, script } of pkgs) {
-    console.log(`  -> ${name} (${script})`)
-    try {
-      run('pnpm', ['--filter', name, 'run', script])
-    } catch (error) {
-      console.error(`  build failed for ${name}; continuing with tracked lib/ artifacts`)
-    }
-  }
+  console.log('  rebuilding active private @dsh-selfuse packages ...')
+  run('pnpm', ['run', 'build:selfuse'])
 }
 
 function refreshProfile() {

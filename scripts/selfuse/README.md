@@ -47,12 +47,17 @@ canonical presets without changing the generated profile, settings, or skills.
 
 Restart dsh after installing to load the new profile.
 
+## `build:selfuse`
+
+`pnpm run build` compiles the active private selfuse packages after the official libraries and before Web assets. Run `pnpm run build:selfuse` after a local private-plugin edit when a complete rebuild is unnecessary. The selected packages come from `config/selfuse/profiles.build.yml`; third-party packages with committed `lib/` artifacts are synchronized separately. A build failure stops `update.mjs` before it refreshes the live profile; `--no-build` explicitly reuses existing artifacts.
+
 ## `update.mjs`
 
 Selfuse-aware updater. It fetches upstream `deepseek-ai/deepseek-harness`
-master through the IP fallback, merges it into the current `selfuse` branch
-(no history rewrite), reinstalls dependencies, rebuilds absorbed packages,
+master over verified TLS, merges it into the current `selfuse` branch
+(no history rewrite), reinstalls dependencies, rebuilds active private packages,
 and refreshes the profile/settings/skills.
+When WSL cannot fetch the remote, set `DSH_SELFUSE_UPSTREAM_BUNDLE` to a locally transferred Git bundle carrying `refs/remotes/origin/master`; the updater verifies that the file exists and uses its commit history without disabling TLS verification.
 
 ```bash
 node scripts/selfuse/update.mjs --check
