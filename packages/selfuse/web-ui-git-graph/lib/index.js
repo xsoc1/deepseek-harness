@@ -1,7 +1,21 @@
 import { realpath } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-//#region src/host/git-runner.ts
+import { mountOnce } from "@dsh-selfuse/plugin-mount";
+//#region lib/types/host/git-runner.js
+/**
+* Shared host git subprocess plumbing: the run result shape, the runner seam,
+* the collected-output cap, and the production runner over the subprocess
+* service. Packages receive this file as a generated copy via
+* scripts/sync-shared.mjs; edit the shared source and re-run the sync instead
+* of editing a copy.
+*
+* The context shape is declared structurally so this module stays
+* self-contained (shared/ has no cordis dependency): any context whose
+* `subprocess` satisfies SubprocessServiceLike works, which the plugin
+* contexts do.
+* @module dsh-web-ui-shared/host/git-runner
+*/
 /** Collected-output cap for one git command. */
 const OUTPUT_CAP_BYTES = 1 << 20;
 /**
@@ -34,7 +48,7 @@ function subprocessRunner$1(ctx, options = {}) {
 				stderr: { maxBytes: OUTPUT_CAP_BYTES }
 			},
 			graceMs: 1e4,
-			signal
+			...signal === void 0 ? {} : { signal }
 		};
 		if (degrade) {
 			let handle;
@@ -74,7 +88,13 @@ function subprocessRunner$1(ctx, options = {}) {
 	} };
 }
 //#endregion
-//#region src/core/git-command.ts
+//#region lib/types/core/git-command.js
+/**
+* Git command vocabulary: argv builders, stderr classification, and the
+* pure branch-name validation mirror. The host service runs these through
+* the subprocess seam; tests exercise this layer with a plain runner.
+* @module dsh-git-graph/core/git-command
+*/
 /** `git rev-parse --show-toplevel` — canonical repository root. */
 const topLevelArgv = () => ["rev-parse", "--show-toplevel"];
 /** `git rev-parse --abbrev-ref HEAD` — current branch ('HEAD' when detached). */
@@ -283,7 +303,13 @@ function validateBranchName(name) {
 	return null;
 }
 //#endregion
-//#region src/core/types.ts
+//#region lib/types/core/types.js
+/**
+* Wire vocabulary shared by the host git service and the browser client:
+* request/response shapes of the /git/* routes and the stable error codes
+* the client maps onto bilingual copy. Pure types — no runtime code.
+* @module dsh-git-graph/core/types
+*/
 /** Parse output of `git for-each-ref refs/heads --format=...`. */
 function parseBranches(stdout) {
 	const rows = [];
@@ -314,7 +340,7 @@ function parsePorcelain(stdout) {
 	let dirtyFiles = 0;
 	let untrackedFiles = 0;
 	let conflicts = 0;
-	const unmerged = /* @__PURE__ */ new Set([
+	const unmerged = new Set([
 		"DD",
 		"AU",
 		"UD",
@@ -407,7 +433,7 @@ function isGraphView(value) {
 	return typeof record.root === "string" && typeof record.branch === "string" && Array.isArray(record.commits) && record.commits.every(isGraphCommit) && typeof record.hasMore === "boolean";
 }
 /** The set of stable {@link GitErrorCode} members the client maps onto copy. */
-const GIT_ERROR_CODES = /* @__PURE__ */ new Set([
+const GIT_ERROR_CODES = new Set([
 	"conflicts-present",
 	"operation-in-progress",
 	"branch-in-other-worktree",
@@ -434,7 +460,7 @@ function isGitError(value) {
 	return true;
 }
 //#endregion
-//#region src/host/git-service.ts
+//#region lib/types/host/git-service.js
 /**
 * Host git service: workspace-scoped git operations through a runner seam
 * (production: the subprocess service; tests: a plain child_process runner).
@@ -500,16 +526,7 @@ var GitService = class {
 	async snapshot(path, signal) {
 		const gated = await this.gate(path);
 		if (!gated.ok) return null;
-		const root = await this.repoRoot(gated.canonical, signal);
-		if (root === null) return null;
-		const [branchResult, porcelain] = await Promise.all([this.runner.run(headBranchArgv(), root, signal), this.runner.run(statusPorcelainArgv(), root, signal)]);
-		const branch = branchResult.stdout.trim();
-		return {
-			root,
-			branch: branch === DETACHED ? "" : branch,
-			counts: parsePorcelain(porcelain.stdout),
-			operationInProgress: await this.operationInProgress(root, signal)
-		};
+		return this.snapshotFromGatedPath(gated.canonical, signal);
 	}
 	/**
 	* The repository snapshot the branch chip renders; null when not a repository.
@@ -754,7 +771,13 @@ var GitService = class {
 	}
 };
 //#endregion
-//#region src/host/poll-guard.ts
+//#region lib/types/host/poll-guard.js
+/**
+* Poll-loop guard shared by the plugin family's Host halves (git-graph,
+* aionui-panel): one bounded refresh loop that never overlaps itself,
+* backs off on consecutive failures, and stops at a global deadline. Pure
+* logic with injectable timers, so consumers test it without wall clocks.
+*/
 const DEFAULT_TIMERS = {
 	set: (fn, ms) => setTimeout(fn, ms),
 	clear: (handle) => {
@@ -829,7 +852,18 @@ var PollGuard = class {
 	}
 };
 //#endregion
-//#region src/host/loopback.ts
+//#region lib/types/host/loopback.js
+/**
+* Loopback trust fence shared by the host route families: socket address,
+* Host header, and browser same-origin markers. Packages receive this file as
+* a generated copy via scripts/sync-shared.mjs; edit the shared source and
+* re-run the sync instead of editing a copy.
+*
+* Semantics: RFC 5735 IPv4 127/8, ::1, IPv4-mapped ::ffff:127/8 (matching the
+* remote-web-ui gate), localhost hostnames, plus the browser same-origin
+* markers (sec-fetch-site and Origin) for the request-level fence.
+* @module dsh-web-ui-shared/host/loopback
+*/
 /** IPv4 127/8 predicate (four decimal octets, first == 127). */
 function isIPv4Loopback(v4) {
 	const parts = v4.split(".");
@@ -845,7 +879,7 @@ function isLoopbackAddress(address) {
 }
 /** Whether a normalized URL hostname names the loopback authority (localhost, [::1], 127/8). */
 function isLoopbackHostname(hostname) {
-	if (hostname === "localhost" || hostname === "[::1]" || (typeof hostname === "string" && hostname.endsWith(".ts.net"))) return true;
+	if (hostname === "localhost" || hostname === "[::1]" || typeof hostname === "string" && hostname.endsWith(".ts.net")) return true;
 	return isIPv4Loopback(hostname);
 }
 /**
@@ -874,7 +908,7 @@ function isLoopbackRequest(request) {
 	}
 }
 //#endregion
-//#region src/host/access.ts
+//#region lib/types/host/access.js
 /**
 * Whether this request may enter any /git route (JSON operations or SSE).
 * @param ctx - host context; may expose remoteWebUiPairing.
@@ -891,7 +925,16 @@ function isPairingAccess(value) {
 	return value !== void 0 && value !== null && typeof value.isPairedDevice === "function";
 }
 //#endregion
-//#region src/host/routes.ts
+//#region lib/types/host/routes.js
+/**
+* /git/* route layer: JSON envelope (ok/error with stable codes) for the
+* query/mutation operations and an SSE stream for external branch changes.
+* The service itself owns workspace gating and the git guards; this layer
+* owns HTTP shape and the SSE subscriber bookkeeping. Routes are loopback-only
+* by default; a live paired-device cookie is an extra allow path when
+* remote-web-ui is loaded.
+* @module dsh-git-graph/host/routes
+*/
 const OK = (value) => ({
 	ok: true,
 	value
@@ -1005,7 +1048,7 @@ function registerGitRoutes(ctx, service) {
 	let heartbeatTimer;
 	const removeSubscriber = (subscriber) => {
 		subscriber.statusAbort?.abort(/* @__PURE__ */ new Error("git status subscriber closed"));
-		subscriber.statusAbort = void 0;
+		delete subscriber.statusAbort;
 		subscribers.delete(subscriber);
 		if (subscribers.size === 0) {
 			guard?.stop();
@@ -1048,7 +1091,7 @@ function registerGitRoutes(ctx, service) {
 			} catch (error) {
 				if (subscribers.has(subscriber)) ctx.logger.warn(`dsh-git-graph: status poll failed for ${subscriber.path}: ${String(error)}`);
 			} finally {
-				if (subscriber.statusAbort === controller) subscriber.statusAbort = void 0;
+				if (subscriber.statusAbort === controller) delete subscriber.statusAbort;
 			}
 		}));
 	};
@@ -1181,48 +1224,7 @@ function registerGitRoutes(ctx, service) {
 	};
 }
 //#endregion
-//#region src/mount-once.ts
-/**
-* Host single-instance guard shared by the plugin family. The family bundle
-* (dsh-web-ui-all / dsh-skins) namespaces every child row id (web-ui-*), so
-* the loader accepts a standalone install of the same package side by side;
-* without this guard the second instance would still re-register the same
-* webserver routes, tools, settings namespaces, and system-prompt sections
-* and fail the boot. mountOnce makes the second host apply a no-op for the
-* lifetime of the first instance (the browser half is already deduped by
-* package name in the client module host).
-*
-* The registry rides a global symbol so two module instances of the same
-* package (npm copy vs repository link) still share one verdict. cordis
-* `ctx.effect` runs its callback immediately and treats the callback's
-* return value as the fiber disposer, so the unmarker is returned, not run.
-*/
-const MOUNTED = Symbol.for("dsh-web-ui.mounted-plugins");
-function mountedSet() {
-	const registry = globalThis;
-	return registry[MOUNTED] ??= /* @__PURE__ */ new Set();
-}
-/**
-* Wrap a cordis plugin apply so the package runs at most once per process.
-* The first mount registers normally and unmarks when its fiber disposes;
-* any later mount of the same package name is a no-op.
-* @param packageName - npm package identity shared by every install source.
-* @param fn - the original plugin apply.
-* @returns an apply of the same shape.
-*/
-function mountOnce(packageName, fn) {
-	return ((...args) => {
-		const mounted = mountedSet();
-		if (mounted.has(packageName)) return;
-		mounted.add(packageName);
-		args[0]?.effect?.(() => () => {
-			mounted.delete(packageName);
-		});
-		return fn(...args);
-	});
-}
-//#endregion
-//#region src/index.ts
+//#region lib/types/index.js
 /**
 * @dsh-selfuse/web-ui-git-graph — host half: the workspace-gated git
 * service and its /git/* HTTP routes (JSON operations + SSE change stream)

@@ -4326,6 +4326,29 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-workspace-changes -->
 
+<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/backup -->
+<a id="dsh-selfusebackup"></a>
+
+## `@dsh-selfuse/backup`
+
+- `inject`: `subprocess` · `commands` · `timer` · `tools` · `launchEnvironment`
+- `source`: [`packages/selfuse/backup/src/index.ts:33`](../packages/selfuse/backup/src/index.ts)
+
+```ts config-catalog
+/** Loader-persisted backup defaults; schedule state remains destination-local. */
+export interface Config {
+  /** Absolute or home-relative archive destination. */
+  destination: string
+  /** Number of archives retained after a completed backup. */
+  keep: number
+  /** Additional tar exclusion patterns. */
+  exclude: string[]
+  /** Optional owner/repo, URL or local Git repository. */
+  githubRepo: string
+}
+```
+<!-- END GENERATED config-catalog:@dsh-selfuse/backup -->
+
 <!-- BEGIN GENERATED config-catalog:@dsh-selfuse/content-risk-guard -->
 <a id="dsh-selfusecontent-risk-guard"></a>
 
@@ -4359,66 +4382,61 @@ export interface LocalNetworkProfile {
 ```
 <!-- END GENERATED config-catalog:@dsh-selfuse/content-risk-guard -->
 
-<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/market -->
-<a id="dsh-selfusemarket"></a>
+<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/git-workflow -->
+<a id="dsh-selfusegit-workflow"></a>
 
-## `@dsh-selfuse/market`
+## `@dsh-selfuse/git-workflow`
 
-- `source`: [`packages/selfuse/market/src/index.ts:15`](../packages/selfuse/market/src/index.ts)
-
-```ts config-catalog
-/** Optional cordis.yml configuration; profile defaults to `web`. */
-export type Config = Partial<Pick<MarketConfig, 'profile' | 'allowRestart'>>
-
-export interface MarketConfig {
-  /** Profile the market installs into; matches the profile serving this UI. */
-  profile: string
-  /** Host-authoritative profile directory; ordinary DSH derives it from DSH_HOME. */
-  profileDirectory?: string
-  /** Detached self-restart is unsafe under systemd/launchd/pm2; operators can disable it (#14). */
-  allowRestart?: boolean
-  /** Which release channel the market offers ITSELF from; other plugins never follow it. */
-  channel?: Channel
-}
-
-/** A channel the market can follow. */
-export type Channel = 'stable' | 'beta' | 'dev'
-```
-<!-- END GENERATED config-catalog:@dsh-selfuse/market -->
-
-<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/skill-router -->
-<a id="dsh-selfuseskill-router"></a>
-
-## `@dsh-selfuse/skill-router`
-
-- `inject`: `systemPrompt`
-- `source`: [`packages/selfuse/skill-router/src/index.ts:20`](../packages/selfuse/skill-router/src/index.ts)
+- `inject`: `tools`
+- `source`: [`packages/selfuse/git-workflow/src/index.ts:19`](../packages/selfuse/git-workflow/src/index.ts)
 
 ```ts config-catalog
-/** Deployment switch for the legacy system-prompt-only skill router. */
+/** Deployment limits for foreground Git calls. */
 export interface Config {
-  /** Whether this legacy prompt-only router contributes its skill section. */
-  enabled: boolean
+  /** Read operation deadline in milliseconds. */
+  timeoutMs: number
+  /** Commit operation deadline in milliseconds. */
+  commitTimeoutMs: number
+  /** Maximum captured stdout bytes per command. */
+  stdoutMaxBytes: number
 }
 ```
-<!-- END GENERATED config-catalog:@dsh-selfuse/skill-router -->
+<!-- END GENERATED config-catalog:@dsh-selfuse/git-workflow -->
 
-<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/wsl-workspace -->
-<a id="dsh-selfusewsl-workspace"></a>
+<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/memory-panel -->
+<a id="dsh-selfusememory-panel"></a>
 
-## `@dsh-selfuse/wsl-workspace`
+## `@dsh-selfuse/memory-panel`
 
-- `inject`: `webServer`
-- `source`: [`packages/selfuse/wsl-workspace/src/index.ts:81`](../packages/selfuse/wsl-workspace/src/index.ts)
+- `inject`: `launchEnvironment` · `typert`
+- `source`: [`packages/selfuse/memory-panel/src/index.ts:18`](../packages/selfuse/memory-panel/src/index.ts)
 
 ```ts config-catalog
-/** Plugin config. */
+/** Store selection and bounds persisted by the native Loader. */
 export interface Config {
-  /** The route under which the dialog data API is served. */
-  route?: string
+  /** Absolute Host directory; empty uses DSH_MEMORY_ROOT or the selected Harness home's memory directory. */
+  root: string
+  /** Complete UTF-8 byte limit for reads and composed notes. */
+  maxFileBytes: number
+  /** Match limit across knowledge pages and notes. */
+  searchLimit: number
 }
 ```
-<!-- END GENERATED config-catalog:@dsh-selfuse/wsl-workspace -->
+<!-- END GENERATED config-catalog:@dsh-selfuse/memory-panel -->
+
+<!-- BEGIN GENERATED config-catalog:@dsh-selfuse/soul-md -->
+<a id="dsh-selfusesoul-md"></a>
+
+## `@dsh-selfuse/soul-md`
+
+- `inject`: `systemPrompt` · `launchEnvironment`
+- `source`: [`packages/selfuse/soul-md/src/index.ts:29`](../packages/selfuse/soul-md/src/index.ts)
+
+```ts config-catalog
+/** Live native Loader reference, not the retired settingsScope API. */
+export type Config = ReturnType<typeof Config>
+```
+<!-- END GENERATED config-catalog:@dsh-selfuse/soul-md -->
 
 ## Loadable plugins with no config
 
@@ -4524,6 +4542,8 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-user-questions` | — | [`packages/interaction/user-questions/src/index.ts`](../packages/interaction/user-questions/src/index.ts) |
 | `@deepseek-ai/dsh-webhook` | `agents` · `agentDefaultModel` · `agentPresets` · `permissionPresets` · `sessionTitle` · `workspaceRegistry` | [`packages/webhook/webhook/src/index.ts`](../packages/webhook/webhook/src/index.ts) |
 | `@deepseek-ai/dsh-workspace` | `storageDomain` · `sessionPersistence` | [`packages/workspace/workspace/src/index.ts`](../packages/workspace/workspace/src/index.ts) |
+| `@dsh-selfuse/skin-layout-compat` | — | [`packages/selfuse/skin-layout-compat/src/index.ts`](../packages/selfuse/skin-layout-compat/src/index.ts) |
+| `@dsh-selfuse/task-notify` | — | [`packages/selfuse/task-notify/src/index.ts`](../packages/selfuse/task-notify/src/index.ts) |
 <!-- END GENERATED config-catalog:no-config -->
 
 ## Packages without inspectable TypeScript source
@@ -4533,26 +4553,6 @@ These packages have a verified compiled entry, bundle patch, or native GUI sourc
 <!-- BEGIN GENERATED config-catalog:opaque -->
 | `package` | `inject` | `source` |
 | --- | --- | --- |
-| `@deepseek-ai/dsh-client-file-changes` | unknown | [`packages/selfuse/eac-client-file-changes/package.json`](../packages/selfuse/eac-client-file-changes/package.json) |
-| `@deepseek-ai/dsh-client-runtime` | unknown | [`packages/client/runtime/package.json`](../packages/client/runtime/package.json) |
-| `@deepseek-ai/dsh-easy-setup` | unknown | [`packages/selfuse/eac-easy-setup/package.json`](../packages/selfuse/eac-easy-setup/package.json) |
-| `@deepseek-ai/dsh-file-changes` | unknown | [`packages/selfuse/eac-file-changes/package.json`](../packages/selfuse/eac-file-changes/package.json) |
-| `@deepseek-ai/dsh-host-apiproxy` | unknown | [`packages/host/apiproxy/package.json`](../packages/host/apiproxy/package.json) |
-| `@deepseek-ai/dsh-shell-terminal` | unknown | [`packages/selfuse/eac-shell-terminal/package.json`](../packages/selfuse/eac-shell-terminal/package.json) |
-| `@deepseek-ai/dsh-task-notify` | unknown | [`packages/selfuse/eac-task-notify/package.json`](../packages/selfuse/eac-task-notify/package.json) |
-| `@deepseek-ai/dsh-web-shell-bridge` | unknown | [`packages/selfuse/eac-web-shell-bridge/package.json`](../packages/selfuse/eac-web-shell-bridge/package.json) |
-| `@dsh-selfuse/backup` | unknown | [`packages/selfuse/backup/package.json`](../packages/selfuse/backup/package.json) |
-| `@dsh-selfuse/control-gui` | unknown | [`packages/selfuse/control-gui/package.json`](../packages/selfuse/control-gui/package.json) |
-| `@dsh-selfuse/git-workflow` | unknown | [`packages/selfuse/git-workflow/package.json`](../packages/selfuse/git-workflow/package.json) |
-| `@dsh-selfuse/memory-panel` | unknown | [`packages/selfuse/memory-panel/package.json`](../packages/selfuse/memory-panel/package.json) |
-| `@dsh-selfuse/mineru` | unknown | [`packages/selfuse/mineru/package.json`](../packages/selfuse/mineru/package.json) |
-| `@dsh-selfuse/skin-center` | unknown | [`packages/selfuse/skin-center/package.json`](../packages/selfuse/skin-center/package.json) |
-| `@dsh-selfuse/skins` | unknown | [`packages/selfuse/skins/package.json`](../packages/selfuse/skins/package.json) |
-| `@dsh-selfuse/soul-md` | unknown | [`packages/selfuse/soul-md/package.json`](../packages/selfuse/soul-md/package.json) |
-| `@dsh-selfuse/undo` | unknown | [`packages/selfuse/undo/package.json`](../packages/selfuse/undo/package.json) |
-| `@dsh-selfuse/web-ui-all` | unknown | [`packages/selfuse/web-ui-all/package.json`](../packages/selfuse/web-ui-all/package.json) |
-| `@dsh-selfuse/web-ui-community-plugins` | unknown | [`packages/selfuse/web-ui-community-plugins/package.json`](../packages/selfuse/web-ui-community-plugins/package.json) |
-| `@dsh-selfuse/web-ui-settings` | unknown | [`packages/selfuse/web-ui-settings/package.json`](../packages/selfuse/web-ui-settings/package.json) |
 <!-- END GENERATED config-catalog:opaque -->
 
 ## Seam packages (not directly loadable)
@@ -4645,8 +4645,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 | `@deepseek-ai/dsh-util-values` | — | [`packages/util/values/src/index.ts`](../packages/util/values/src/index.ts) |
 | `@deepseek-ai/dsh-util-workspace-path` | — | [`packages/util/workspace-path/src/index.ts`](../packages/util/workspace-path/src/index.ts) |
 | `@deepseek-ai/dsh-win32-process` | — | [`packages/subprocess/win32-process/src/index.ts`](../packages/subprocess/win32-process/src/index.ts) |
-| `@dsh-selfuse/remote-web-ui` | — | [`packages/selfuse/remote-web-ui/src/index.ts`](../packages/selfuse/remote-web-ui/src/index.ts) |
-| `@dsh-selfuse/ssh` | — | [`packages/selfuse/ssh/src/index.ts`](../packages/selfuse/ssh/src/index.ts) |
+| `@dsh-selfuse/plugin-mount` | — | [`packages/selfuse/plugin-mount/src/index.ts`](../packages/selfuse/plugin-mount/src/index.ts) |
+| `@dsh-selfuse/skin-center` | — | [`packages/selfuse/skin-center/src/index.ts`](../packages/selfuse/skin-center/src/index.ts) |
 | `@dsh-selfuse/web-ui-git-graph` | — | [`packages/selfuse/web-ui-git-graph/src/index.ts`](../packages/selfuse/web-ui-git-graph/src/index.ts) |
-| `@dsh-selfuse/web-ui-task-board` | — | [`packages/selfuse/web-ui-task-board/src/index.ts`](../packages/selfuse/web-ui-task-board/src/index.ts) |
 <!-- END GENERATED config-catalog:library -->

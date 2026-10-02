@@ -32,7 +32,17 @@ Web 启动预检使用 `--presets-only`。它只修复缺失的规范 preset，�
 
 ## `build:selfuse`
 
-`pnpm run build` 会在官方库构建之后、Web 资源构建之前编译当前启用的私有 selfuse 包。只修改本地私有插件时，可运行 `pnpm run build:selfuse`，无需完整重建。选取范围来自 `config/selfuse/profiles.build.yml`；已提交 `lib/` 产物的第三方包另行同步。构建失败会使 `update.mjs` 在刷新现用 profile 前停止；`--no-build` 则明确复用已有产物。
+候选组成直接加载 Git 图和皮肤中心。皮肤中心拥有小型 `skin-layout-compat` 叶子包。Settings/community/skins/all、SSH/task-board/MinerU 及其不再使用的 ClientRuntime/ApiProxy SDK 均已归档到工作区外。清单的 `retiredPackages` 防止生成器从旧 profile 恢复这九项依赖，同时保留无关的 CLI 安装插件。SSH 与计划任务优先使用原生能力。不要对官方 Desktop 用户目录运行此开发生成器。
+
+`pnpm run build` 会在官方库构建之后、Web 资源构建之前编译当前启用的私有 selfuse 包。只修改本地私有插件时，可运行 `pnpm run build:selfuse`，无需完整重建。选取范围来自 `config/selfuse/profiles.build.yml`；若选中的私有包没有真实构建脚本，会拒绝继续，不默认为冻结产物已通过。构建失败会使 `update.mjs` 在刷新现用 profile 前停止；`--no-build` 则明确复用已有产物，不能证明兼容性。
+
+## `archive-conditional.mjs`
+
+用户批准退役的 SSH/task-board/MinerU 目录及其闲置 SDK 已保存在源码目录外。`--move` 拒绝覆盖已有目标，校验字面量源码与归档根目录，并在改名前后记录文件哈希和符号链接目标。`--verify` 检查原目录仍不存在且归档清单保持一致。不读取或移动插件数据及会话。
+
+```sh
+node scripts/selfuse/archive-conditional.mjs --verify
+```
 
 ## `update.mjs`
 
@@ -49,36 +59,6 @@ node scripts/selfuse/update.mjs --apply --restart
 - 只有指定 `--restart` 才会重启 DSH。
 - 刷新前备份生成的 profile 文件。
 
-## 远程桌面版
+## 旧 Windows/Web 管理脚本
 
-详细方案与排障见：
-
-```text
-config/selfuse/remote-desktop.md
-```
-
-## Windows 控制台 / 管理脚本（已收录于仓库根）
-
-本地运行的 Windows 管理脚本已收入 selfuse 分支：
-
-- `dsh-control.ps1`：启停、重启、状态、UI、日志、更新检查与更新。
-- `packages/selfuse/control-gui/dsh-control-gui.exe`：WinForms 图形控制台。
-- `dsh-watchdog.ps1` / `dsh-watchdog.vbs`：看门狗。
-- `ensure-dsh-watchdog.ps1` / `ensure-dsh-watchdog.vbs`：兜底任务。
-- `run-dsh-web.ps1`：在 WSL 内启动 DSH Web。
-- `scripts/update-dsh.ps1`：检查并更新上游 DSH。
-- `dsh.ico` / `dsh-icon.png` / `dsh-icon.svg`：控制台图标资源。
-
-用法：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control.ps1 status
-powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control.ps1 restart
-Start-Process F:\tools\deepseek-harness\packages\selfuse\control-gui\dsh-control-gui.exe
-```
-
-完整管理脚本副本（包括 repair、patch、sync、prune）位于：
-
-```text
-scripts/selfuse/management/
-```
+这些脚本是已退役的 WSL Web 管理实现，不是官方 Desktop 的启动或更新入口。用户在 2026-09-30 放弃远程插件，旧 Web profile、Serve 映射和看门狗任务均已退役；旧 WinForms 控制台包已从工作区删除。保留管理脚本源码仅供读取旧部署行为，不能据此重新开启远程访问。当前运行方式见 `xsoc1/dsh-selfuse` 的 `docs/current-deployment.md`。

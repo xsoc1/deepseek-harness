@@ -1,15 +1,15 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "lib",
-    "declarationDir": "lib/types",
-    "rootDir": "src",
-    "composite": false,
-    "allowImportingTsExtensions": false,
-    "rewriteRelativeImportExtensions": false,
-    "paths": {
-      "@deepseek-ai/cordis": ["../../../vendor/cordis/lib/types/index.d.ts"]
-    }
+    "outDir": "lib/types",
+    "rootDir": "src"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/schemastery" },
+    { "path": "../../llm/llm" },
+    { "path": "../../core/tools" },
+    { "path": "../../util/atomic-write" }
+  ]
 }

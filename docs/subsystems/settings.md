@@ -22,6 +22,132 @@ A form namespace is the local id of a uniquely addressed entry in the active pro
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxbackuppanel--backuppanelservice"></a>
+
+### `ctx.backupPanel` — `BackupPanelService`
+
+`backupPanel` 宿主服务：Settings 标签页的 RPC 面。方法签名与描述符的 parameters 顺序一致（取消型方法末位是 signal），实现全部委托 ops 闭包， 与 `/backup` 命令、`backup_dsh` 工具共用同一套核心操作。
+
+```ts cordis-catalog
+/** Read the current archive and schedule overview.
+ * @returns Status without archive contents or credentials.
+ */
+status(): Promise<BackupStatus>
+
+/** Create an archive and apply retention.
+ * @param keep - Optional retention override.
+ * @param signal - Optional cancellation for subprocess and filesystem work.
+ * @returns Archive metadata or an operation failure.
+ */
+backup(keep?: number, signal?: AbortSignal): Promise<BackupResult>
+
+/** Verify archive checksum sidecars.
+ * @param selector - Archive prefix, all or latest; defaults to latest.
+ * @param signal - Optional cancellation.
+ * @returns Per-archive verification results.
+ */
+verify(selector?: string, signal?: AbortSignal): Promise<VerifyResult>
+
+/** Preview or replace the local data root from a verified archive.
+ * @param selector - Unique archive name or prefix; defaults to latest.
+ * @param dryRun - True previews without writing; false performs restoration.
+ * @param signal - Optional cancellation; existing aside data is retained.
+ * @returns Preview or restoration metadata, or a failure.
+ */
+restore(selector?: string, dryRun?: boolean, signal?: AbortSignal): Promise<RestoreResult>
+
+/** Persist a schedule and replace this instance's timer.
+ * @param hours - Integer interval from 1 to 720, or zero to disable.
+ * @returns Accepted or rejected update with the effective interval.
+ */
+setAuto(hours: number): Promise<AutoResult>
+
+/** Read the selected remote and last synchronization outcome.
+ * @returns Status and credential presence, never a token value.
+ */
+githubStatus(): Promise<GithubStatus>
+
+/** Synchronize archives to the configured dedicated Git remote.
+ * @param signal - Optional cancellation.
+ * @returns Push outcome and any skipped large filenames.
+ */
+githubSyncNow(signal?: AbortSignal): Promise<GithubResult>
+
+/** Unlink one selected archive and its checksum sidecar.
+ * @param selector - Unique name or prefix; defaults to latest.
+ * @param signal - Optional cancellation checked before each unlink.
+ * @returns Deletion summary or a failure.
+ */
+deleteBackup(selector?: string, signal?: AbortSignal): Promise<BackupSummaryResult>
+
+/** Persist a remote override without performing a push.
+ * @param repo - Repository path or URL; empty/off clears the override.
+ * @returns Accepted or rejected update with the effective override.
+ */
+setGithubRepo(repo?: string): Promise<RepoResult>
+```
+
+Source: [`packages/selfuse/backup/src/index.ts`](../../packages/selfuse/backup/src/index.ts)
+
+<a id="ctxmemorypanel--memorypanelservice"></a>
+
+### `ctx.memoryPanel` — `MemoryPanelService`
+
+Local Markdown access; only the settings tab consumes this service.
+
+```ts cordis-catalog
+/** Read directory counts and bytes.
+ * @param signal - Optional cancellation.
+ * @returns Metadata without file content.
+ */
+status(signal?: AbortSignal): Promise<MemoryPanelStatus>
+
+/** List permitted knowledge files.
+ * @param signal - Optional cancellation.
+ * @returns File names and sizes; IO failures reject.
+ */
+pages(signal?: AbortSignal): Promise<MemoryPanelPages>
+
+/** Read one knowledge page.
+ * @param id - Restricted basename without extension.
+ * @param signal - Optional cancellation.
+ * @returns Complete bounded UTF-8 content; invalid ids and links reject.
+ */
+page(id: string, signal?: AbortSignal): Promise<MemoryPanelPage>
+
+/** List a page of notes in descending modification-time order.
+ * @param limit - Integer from 1 to 500.
+ * @param offset - Integer from 0 to 100000.
+ * @param signal - Optional cancellation.
+ * @returns Note metadata and total count.
+ */
+notes(limit: number, offset: number, signal?: AbortSignal): Promise<MemoryPanelNotes>
+
+/** Read one note.
+ * @param id - Restricted basename without extension.
+ * @param signal - Optional cancellation.
+ * @returns Complete bounded UTF-8 content; invalid ids and links reject.
+ */
+note(id: string, signal?: AbortSignal): Promise<MemoryPanelNote>
+
+/** Search both collections by case-insensitive substring.
+ * @param query - At most 1024 characters; empty returns no matches.
+ * @param signal - Optional cancellation.
+ * @returns Bounded snippets; unreadable or oversized files reject.
+ */
+search(query: string, signal?: AbortSignal): Promise<MemoryPanelSearch>
+
+/** Create a uniquely named note without overwriting an existing file.
+ * @param title - Optional one-line title represented by an empty string.
+ * @param text - Non-empty note body.
+ * @param signal - Optional cancellation before the write commits.
+ * @returns The saved note id and actual configured path.
+ */
+saveNote(title: string, text: string, signal?: AbortSignal): Promise<MemoryPanelSaved>
+```
+
+Source: [`packages/selfuse/memory-panel/src/index.ts`](../../packages/selfuse/memory-panel/src/index.ts)
+
 <a id="ctxsettings--settingsforms"></a>
 
 ### `ctx.settings` — `SettingsForms`

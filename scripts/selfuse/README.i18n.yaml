@@ -12,14 +12,14 @@
   en: d74cfa959bed2ff9
   zh: 800b035e3c3a1cdb
 /dsh-selfuse-scripts/build-selfuse:
-  en: 05589cfe9d61a977
-  zh: 8bbc3a79922e2fc8
+  en: 230ab2e32376924d
+  zh: 2c92009886c57194
+/dsh-selfuse-scripts/archive-conditional-mjs:
+  en: 4b9647663b1e286e
+  zh: 8e7152869e64503b
 /dsh-selfuse-scripts/update-mjs:
   en: 0ced5834c735f684
   zh: 341bb2633512573c
-/dsh-selfuse-scripts/section:
-  en: 0a3729c30ad6a9f4
-  zh: 0a3729c30ad6a9f4
-/dsh-selfuse-scripts/windows:
-  en: fe451816670f1dca
-  zh: 4fc1df1c9e43ec7f
+/dsh-selfuse-scripts/legacy-windows-web-management-scripts:
+  en: ec1a584fe7b81d62
+  zh: c8a997643c7ca464

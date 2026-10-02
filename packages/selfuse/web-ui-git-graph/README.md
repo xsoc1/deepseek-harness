@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This bundle adds a branch selector for blank Web sessions and a Git graph panel. It checks conflicts and worktree ownership before switching branches, while the official workspace selector remains in charge of workspace choice. It does not add model tools or prompt context. The selfuse profile loads this package through `web-ui-all`.
+This bundle adds a branch selector for blank Web sessions and a Git graph panel. It checks conflicts and worktree ownership before switching branches, while the official workspace selector remains in charge of workspace choice. It does not add model tools or prompt context. The selfuse candidate profile loads this package directly.
 
 ## Table of Contents
 
@@ -43,7 +43,7 @@ pnpm test
 pnpm run build
 ```
 
-`lib/client.js` is the browser bundle (a closure-factory artifact, `window.__ModuleLoader__.load`), served by the host's client-modules at `/plugins/<id>/client.js`; the build presets `build/tsdown.client.ts` + `build/web/src/platform.ts` are copies taken from the main repo's `packages/client/tsdown.client.ts` / `packages/client/web/src/platform.ts`, and must be kept in sync when the main repo changes.
+`lib/client.js` is the browser bundle (a closure-factory artifact, `window.__ModuleLoader__.load`), served by the host's client-modules at `/plugins/<id>/client.js`. This package imports the workspace's `packages/client/tsdown.client.ts` directly; it does not maintain a copied build preset.
 
 The selfuse profile uses the workspace package. A standalone Git install or its prepare path has not been verified against this integrated tree.
 
@@ -51,34 +51,9 @@ The selfuse profile uses the workspace package. A standalone Git install or its 
 
 This package is a dsh profile bundle (`package.json` declares `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }`). After activation, the next `dsh web` (or corresponding profile) startup has the bundle patch's insert line mount `ui-git-graph` (host half: git service + `/git/*` routes) together with the browser half (dsh.client declaration) into the Web composition; after a page refresh, the branch pill appears in the hero row after the agent-preset seat for a blank session and is absent from an active session.
 
-### Generic install (any machine)
+### Selfuse deployment
 
-This plugin is merged into the dsh-web-ui family monorepo (`github.com/zhu1090093659/dsh-web-ui`). The plugin is published to npm; one-line install recommended:
-
-```sh
-dsh plugin --profile web add @dsh-selfuse/web-ui-git-graph@latest
-```
-
-Or install the family aggregate package `@dsh-selfuse/web-ui-all` all at once (same one-line `dsh plugin --profile web add @dsh-selfuse/web-ui-all@latest`).
-
-Install from the repository when you need to debug code:
-
-```sh
-git clone https://github.com/zhu1090093659/dsh-web-ui.git
-cd dsh-web-ui
-pnpm install && pnpm -r build
-dsh plugin --profile web add link:$(pwd)/packages/dsh-git-graph
-```
-
-> The `github:` install form applies to a standalone repo whose package sits at the repository root (the `prepare` script builds self-contained; pnpm ≥10 rejects it the first time, add the package key to the profile's `pnpm-workspace.yaml` `allowBuilds` per the printed error and retry). For subpackages of a monorepo use the `link:` form above.
-
-### Local development loop (this repo checkout)
-
-```sh
-dsh plugin --profile <name> add link:/absolute/path/to/dsh-git-graph
-```
-
-A `link:` install references the local directory directly; a rebuild takes effect immediately without reinstalling (after a code change, `pnpm run build` then refresh the page). Note that `link:` takes an absolute path (`~` is expanded by the shell, not by pnpm semantics).
+This fork is a private workspace package, not a published `@dsh-selfuse/...@latest` npm release. The candidate profile generator resolves it from the current workspace's CLI installation. Native Desktop installation and visual interaction remain unverified; do not change a real profile on the strength of a successful bundle build. The family aggregate is retired; this bundle and Skin Center are separate entries.
 
 ## Uninstall
 
@@ -110,4 +85,4 @@ pnpm run build
 
 ## Dev Note
 
-Re-run the browser interaction checks after each official Web client update; a successful package build alone does not verify the slot's visual placement.
+The package ships Host and client bundles plus type declarations; intermediate JavaScript under `lib/types/` is not a runtime entry. No invariant companion is published because Git state is external to the session log and this package maintains no independently observed session-state relationship. The former empty installer has been removed. Re-run browser interaction checks after each official Web client update; a successful build alone does not verify visual placement.

@@ -6,8 +6,10 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ClientRemote } from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-office-to-pdf/remote'
 import { makeTranslate, RemoteError } from '@deepseek-ai/dsh-client-test-runtime'
-import { DocumentPreviewRegistry } from '../src/client/document/registry.ts'
+import { DocumentPreviewRegistry } from '../src/client/document-registry.ts'
 import { apply } from '../src/client/office/index.ts'
+import { pdfBodyRegistration } from '../src/client/pdf/index.ts'
+import { LazyPdfBody } from '../src/client/pdf/LazyPdfBody.tsx'
 import { officeFace } from '../src/client/office/face.ts'
 import { Config } from '../src/config.ts'
 import { OfficeBody, type OfficeBodyInjected } from '../src/client/office/OfficeBody.tsx'
@@ -74,7 +76,12 @@ async function harness(config: Partial<Config['office']> = {}, missing?: 'remote
     if (missing !== 'render') ctx.provide('remote.officeToPdf', { render, generation: rendererGeneration } as never)
   }
   const fiber = ctx.plugin({ apply: (scope: Context) => {
-    apply(scope, Config({ office: config }).office)
+    apply(scope, Config({ office: config }).office, (pdfScope, id) => {
+      const presentation = pdfBodyRegistration(pdfScope)
+      pdfScope.effect(() => pdfScope.slots.inject('sidebar.right.tab.document.office.pdf', () => pdfScope.slots.register({
+        name: 'sidebar.right.tab.document.office.pdf', key: id, locale: 'sidebarPdf', ...presentation,
+      }, LazyPdfBody)))
+    })
   } })
   await fiber.await()
   const entry = recorded.find(entry => entry.component === OfficeBody)!.options

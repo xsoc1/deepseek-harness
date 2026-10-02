@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-皮肤中心允许用户在不重启 DSH 的情况下试穿和应用 Web UI 皮肤。内置和用户皮肤出现在同一个设置页面，壁纸与背景控制也由本地浏览器界面提供。皮肤只改变呈现，不进入模型请求。当前入库的包是预编译快照：`lib/` 与资产存在，但下文的 `src/` 路径指向上游源码，本 checkout 不维护这些文件。
+皮肤中心允许用户在不重启 DSH 的情况下试穿和应用 Web UI 皮肤。内置和用户皮肤出现在同一个设置页面，壁纸与背景控制也由本地浏览器界面提供。皮肤只改变呈现，不进入模型请求。Host 和 Client 均从维护中的源码树编译；实际 Desktop 视觉效果需独立验收。
 
 ## 目录
 
@@ -44,11 +44,13 @@ dsh plugin --profile web add link:$(pwd)/packages/selfuse/skin-center
 
 皮肤中心是符合官方 DSH 插件标准的自包含 bundle（`dsh.bundle.patch` 指向 `cordis.patch.yml`）。此自用层已包含编译后的 `lib/`；本地 `link:` 安装直接使用该包。
 
+此 bundle 同时挂载 [skin-layout-compat](../skin-layout-compat/README.zh.md)，这是为保留资产提供布局属性的小型可重建适配。它不再需要旧 skins 载具和 web-ui-all 聚合包。不发布 invariant 配套模块：视觉资产和偏好没有需独立对账的模型日志状态。
+
 ## 配置
 
-- **总开关**：开关整张卡片（试穿 / 应用 / 背景控制）；持久化在 `skin-background` 设置命名空间。
+- **总开关**：开关整张卡片（试穿 / 应用 / 背景控制）；通过原生 ConfigForms 持久化在 `ui-skin-center.background`。
 - **背景滑杆**：遮蔽（0–100%）、两个背景模糊半径与输入卡模糊（0–20 px），持久化在同一命名空间。
-- **壁纸面板**：媒体库文件夹、选择、渲染模式（实时 / 静态帧）、压暗、模糊、隐藏时暂停、声音开关与音量；持久化在 `skin-wallpaper` 命名空间。
+- **壁纸面板**：媒体库文件夹、选择、渲染模式（实时 / 静态帧）、压暗、模糊、隐藏时暂停、声音开关与音量；通过原生 ConfigForms 持久化在 `ui-skin-center.wallpaper`。
 - **用户皮肤目录**：`$DSH_HOME/skins/<id>/`；`DSH_SKINS_HOME` 可覆盖根目录（开发与测试用）。
 
 ## 安全模型
@@ -59,7 +61,8 @@ dsh plugin --profile web add link:$(pwd)/packages/selfuse/skin-center
 
 ## 已知限制与待完成工作
 
-- 此工作区副本包含编译后的 `lib/` 与资产，但没有 `src/` 树。下文的源码路径设计说明描述的是上游来源，而不是本 checkout 中可编辑的文件；源码级改动必须先导入并验证对应源码。
+- 尚未验收官方 Desktop 激活和视觉位置。原生配置使用 `ui-skin-center` Loader 入口；不自动改写旧 `skin-background` 和 `skin-wallpaper` 用户设置。
+- CSS 模块声明列出实际本地类名，包含壁纸目录控件；`tests/css-modules.spec.ts` 对比 Lightning CSS 导出并拒绝缺失或虚构名称。类型与运行测试仍不等于 Desktop 视觉验收。
 
 - 插件运行时写入的内联样式只能经 L3 `!important` 补丁覆盖。
 - 不输出语义属性（且无稳定 DOM 锚点）的插件只享受 L1 token 覆盖。

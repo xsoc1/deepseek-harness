@@ -31,6 +31,7 @@ describe.skipIf(MODE === 'record')('web e2e: remote welcome notice', () => {
     tripwire = watchConsole(page)
     await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
     await page.waitForSelector('#root', { timeout: 30_000 })
+    expect(new URL(page.url()).hostname).toBe('remote.localhost')
   }, 120_000)
 
   afterAll(async () => {

@@ -1,0 +1,7 @@
+- insert:
+    - id: selfuse-soul-md
+      name: '../../../packages/selfuse/soul-md/lib/index.js'
+      config:
+        path: missing-snapshot-soul.md
+        fallback: 'Soul fixture for {{model}}. Keep replies concise.'
+        watch: false

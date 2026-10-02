@@ -2947,7 +2947,7 @@ describe('Remote stream client carrier lifecycle', () => {
     })
   })
 
-  it('replaces a dropped established socket for a waiting snapshot generation', async () => {
+  it('replaces a dropped socket when its connection owner requests reconnect', async () => {
     await withFakeWebSocket('https://harness.example', async () => {
       FakeWebSocket.autoOpen = false
       const client = new RemoteStreamMuxClient()
@@ -2969,6 +2969,7 @@ describe('Remote stream client carrier lifecycle', () => {
       await vi.waitFor(() => { expect(first.sent).toHaveLength(1) })
 
       first.drop()
+      client.reconnect()
       await vi.waitFor(() => { expect(FakeWebSocket.sockets).toHaveLength(2) })
       const replacement = FakeWebSocket.sockets[1]!
       replacement.open()
@@ -2985,7 +2986,7 @@ describe('Remote stream client carrier lifecycle', () => {
     })
   })
 
-  it('leaves initial retry to its owner, replaces one established drop, and stops permanently', async () => {
+  it('leaves carrier retry to its owner and stops permanently', async () => {
     await withFakeWebSocket('https://harness.example', async () => {
       FakeWebSocket.autoOpen = false
       const client = new RemoteStreamMuxClient()
@@ -3007,16 +3008,12 @@ describe('Remote stream client carrier lifecycle', () => {
       expect(FakeWebSocket.sockets).toHaveLength(2)
       expect(connected.sent).toEqual([])
       connected.fail()
-      await vi.waitFor(() => { expect(FakeWebSocket.sockets).toHaveLength(3) })
-
-      const failedReplacement = FakeWebSocket.sockets[2]!
-      failedReplacement.fail()
       await Promise.resolve()
-      expect(FakeWebSocket.sockets).toHaveLength(3)
+      expect(FakeWebSocket.sockets).toHaveLength(2)
 
       client.reconnect()
-      await vi.waitFor(() => { expect(FakeWebSocket.sockets).toHaveLength(4) })
-      const final = FakeWebSocket.sockets[3]!
+      await vi.waitFor(() => { expect(FakeWebSocket.sockets).toHaveLength(3) })
+      const final = FakeWebSocket.sockets[2]!
       final.open()
       await client.close()
       await client.close()
@@ -3024,20 +3021,17 @@ describe('Remote stream client carrier lifecycle', () => {
       await expect(client.open('feed/follow', {}, new AbortController().signal)
         [Symbol.asyncIterator]().next()).rejects.toThrow('Remote stream client disposed')
 
-      expect(FakeWebSocket.sockets).toHaveLength(4)
+      expect(FakeWebSocket.sockets).toHaveLength(3)
       expect(final.closedWith).toContainEqual({ code: 1000, reason: 'disposed' })
 
       const stopping = new RemoteStreamMuxClient()
       stopping.start()
-      const racing = FakeWebSocket.sockets[4]!
+      const racing = FakeWebSocket.sockets[3]!
       racing.open()
       await Promise.resolve()
       racing.drop()
-      await vi.waitFor(() => { expect(FakeWebSocket.sockets).toHaveLength(6) })
-      const abandoned = FakeWebSocket.sockets[5]!
       await stopping.close()
-      expect(FakeWebSocket.sockets).toHaveLength(6)
-      expect(abandoned.closedWith).toContainEqual({})
+      expect(FakeWebSocket.sockets).toHaveLength(4)
     })
   })
 

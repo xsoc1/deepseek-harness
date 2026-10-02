@@ -1,5 +1,5 @@
 ---
-description: "Back up and restore the local DSH home, with archive verification and optional scheduled copies."
+description: "Add local DSH-home backup, verification, restore and an optional settings tab to a profile."
 kind: "package-bundle"
 ---
 
@@ -9,133 +9,113 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This plugin provides local DSH-home backup, verification, restore, retention, and an optional Web settings panel. Archives contain credentials, so their destination must be treated as private. It is not active in the current selfuse profile unless explicitly installed.
+This private workspace layer adds the `backup_dsh` tool, `/backup` command, persistent scheduling and a settings tab to a profile. The current official Desktop profile does not include it. Install a built local source link for development, or remove it through the native CLI. Archives contain plaintext credentials; checksum verification is not encryption or authentication.
 
 ## Table of Contents
 
-- Commands
-- GitHub sync
-- Settings panel
-- Configuration
-- Security note
-- Model Experience
-- Known Limitations and Deferred Work
-- Dev Note
+- [Use this package](#use-this-package)
+- [Understand the implementation](#understand-the-implementation)
+- [Further Exploration](#further-exploration)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
 
-[![dsh-plugin](https://img.shields.io/badge/ecosystem-dsh--plugin-8b5cf6)](https://github.com/topics/dsh-plugin)
+-----
 
-One-command backup **and restore** for DeepSeek Harness user data — sessions, settings, credentials, skills, and plugin config under `~/.dsh`, excluding reinstallable `node_modules` — with sha256 checksums, integrity verification, automatic rotation, and scheduled auto-backup that survives restarts. Works on macOS, Linux, and Windows.
+<a id="use-this-package"></a>
+## Use this package
 
-## Commands
+### Install into a profile
 
-- **`/backup`** — immediately back up `~/.dsh` to `~/Desktop/@dsh-selfuse/backups/dsh-<timestamp>.tar.gz`
-- **`/backup list`** — list existing backups (name + size) and auto-backup status
-- **`/backup verify [prefix|all]`** — validate archive checksums (default: the newest)
-- **`/backup restore <prefix|latest> [--dry-run]`** — restore `~/.dsh` from an archive
-- **`/backup auto <N>|off|status`** — auto-backup every N hours (1–720; keeps 3 copies below 24h, 7 otherwise; persisted across restarts)
-- **`/backup --keep N`** — override the rotation count (default 7)
-- **`/backup github status|sync`** — GitHub sync status / push now
-- **`backup_dsh` tool** — same capability for the model (`mode=backup|list|verify|restore|auto`)
-
-## GitHub sync
-
-With `config.githubRepo` set, every backup (manual, automatic, or panel) is also pushed to a Git repository — archives, checksum sidecars, and rotation deletions stay in sync:
-
-```yaml
-- id: @dsh-selfuse/backup
-  name: '@dsh-selfuse/backup'
-  config:
-    githubRepo: 'your-name/@dsh-selfuse/backups'   # owner/repo, full URL, or a local path
-```
-
-Use a **private** repository — archives contain plaintext credentials. For an `https` remote, set the token in the environment (`DSH_BACKUP_GITHUB_TOKEN` or `GITHUB_TOKEN`); it is only written into the sync worktree's credential file (never process args). Push is `HEAD:main --force-with-lease`; archives over 90 MB are skipped with a notice. State (last push, last error) lives in `<destination>/auto.json` and shows in the panel and `/backup github status`.
-
-## Settings panel (Web)
-
-The same controls have a visual entry: a **Backup** tab inside Settings → Plugins (`dsh web`). It shows the destination, auto-backup state, GitHub sync status, and every archive with its size, and offers one-click back-up-now, per-archive verify, download, and restore with a dry-run preview plus explicit confirmation. Downloads stream from the loopback-only route `GET /backup-download/<name>`. The tab talks to the host through the `backupPanel` Typert Remote namespace (`/api` RPC); the browser bundle ships prebuilt in `lib/client.js` — no build step at install time. Client Remote strict codecs provide `create()` schema factories; rebuild `lib/client.js` after changing their descriptors.
-
-## How restore works
-
-Restore is safe by construction:
-
-1. The archive's sha256 is verified first — a corrupt archive never touches existing data.
-2. Entries are listed and any path outside the backup root rejects the restore (tar path-traversal guard).
-3. The current `~/.dsh` is snapshotted, then moved aside to `~/.dsh.pre-restore-<timestamp>` — restore replaces rather than merges.
-4. The archive is extracted; restart `dsh` afterwards so restored sessions and settings take effect.
-
-`--dry-run` shows the archive summary without writing anything.
-
-## Configuration (optional)
-
-Plugin `config` in the active cordis profile:
-
-```yaml
-- id: @dsh-selfuse/backup
-  name: '@dsh-selfuse/backup'
-  config:
-    destination: '~/Backups/dsh'   # default ~/Desktop/@dsh-selfuse/backups
-    keep: 10                       # default rotation count
-    exclude:                       # extra tar --exclude patterns
-      - '*cache*'
-    githubRepo: 'name/@dsh-selfuse/backups' # optional GitHub sync (see below)
-```
-
-Auto-backup state lives in `<destination>/auto.json` and resumes after restart.
-
-## Security note
-
-Backups contain plaintext credentials (`.credentials.yaml`, `qq-bridge/config.json`). Archives and checksum sidecars are chmod 600 on POSIX (Windows relies on per-user profile ACLs), but do **not** sync the backup directory to untrusted locations, and treat archives as sensitive as your API keys.
-
-Storage note: the plugin writes its own data (archives, checksum sidecars, `auto.json`) directly through `node:fs`, the same pattern as DSH's own session persistence — the `ctx.fs` capability is the model-facing sandboxed surface and does not apply to host-owned storage.
-
-## Install
+From the candidate checkout, build the package, then use an initialized disposable profile and an absolute local package path. These source-link operations were exercised through the native CLI; they are not npm publication or installed Desktop acceptance.
 
 ```sh
-dsh plugin --profile web add @dsh-selfuse/backup
+pnpm --filter @dsh-selfuse/backup run build
+DSH_HOME=/absolute/scratch/dsh pnpm exec tsx apps/cli/src/bin.ts plugin --profile backup-acceptance add link:/absolute/checkout/packages/selfuse/backup
+DSH_HOME=/absolute/scratch/dsh pnpm exec tsx apps/cli/src/bin.ts plugin --profile backup-acceptance remove @dsh-selfuse/backup
 ```
 
-Then restart `dsh web` (plugin discovery is cached per process) and run `/backup`, or open Settings → Plugins → Backup.
+The package's patch declaration activates its layer through `package.json`'s `dsh.profile.bundles` list. Restart the owning application after changing the profile. Do not run scratch instructions against the real Desktop home.
 
-## Requirements
+### What you get
 
-- macOS, Linux, or Windows 10+ with `tar` in PATH (Windows ships bsdtar in System32; Git Bash's GNU tar also works — checksums prefer `sha256sum`/`shasum` and fall back to an in-process hash on Windows)
-- DSH `0.1.0-rc.6` or compatible
+`/backup` creates an archive; `list`, `verify [prefix|all]`, `restore <prefix|latest> [--dry-run]`, `auto <hours>|off|status` and `github status|sync` provide the other actions. `--keep N` overrides retention for one backup; scheduled backups retain three copies below 24 hours and seven otherwise. The model tool offers backup, list, verify, restore and auto modes. The settings tab adds preview/confirmation, individual deletion and synchronization controls; download appears only when the Host has a Web server and accepts only local requests.
 
-## Development
+### Configuration and restore
 
-Zero runtime dependencies — the host plugin is `lib/index.js`. The browser half lives in `src/` and is bundled (zod inlined, React/Cordis external) into `lib/client.js`, which is committed so git installs never build:
+The patch inserts one plugin row. Supply its configuration through the owning profile; the destination must be an absolute Host path outside `DSH_HOME`, with `~/` expanded from the launch environment.
 
-```sh
-node scripts/build-client.mjs   # rebuild the client bundle after editing src/
-node scripts/smoke.mjs          # host smoke suite (real temp dir, mocked DSH services)
-node scripts/smoke-client.mjs   # client bundle: handshake, schemas, tab registration, SSR
+```yaml
+- id: '@dsh-selfuse/backup'
+  name: '@dsh-selfuse/backup'
+  config:
+    destination: '~/Backups/dsh'
+    keep: 7
+    exclude: []
+    githubRepo: ''
 ```
 
-## License
+Without a destination, backups use `~/Desktop/@dsh-selfuse/backups`. The data root is `DSH_HOME`, or `~/.dsh` when unset; Windows may resolve the home from `USERPROFILE`. Archives exclude reinstallable `node_modules`; scheduling and Git state persist in `<destination>/auto.json`.
 
-MIT
+Preview a restore first. Restoration verifies the checksum and rejects escaping paths, links and special files before writes; it snapshots current data, moves that data into a timestamped sibling, then extracts the selected archive. The pre-restore snapshot temporarily increases retention so rotation cannot delete the selected archive. Stop other writers, preserve the sibling on failure, and restart DSH after recovery; this is not a transactional live-session migration.
 
+### Optional Git synchronization
+
+Set `githubRepo` to a dedicated private GitHub repository, a Git URL or a local repository path. For HTTPS authentication, supply `DSH_BACKUP_GITHUB_TOKEN` or `GITHUB_TOKEN` in the launch environment. A local credential file is excluded from commits. Synchronization updates the selected remote and pushes `HEAD:main` with a lease obtained from that remote; use an exclusively backup-owned branch, not an existing project branch. Files above 90 MiB are skipped. A private remote does not encrypt the archive.
+
+-----
+
+<a id="understand-the-implementation"></a>
+## Understand the implementation
+
+<details>
+<summary>Implementation internals — click to expand</summary>
+
+[cordis.patch.yml](cordis.patch.yml) inserts the layer. [src/index.ts](src/index.ts) owns the command, tool, schedule, Typert service and optional download route; [src/storage.ts](src/storage.ts) performs literal unlink/rename and archive-path validation. [src/client/index.ts](src/client/index.ts) owns typed Remote codecs, locale and slot contributions; [src/types.ts](src/types.ts) contains browser-safe response fields.
+
+Explicit Host and Client projects emit declarations separately and share only response source. [tsdown.config.ts](tsdown.config.ts) uses the native client-bundle builder; authored JS and fake-service smoke scripts are not a second source tree. Mutating command, tool, panel and timer operations are serialized within one plugin instance. Downloads require both a loopback Host header and peer address, reject symlinks and stream an already-open regular file.
+
+</details>
+
+-----
+
+<a id="further-exploration"></a>
+## Further Exploration
+
+See [plugin composition](../../boot/app-boot/README.md), [testing](../../../docs/testing.md) and [defensive patterns](../../../docs/defensive-patterns.md). The original plugin is [dsh-backup](https://github.com/xiaoyuyu6420/dsh-backup); this workspace owns the compatibility changes.
+
+<a id="model-experience"></a>
 ## Model Experience
 
 ### Backup tool result
 
 #### What the model sees
 
-When the agent calls `backup_dsh`, it receives the operation result, including an archive name or an error. Archive contents are not placed in the model request by this plugin.
+The model receives the `backup_dsh` schema and operation status, with `path` and `sha` for backup success. Archive contents and Git tokens are not included in this plugin's result. Restore mode can replace the local data root; the panel's confirmation does not add an approval step to tool calls.
 
 #### Token effect
 
-Only the tool schema and returned status text add model tokens when the tool is available or called; the backup data itself stays on disk.
+The schema and returned status add context tokens. File contents remain on disk unless another tool or the user supplies them to the model.
 
 #### KV Cache effect
 
-The schema and any emitted tool result participate in the current turn's context; changing local archives without a tool call does not alter cached model context.
+Changing local archives alone does not change model context. Tool results become part of the active conversation, so subsequent requests include those results according to the owning agent's context rules.
 
 ## Known Limitations and Deferred Work
 
-- Restore replaces the DSH home and requires a DSH restart; it should be previewed with `--dry-run` and is not a live session migration.
-- GitHub synchronization exposes plaintext credential archives to the chosen private repository and depends on a separately configured token.
+<a id="known-limitations-and-deferred-work"></a>
 
+- A current checkout requires Node matching the root manifest, native subprocess/tools/commands services and `tar` on PATH. The integrated candidate is DSH 0.2.0-rc.2; isolated Linux tests are not Windows tar or installed Desktop activation tests. Actual GitHub HTTPS authentication and Desktop downloads remain unverified; Desktop without a Web server uses local archive files rather than an HTTP download route.
+- A complete subprocess capture is bounded to 1 MiB; a larger archive listing stops restore before moving current data. In-process checksum fallback is bounded to 256 MiB. Checksums detect accidental corruption, not malicious replacement of both archive and checksum. Archive rejection is lexical plus tar metadata validation, not a defense against a concurrent process changing files or symlink ancestors. The backup is not encrypted or a consistent snapshot of concurrent writers, and extraction failure does not automatically roll back.
+
+<a id="dev-note"></a>
 ### Dev Note
 
-The current integrated checkout, not this inherited README's older compatibility claim, is the authority for version support. Re-run the package smoke tests after a DSH upgrade.
+No invariant companion is published because archives and scheduling files are external state without a Session projection; native operation and unload tests check their effects.
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+Run the package build, then `pnpm exec vitest run packages/selfuse/backup/tests scripts/selfuse/backup-profile-acceptance.spec.ts` from the checkout. These tests exercise native Loader reload, actual restore, two local Git remotes, the HTTP route and the rebuilt browser factory against disposable files. The Client artifact is minified with its source map; the Host artifact remains readable. Keep full release gates and real Desktop activation as separate acceptance steps; never use the live home for these tests.
+
+</details>

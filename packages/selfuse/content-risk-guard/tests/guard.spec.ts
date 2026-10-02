@@ -5,17 +5,18 @@ import {
 } from '../src/sanitizer.ts'
 import type { Message } from '@deepseek-ai/dsh-llm'
 import { Context } from '@deepseek-ai/cordis'
-import LlmRuntime, { LlmAdapter, ToolCallId } from '@deepseek-ai/dsh-llm'
-import type { GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
+import LlmRuntime, { createToolResultMessage, LlmAdapter, ToolCallId } from '@deepseek-ai/dsh-llm'
+import type { ContentBlock, GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime, { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
-import type { PtcDispatchLog, ToolExecutionInput } from '@deepseek-ai/dsh-tools'
-import { SessionId } from '@deepseek-ai/dsh-session'
+import type { ToolExecutionInput } from '@deepseek-ai/dsh-tools'
 import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import * as ContentRiskGuard from '../src/index.ts'
 import { LocalResultStore } from '../src/local-result-store.ts'
+import { createPrivacyTestAgent } from './agent-fixture.ts'
+import { scopeTarget } from '@deepseek-ai/dsh-scope'
 
 it('does not silently retry by replacing an unrelated tool result after a provider risk rejection', async () => {
   const ctx = new Context()
@@ -38,12 +39,9 @@ it('does not silently retry by replacing an unrelated tool result after a provid
   }
   ctx.llm.registerAdapter(['risk-fixture'], new RiskAdapter())
   await ctx.plugin(ContentRiskGuard, {})
-  const messages: Message[] = [{
-    role: 'tool',
-    content: [{
-      type: 'tool-result', id: 'safe', name: 'bash', content: [{ type: 'text', text: 'BENIGN_OK' }],
-    }],
-  }]
+  const messages: Message[] = [createToolResultMessage({
+    callId: ToolCallId('safe'), content: [{ type: 'text', text: 'BENIGN_OK' }], isError: false,
+  })]
 
   const chunks: StreamChunk[] = []
   try {
@@ -73,11 +71,9 @@ it('stops a contaminated historical result before any adapter receives it', asyn
   ctx.llm.registerAdapter(['risk-fixture'], new CaptureAdapter())
   await ctx.plugin(ContentRiskGuard, {})
   const historical = JSON.stringify({ output: '  1\tproxies:\n  2\t  - name: fixture-node\n  3\t    type: socks5\n  4\t    password: fixture-pass' })
-  const messages: Message[] = [{
-    role: 'tool', content: [{
-      type: 'tool-result', id: 'old-result', name: 'run_code', content: [{ type: 'text', text: historical }],
-    }],
-  }]
+  const messages: Message[] = [createToolResultMessage({
+    callId: ToolCallId('old-result'), content: [{ type: 'text', text: historical }], isError: false,
+  })]
   expect(hasSensitiveNetworkContent(JSON.stringify({ messages }))).toBe(true)
   const chunks: StreamChunk[] = []
   try {
@@ -128,19 +124,16 @@ it('checks user, system, and tool-schema text before provider dispatch', async (
 it('keeps a sensitive result local while leaving an unrelated result intact', async () => {
   const privateRoot = await mkdtemp(join(tmpdir(), 'dsh-risk-fixture-'))
   const ctx = new Context()
-  const agent = { session: { header: { id: SessionId('risk-session') } } }
-  const exec = (name: string, callId: string): ToolExecutionInput => ({
-    name,
-    callId: ToolCallId(callId),
-    arguments: {},
-    agent,
-    signal: new AbortController().signal,
-  } as unknown as ToolExecutionInput)
   const secret = 'proxies:\n  - name: "node-secret"\n    type: vmess\n    server: node.example.test\n    password: fixture-secret\n'
   try {
     await ctx.plugin(SystemPrompt)
     await ctx.plugin(ToolRuntime)
     const guardFiber = await ctx.plugin(ContentRiskGuard, { privateRoot })
+    const agent = await createPrivacyTestAgent(ctx, 'risk-session')
+    const exec = (name: string, callId: string): ToolExecutionInput => ({
+      name, callId: ToolCallId(callId), arguments: {}, agent,
+      signal: new AbortController().signal,
+    })
     ctx.tools.register(defineContentToolFixture({
       name: 'network_fixture',
       description: 'fixture',
@@ -162,7 +155,9 @@ it('keeps a sensitive result local while leaving an unrelated result intact', as
     expect(safe.content).toEqual([{ type: 'text', text: 'BENIGN_OK' }])
     const files = await readdir(privateRoot)
     expect(files).toHaveLength(1)
-    const path = join(privateRoot, files[0]!)
+    const file = files.at(0)
+    if (file === undefined) throw new Error('missing private result')
+    const path = join(privateRoot, file)
     expect((await stat(path)).mode & 0o777).toBe(0o600)
     expect(await readFile(path, 'utf8')).toContain('node-secret')
     const handle = riskyText.match(/local-result:([a-f0-9]{32})/)?.[1]
@@ -181,9 +176,9 @@ it('keeps a sensitive result local while leaving an unrelated result intact', as
     })
     const otherSession = await ctx.tools.execute({
       ...exec('inspect_local_network_result', 'inspect-other-session'),
-      agent: { session: { header: { id: SessionId('other-session') } } },
+      agent: await createPrivacyTestAgent(ctx, 'other-session'),
       arguments: { handle },
-    } as ToolExecutionInput)
+    })
     expect(otherSession.isError).toBe(true)
     expect(JSON.stringify(otherSession.content)).not.toContain('node-secret')
     await guardFiber.dispose()
@@ -213,9 +208,9 @@ it('fails closed when a sensitive result cannot be stored', async () => {
     }))
     const result = await ctx.tools.execute({
       name: 'oversize_fixture', callId: ToolCallId('oversize-call'), arguments: {},
-      agent: { session: { header: { id: SessionId('limit-session') } } },
+      agent: await createPrivacyTestAgent(ctx, 'limit-session'),
       signal: new AbortController().signal,
-    } as unknown as ToolExecutionInput)
+    })
     expect(result.isError).toBe(true)
     expect(JSON.stringify(result.content)).not.toContain('limit-secret')
     expect(await readdir(privateRoot)).toEqual([])
@@ -246,26 +241,38 @@ it('bounds the complete stored record at an exact multibyte limit', async () => 
 it('isolates a sensitive PTC sub-call log without rewriting a harmless one', async () => {
   const privateRoot = await mkdtemp(join(tmpdir(), 'dsh-risk-ptc-'))
   const ctx = new Context()
-  const agent = { session: { header: { id: SessionId('ptc-session') } } }
   try {
     await ctx.plugin(SystemPrompt)
     await ctx.plugin(ToolRuntime)
     await ctx.plugin(ContentRiskGuard, { privateRoot })
-    const shape = (text: string, id: string) => ctx.waterfall(ctx, 'tools/ptc-dispatch-log', {
-      agent, subCallId: ToolCallId(id), name: 'fixture', content: [{ type: 'text', text }],
-    } as unknown as PtcDispatchLog, async () => [{ type: 'text' as const, text }])
+    const agent = await createPrivacyTestAgent(ctx, 'ptc-session')
+    ctx.tools.register(defineContentToolFixture({
+      name: 'shape_fixture', description: 'exercise real dispatch-log shaping',
+      parameters: { text: { type: 'string', required: true }, fail: { type: 'boolean' } },
+      async execute(args, exec) {
+        const content = [{ type: 'text' as const, text: args.text }]
+        return ctx.waterfall(scopeTarget(ctx.tools, agent), 'tools/ptc-dispatch-log', {
+          exec, agent, subCallId: exec.callId, name: 'fixture', isError: args.fail === true, content,
+        }, () => args.fail
+          ? Promise.reject<ContentBlock[]>(new Error('fixture log shaping failed'))
+          : Promise.resolve(content))
+      },
+    }))
+    const shape = async (text: string, id: string, fail = false) => {
+      const result = await ctx.tools.execute({
+        agent, name: 'shape_fixture', callId: ToolCallId(id), arguments: { text, fail },
+        signal: new AbortController().signal,
+      })
+      expect(result.isError).toBeFalsy()
+      return result.content
+    }
     const secret = 'proxies:\n  - name: subcall-secret\n    type: vmess\n'
     const risky = await shape(secret, 'ptc-risk')
     expect(JSON.stringify(risky)).toContain('local-result:')
     expect(JSON.stringify(risky)).not.toContain('subcall-secret')
     expect(await shape('BENIGN_OK', 'ptc-safe')).toEqual([{ type: 'text', text: 'BENIGN_OK' }])
     expect(await readdir(privateRoot)).toHaveLength(1)
-    const failed = await ctx.waterfall(ctx, 'tools/ptc-dispatch-log', {
-      agent, subCallId: ToolCallId('ptc-failed'), name: 'fixture',
-      content: [{ type: 'text', text: secret }],
-    } as unknown as PtcDispatchLog, async (): Promise<never> => {
-      throw new Error('fixture log shaping failed')
-    })
+    const failed = await shape(secret, 'ptc-failed', true)
     expect(JSON.stringify(failed)).not.toContain('subcall-secret')
   } finally {
     await ctx.fiber.dispose()

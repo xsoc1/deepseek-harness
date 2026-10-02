@@ -1,5 +1,5 @@
 # dsh bundle patch: inserts this plugin into a profile's layer stack.
-# 同时声明 dsh.client（见 package.json），Web 浏览器半边在 /plugins/dsh-memory-panel/client.js 提供。
+# Native Client factory uses authenticated RPC; this layer has no legacy HTTP route.
 - insert:
     - id: dsh-memory-panel
       name: '@dsh-selfuse/memory-panel'

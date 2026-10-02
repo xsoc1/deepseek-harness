@@ -9,23 +9,20 @@
   en: 504a40cf3aa20929
   zh: a9a23955dbd279c7
 /dsh-git-graph/summary:
-  en: ab948b8d63b19473
-  zh: b654b2e1e3354cdc
+  en: d70b7d0b27de59b4
+  zh: 23841419965db7fe
 /dsh-git-graph/table-of-contents:
   en: 10d162f5609ed15a
   zh: 58ccf22f27a78d7a
 /dsh-git-graph/repository-layout-and-build:
-  en: aaf6b9e8e064aba6
-  zh: d2ce89c95a088899
+  en: d46c43077e68947a
+  zh: 6c3e4ca8162b9152
 /dsh-git-graph/activation:
   en: e4b453e1ee2fe855
   zh: 063fe73815991563
-/dsh-git-graph/activation/generic-install-any-machine:
-  en: 8aa19574928cc972
-  zh: cac9cab39de72158
-/dsh-git-graph/activation/local-development-loop-this-repo-checkout:
-  en: 9631a960bb2753f8
-  zh: 83e71d07b79d645d
+/dsh-git-graph/activation/selfuse-deployment:
+  en: a95b207acc96b192
+  zh: 7200ec67ef11a240
 /dsh-git-graph/uninstall:
   en: 88db734dbc3426ae
   zh: 560d3734ee9de3a8
@@ -39,5 +36,5 @@
   en: cc3ea5a73096469f
   zh: 9324bdc324ea5b35
 /dsh-git-graph/dev-note:
-  en: d24f39f0b2514350
-  zh: b119c9be048c5a33
+  en: 21f6e0cef416e4ca
+  zh: 8aee4f1fc682ec99

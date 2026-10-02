@@ -31,7 +31,7 @@ With an explicit `profiles` allowlist, the model can list profile aliases and in
 <a id="configuration"></a>
 ## Configuration
 
-Mount the plugin with the normal Cordis loader; the self-use Web profile already includes it:
+Mount the plugin with the normal Cordis loader. The development selfuse profile includes it; the retired Web service and the signed Windows Desktop profile are not updated by editing that candidate:
 
 ```yaml
 - name: '@dsh-selfuse/content-risk-guard'
@@ -76,4 +76,6 @@ Each new tool result appends a notice rather than the original text. The handle 
 
 ### Dev Note
 
-This is a local privacy boundary, not a provider-policy bypass. Re-run the sanitizer, local-profile, and contaminated-session tests after every model-request or tool-result pipeline change.
+No invariant companion is published because private handle files are intentionally opaque to observers; real Agent pipeline tests verify interception, dispatch refusal and disposal.
+
+This is a local privacy boundary, not a provider-policy bypass. The Host project inherits strict workspace source resolution and builds with `tsc -b` and tsdown; it no longer uses built Cordis declarations as a compiler-path override. Tests compose real Agent, Session, tools and approval services in disposable contexts; the Loader test controls module resolution only and checks disable/re-enable cleanup. Approval tests observe the real audit events, not a fabricated approval object. Re-run `pnpm exec vitest run packages/selfuse/content-risk-guard/tests` after pipeline changes; source composition does not establish signed Windows Desktop activation or real-provider acceptance.

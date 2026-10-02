@@ -2,15 +2,14 @@ import { chmod, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'n
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
-import { SessionId } from '@deepseek-ai/dsh-session'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime, { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
-import type { ToolExecutionInput } from '@deepseek-ai/dsh-tools'
-import type ApprovalService from '@deepseek-ai/dsh-user-approval'
+import ApprovalService, { type ApprovalOutcome } from '@deepseek-ai/dsh-user-approval'
 import { expect, it } from 'vitest'
 import * as ContentRiskGuard from '../src/index.ts'
 import { LocalNetworkProfileExecutor } from '../src/local-network-profile.ts'
+import { createPrivacyTestAgent } from './agent-fixture.ts'
 
 const fixture = [
   '# local fixture comment',
@@ -91,9 +90,9 @@ it('denies a model-requested profile write when no human approval channel exists
       name: 'change_local_network_profile',
       callId: ToolCallId('change-call'),
       arguments: { profileId: 'fixture', operation: 'set-mode', mode: 'global' },
-      agent: { session: { header: { id: SessionId('profile-session') } } },
+      agent: await createPrivacyTestAgent(ctx, 'profile-session'),
       signal: new AbortController().signal,
-    } as unknown as ToolExecutionInput)
+    })
     expect(result.isError).toBe(true)
     expect(await readFile(path, 'utf8')).toBe(fixture)
     expect(JSON.stringify(result.content)).not.toContain('fixture-pass')
@@ -115,23 +114,30 @@ it('writes only after the approval service grants the model-requested change', a
     await ctx.plugin(ContentRiskGuard, {
       privateRoot: join(root, 'private'), profiles: [{ id: 'fixture', path }],
     })
-    ctx.provide('approval', {
-      request: () => {
-        approvals += 1
-        return Promise.resolve('allowed-once')
-      },
-    } as unknown as ApprovalService)
+    const agent = await createPrivacyTestAgent(ctx, 'allowed-session')
+    await ctx.plugin(ApprovalService)
+    const audit: string[] = []
+    ctx.on('session/event', (session, event) => {
+      if (session === agent.session && event.type.startsWith('approval/')) audit.push(event.type)
+    })
+    // Approval decisions must be enclosed by a real session turn for durable audit.
+    agent.session.append('turn/start', { turn: 1 })
+    ctx.on('approval/request', () => {
+      approvals += 1
+      return Promise.resolve<ApprovalOutcome>('allowed-once')
+    })
     const result = await ctx.tools.execute({
       name: 'change_local_network_profile',
       callId: ToolCallId('allowed-call'),
       arguments: { profileId: 'fixture', operation: 'set-mode', mode: 'global' },
-      agent: { session: { header: { id: SessionId('allowed-session') } } },
+      agent,
       signal: new AbortController().signal,
-    } as unknown as ToolExecutionInput)
+    })
     expect(approvals).toBe(1)
     expect(result.isError).toBeFalsy()
     expect(await readFile(path, 'utf8')).toContain('mode: global')
     expect(JSON.stringify(result.content)).not.toContain('fixture-pass')
+    expect(audit).toEqual(['approval/asked', 'approval/decided'])
   } finally {
     await ctx.fiber.dispose()
     await rm(root, { recursive: true, force: true })
@@ -155,9 +161,9 @@ it('isolates a partial read that directly names an allowlisted file even without
     }))
     const result = await ctx.tools.execute({
       name: 'partial_read_fixture', callId: ToolCallId('partial-call'), arguments: { path },
-      agent: { session: { header: { id: SessionId('path-session') } } },
+      agent: await createPrivacyTestAgent(ctx, 'path-session'),
       signal: new AbortController().signal,
-    } as unknown as ToolExecutionInput)
+    })
     expect(JSON.stringify(result.content)).toContain('local-result:')
     expect(JSON.stringify(result.content)).not.toContain('fixture-pass')
     expect(await readdir(privateRoot)).toHaveLength(1)

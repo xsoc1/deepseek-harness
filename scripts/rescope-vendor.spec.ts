@@ -1,12 +1,26 @@
 /** Recorded npm evidence stays intact while authored files and exact edits remain checked. */
 
 import { describe, expect, it } from 'vitest'
-import { exactEditState, isRescopeExcluded } from './rescope-vendor.ts'
+import { exactEditState, isRescopeExcluded, rescopeText } from './rescope-vendor.ts'
 
 const ANCHOR = '\n## Sync procedure'
 const INSERTED = `\n15. **rescope**: one log entry.\n${ANCHOR}`
 
 describe('rescope file selection', () => {
+  it.each([
+    'packages/extensions/cordis-host-runner/tests/inspect-registry.spec.ts',
+    'snapshots/session/cordis-inspect-liveness/client-fixture.mjs',
+    'snapshots/session/cordis-inspect-timeout/client-fixture.mjs',
+  ])('preserves inspect protocol events in %s', (file) => {
+    const source = "ctx.on('cordis/inspect-query', onQuery)\nctx.on('cordis/inspect-query-resolved', onResolved)"
+    expect(rescopeText(source, file)).toBe(source)
+  })
+
+  it('still renames actual module imports outside the protocol owner', () => {
+    const source = "import { Context } from 'cordis'"
+    expect(rescopeText(source, 'packages/example/src/index.ts')).toBe("import { Context } from '@deepseek-ai/cordis'")
+  })
+
   it('preserves the recorded npm resolution', () => {
     expect(isRescopeExcluded('scripts/dependency-catalog/package-lock.json')).toBe(true)
   })

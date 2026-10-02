@@ -9,6 +9,10 @@
 
 ```mermaid
 flowchart LR
+  pkg__dsh_selfuse_memory_panel["@dsh-selfuse/memory-panel"]
+  svc_memoryPanel["ctx.memoryPanel<br/>Optional local Markdown settings service"]
+  pkg__dsh_selfuse_backup["@dsh-selfuse/backup"]
+  svc_backupPanel["ctx.backupPanel<br/>Optional local archive settings service"]
   pkg_hmr["hmr"]
   svc_hmr["ctx.hmr<br/>Serialized module and configuration reloads"]
   pkg_app_boot["app-boot"]
@@ -278,6 +282,8 @@ flowchart LR
   pkg_cordis_host_runner["cordis-host-runner"]
   svc_dynamicCordisRunner["ctx.dynamicCordisRunner<br/>Dynamic Cordis package host runner"]
   svc_cordisInspect["ctx.cordisInspect<br/>Dynamic Cordis inspect registry"]
+  pkg__dsh_selfuse_backup --> svc_backupPanel
+  pkg__dsh_selfuse_memory_panel --> svc_memoryPanel
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
@@ -443,6 +449,7 @@ flowchart LR
   svc_attachments --> pkg_llm_pi_ai
   svc_attachments --> pkg_tool_fs
   svc_authorization --> pkg_llm_pi_ai
+  svc_backupPanel --> pkg__dsh_selfuse_backup
   svc_browserUse --> pkg_experimental_browser_use_chrome_devtools_mcp
   svc_browserUse --> pkg_experimental_browser_use_playwright_mcp
   svc_browserUse --> pkg_experimental_browser_use_stagehand_native
@@ -481,6 +488,7 @@ flowchart LR
   svc_llm --> pkg_compaction_basic
   svc_lsp --> pkg_tool_lsp
   svc_mcpResources --> pkg_mcp_resources
+  svc_memoryPanel --> pkg__dsh_selfuse_memory_panel
   svc_officeToPdf --> pkg_client_ui_sidebar_documentpreview
   svc_otel --> pkg_host_product_telemetry_otel
   svc_otel --> pkg_session_telemetry_otel
@@ -579,6 +587,8 @@ flowchart LR
 
 | ctx 键 | 角色 | 所属包 | 实现 | 直接消费方 | 配套插件 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.memoryPanel` | `service` | `@dsh-selfuse/memory-panel` | - | `@dsh-selfuse/memory-panel` | - | 私有记忆面板为人读取本地 Markdown；既不注入模型上下文，也不属于默认官方 Desktop profile。 |
+| `ctx.backupPanel` | `service` | `@dsh-selfuse/backup` | - | `@dsh-selfuse/backup` | - | 私有备份层拥有 Host 服务及其 Client Remote 标签页；不属于默认官方 Desktop profile。 |
 | `ctx.hmr` | `core` | [`hmr`](../packages/boot/hmr) | - | [`app-boot`](../packages/boot/app-boot) | - | 负责模块和精确配置监听；应用修改共用其队列，自动重载等待应用文件锁。 |
 | `ctx.pluginRegistryProbe` | `core` | [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager) | - | [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager) | - | 在 Host 上并发比较公共安装源响应；初始安装源推荐由 Client 负责。 |
 | `ctx.pluginManager` | `core` | [`plugin-manager`](../packages/boot/plugin-manager) | - | [`plugin-manager`](../packages/boot/plugin-manager), `ui-settings-plugin-inventory` | - | 与 CLI 共享 profile 包操作，并向 Web 和 Agent 调用方分别报告持久状态与运行状态。 |

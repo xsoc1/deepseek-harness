@@ -250,7 +250,6 @@ body {
   --dsw-specific-bubble: #e0faff;
   --dsw-specific-input-major: rgba(255, 255, 255, 0.65);
   --dsw-specific-login-input: rgba(255, 255, 255, 0.65);
-  --dsw-specific-menu: rgba(244, 252, 255, 0.96);
   --dsw-specific-selector: rgba(228, 249, 255, 0.9);
   --dsw-specific-sidebar-fill: rgba(238, 249, 255, 0.5);
   --dsw-specific-sidebar-nav-item-active-accent: #7cc6e2;
@@ -341,7 +340,6 @@ body[data-ds-dark-theme] {
   --dsw-specific-bubble: rgba(13, 21, 36, 0.7);
   --dsw-specific-input-major: rgba(6, 10, 20, 0.6);
   --dsw-specific-login-input: rgba(6, 10, 20, 0.6);
-  --dsw-specific-menu: rgba(6, 10, 20, 0.9);
   --dsw-specific-selector: rgba(8, 13, 24, 0.75);
   --dsw-specific-sidebar-fill: rgba(4, 6, 12, 0.65);
   --dsw-specific-sidebar-nav-item-active-accent: rgba(13, 21, 36, 0.6);

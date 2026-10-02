@@ -60,7 +60,7 @@ describe('tierExternalDeps', () => {
     expect(isLocalSkinCenterLightningCss(skin, new Set(['lightningcss']))).toBe(false)
     skin.set('packages/client/runtime/package.json', { dependencies: { lightningcss: '^1' } })
     expect(isLocalSkinCenterLightningCss(skin, new Set())).toBe(false)
-    expect(() => assertRuntimeLicenses([{ name: 'lightningcss', license: 'MPL-2.0' }]))
+    expect(() => { assertRuntimeLicenses([{ name: 'lightningcss', license: 'MPL-2.0' }]) })
       .toThrow('lightningcss (MPL-2.0)')
   })
 

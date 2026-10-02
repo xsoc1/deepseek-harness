@@ -80,10 +80,10 @@ export function parseGraph(stdout) {
 export function parseDecoration(decoration) {
     if (decoration === '')
         return [];
-    return decoration.split(', ').map(part => {
+    return decoration.split(', ').map((part) => {
         if (part === 'HEAD')
             return '';
-        let name = part.replace(/^HEAD -> /, '').replace(/^tag: /, '');
+        const name = part.replace(/^HEAD -> /, '').replace(/^tag: /, '');
         return name.trim();
     }).filter(name => name !== '');
 }
@@ -242,3 +242,4 @@ export function isGitError(value) {
         return false;
     return true;
 }
+//# sourceMappingURL=types.js.map

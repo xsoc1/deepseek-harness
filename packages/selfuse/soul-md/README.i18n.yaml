@@ -3,23 +3,32 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/selfuse/soul-md/README.md
 /:
-  en: c68475cc3e4af3b9
-  zh: eb00f7076b47f39c
+  en: b71ca5b75a7d35b1
+  zh: 7870e962fcd8fc23
 /dsh-selfuse-soul-md:
   en: 7f0dbd04c30ae877
   zh: 28281df9038e5cbb
 /dsh-selfuse-soul-md/summary:
-  en: 8ac759b8e21baba6
-  zh: 647a6f6862e70c5d
+  en: f3555a12c5375fac
+  zh: 531a4f8890a8d7ab
 /dsh-selfuse-soul-md/table-of-contents:
-  en: 595b69c299f4386e
-  zh: 435adcb4577484cc
-/dsh-selfuse-soul-md/configuration:
-  en: e6ee65f1181f5879
-  zh: e9b808ff61efddfc
-/dsh-selfuse-soul-md/prompt-behavior:
-  en: d0d58f94573aac88
-  zh: b69c594741ce412f
+  en: d152484eb41ac6b4
+  zh: 3a2f21ff0dc3420d
+/dsh-selfuse-soul-md/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/dsh-selfuse-soul-md/use-this-package/install-into-a-profile:
+  en: 8bab0b6efc40bbbc
+  zh: 38db7183b919a597
+/dsh-selfuse-soul-md/use-this-package/what-you-get:
+  en: a114f8ea4e1f8933
+  zh: 306881b3b746bc30
+/dsh-selfuse-soul-md/understand-the-implementation:
+  en: b338df205c5f66ce
+  zh: b619871df8f8c16e
+/dsh-selfuse-soul-md/further-exploration:
+  en: 126141275af5053c
+  zh: 0f84d7b142b3c85b
 /dsh-selfuse-soul-md/model-experience:
   en: 215e7ba838619b7b
   zh: a311da3843709f90
@@ -27,17 +36,17 @@
   en: edabe2e34cf3cc10
   zh: 9ff83c25a803cceb
 /dsh-selfuse-soul-md/model-experience/persona-card-section/what-the-model-sees:
-  en: bfab0f3418007f5e
-  zh: 461842079ab414b3
+  en: 6976ad489297fcfc
+  zh: 42d61ca06f4f9ed1
 /dsh-selfuse-soul-md/model-experience/persona-card-section/token-effect:
-  en: 7b3a71af0d3b3e19
-  zh: d7ba1b60e5bcae3b
+  en: 2809332317dc6c9f
+  zh: 2db529cd4eb5632c
 /dsh-selfuse-soul-md/model-experience/persona-card-section/kv-cache-effect:
-  en: 2e499f0ed6387e33
-  zh: 9b49fff61019eabf
+  en: b3be2d96ab8aba0d
+  zh: 9dac84c94212d4e0
 /dsh-selfuse-soul-md/known-limitations-and-deferred-work:
-  en: 61db0a1f997814f4
-  zh: 981098563c17da98
+  en: 3f86383372ad78f5
+  zh: a62170e87b285924
 /dsh-selfuse-soul-md/known-limitations-and-deferred-work/dev-note:
-  en: 2280b14ae906deaa
-  zh: 3d26c949fa4eeb66
+  en: 184d24967d3661a4
+  zh: 73a7d4523cbf35bb

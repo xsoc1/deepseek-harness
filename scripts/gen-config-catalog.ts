@@ -742,9 +742,7 @@ export function collectConfigCatalog(scanRoot: string = root): CatalogEntry[] {
       // Admit only a verifiable package artifact; otherwise fail closed.
       const hasMain = main !== undefined && existsSync(resolve(scanRoot, dir, main))
       const hasPatch = patch !== undefined && existsSync(resolve(scanRoot, dir, patch))
-      const isControlGui = pkg === '@dsh-selfuse/control-gui'
-        && existsSync(resolve(scanRoot, dir, 'gui-src'))
-      if (!hasMain && !hasPatch && !isControlGui) {
+      if (!hasMain && !hasPatch) {
         violations.push(`${pkg}: entry ${entryRel} is missing and no declared package artifact is present.`)
         continue
       }

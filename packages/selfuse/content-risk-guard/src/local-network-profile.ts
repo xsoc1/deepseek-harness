@@ -176,7 +176,7 @@ export class LocalNetworkProfileExecutor {
         this.maxBytes, true)
       let record: unknown
       try {
-        record = JSON.parse(recordText) as unknown
+        record = JSON.parse(recordText)
       } catch {
         throw new Error('local network backup is invalid')
       }

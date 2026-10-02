@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { IconBranchOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconBranchOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { BranchesView, RepoStatus } from '../../core/types.ts'
 import type { GitGraphInjected } from '../index.ts'
@@ -19,7 +19,8 @@ import { CreateBranchDialog } from './CreateBranchDialog.tsx'
 import { GraphDialog } from '../graph/GraphDialog.tsx'
 import css from './context.module.css'
 
-/** Full props of the branch chip: either seat's runtime share (the session-maybe context hole or the dock fallback's blank-session hero) + the git-graph inject face + the locale seat. */
+/** Branch chip props: either session context or blank-session dock runtime,
+ * plus the Git graph service and localized text. */
 export type BranchChipProps =
   (PropsRuntime<'conversation.input.selector.context'> | PropsRuntime<'conversation.input.dock'>)
   & GitGraphInjected
@@ -134,7 +135,8 @@ export function BranchChip(props: BranchChipProps) {
   // session baseline's blank flag instead.
   const dockSeat = 'session' in props && 'input' in props
   const sessionSnapshot = dockSeat ? props.session : undefined
-  const heroSeat = sessionSnapshot?.composerPhase === 'blank' && (sessionSnapshot.openState === 'open' || blankSession === true)
+  const heroSeat = sessionSnapshot?.blank === true && !sessionSnapshot.promptAttempted
+    && (sessionSnapshot.openState === 'open' || blankSession)
   const showBranchSelector = dockSeat ? heroSeat : blankSession
   const stockLightTheme = useStockLightTheme()
 
@@ -233,7 +235,9 @@ export function BranchChip(props: BranchChipProps) {
     if (!showBranchSelector || !branchOpen) return undefined
     let live = true
     setBranchesView(null)
-    props.branches(sessionId).then((view) => { if (live) setBranchesView(view) })
+    void props.branches(sessionId).then((view) => { if (live) setBranchesView(view) }).catch(() => {
+      if (live) setBranchesView(null)
+    })
     return () => { live = false }
   }, [showBranchSelector, branchOpen, props.branches, sessionId])
 
@@ -260,7 +264,7 @@ export function BranchChip(props: BranchChipProps) {
       <div className={css.chipWrap}>
         <Chip
           hero={heroSeat}
-          icon={<IconBranchOutline16 size={14} />}
+          icon={<IconBranchOutlineRegular size={14} />}
           label={repo.branch === '' ? props.t('branch.detached') : repo.branch}
           ariaLabel={props.t('chip.aria.branch')}
           open={branchOpen}

@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/skin-layout-compat/README.md
+/:
+  en: d028b307b0864f63
+  zh: f2885a879042aea4
+/skin-layout-compatibility:
+  en: a13aecc1c126faf3
+  zh: c91af3cef1f9b57e
+/skin-layout-compatibility/summary:
+  en: 46edc41438c498f6
+  zh: cbb25ce0f037a1f8
+/skin-layout-compatibility/table-of-contents:
+  en: dcdaa9c1a27cffb0
+  zh: 7134b9363c6abecf
+/skin-layout-compatibility/behavior:
+  en: 16aaf636a331e227
+  zh: a907af79e479a915
+/skin-layout-compatibility/verification:
+  en: 8e24226eb64ec42a
+  zh: dbe80b0bf090d0dc
+/skin-layout-compatibility/known-limitations-and-deferred-work:
+  en: ca27b9cb9b069547
+  zh: 3a20454826911273
+/skin-layout-compatibility/dev-note:
+  en: 2925ed704d2e6db3
+  zh: a0051bd358818def

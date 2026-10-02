@@ -22,7 +22,7 @@
   "keywords": [
     "deepseek",
     "dsh",
-    "cordis",
+    "@deepseek-ai/cordis",
     "plugin",
     "skill",
     "mathematics",

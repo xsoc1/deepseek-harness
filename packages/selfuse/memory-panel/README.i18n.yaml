@@ -3,29 +3,35 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/selfuse/memory-panel/README.md
 /:
-  en: 1b4dad8064ac6894
-  zh: c1de318b105cc388
+  en: c902eba47c150623
+  zh: 8e53d99c643a4df2
 /dsh-selfuse-memory-panel:
   en: f147bdef62d7020f
   zh: d1c33a5ce9b0aff3
 /dsh-selfuse-memory-panel/summary:
-  en: 1dcbe8594fb156f0
-  zh: f0bc566d08ae07a0
+  en: 499e6bb8171a2a7c
+  zh: 70534f9aca13b748
 /dsh-selfuse-memory-panel/table-of-contents:
-  en: 74a4c4d4112de397
-  zh: 019844b44cb11147
-/dsh-selfuse-memory-panel/storage-and-features:
-  en: d588c9ab386ea407
-  zh: 238ebf9bea359b90
-/dsh-selfuse-memory-panel/install:
-  en: 2b354e4e411bd9ff
-  zh: ad14754d8b5cebdd
-/dsh-selfuse-memory-panel/security:
-  en: 8123462a00cc0799
-  zh: 7e30ae34e6c6f15d
+  en: 80b31a934611cb4a
+  zh: 547e5489bac74e8b
+/dsh-selfuse-memory-panel/use-this-package:
+  en: bbff250eba0f1b89
+  zh: b20a47f82d8ab6e0
+/dsh-selfuse-memory-panel/use-this-package/install-into-a-profile:
+  en: ec1f456aaef4a1f6
+  zh: 3db6e4e073862b9f
+/dsh-selfuse-memory-panel/use-this-package/storage-and-controls:
+  en: 8ed61e21ea639189
+  zh: 9414db4e9b9926e9
+/dsh-selfuse-memory-panel/understand-the-implementation:
+  en: 00be160c0cd4e5d8
+  zh: bb1b243b68244a75
+/dsh-selfuse-memory-panel/further-exploration:
+  en: 01052f4053237f0b
+  zh: 4acb9ba351599ab3
 /dsh-selfuse-memory-panel/known-limitations-and-deferred-work:
-  en: 18169c88d33f3e2a
-  zh: 4d929ec204be2bd9
+  en: d54911f9ef58fd21
+  zh: 2c0f4b3656c4d938
 /dsh-selfuse-memory-panel/known-limitations-and-deferred-work/dev-note:
-  en: 9198829b8ead4b5f
-  zh: 95cb2fa0726a0655
+  en: f42ede3257532a78
+  zh: eb0f77b1811efadd

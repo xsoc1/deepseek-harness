@@ -180,8 +180,7 @@ type BatchArtifact = ComboArtifact & { descriptor: WebBootBatch }
 /** Versioned code is immutable; mismatched revisions are rejected instead of serving newer bytes. */
 const IMMUTABLE_CACHE = 'public, max-age=31536000, immutable'
 /** Generated request URLs stay below conservative browser and intermediary request-target limits. */
-const MAX_COMBO_URL_BYTES = 256
-const MAX_COMBO_ENTRIES = 4
+const MAX_COMBO_URL_BYTES = 3 * 1024
 const HASH_REVISION_LENGTH = 12
 const COMBO_REVISION_PLACEHOLDER = '0'.repeat(HASH_REVISION_LENGTH)
 
@@ -275,7 +274,7 @@ function partitionComboRecords(records: readonly WebPluginRecord[]): WebPluginRe
   let current: WebPluginRecord[] = []
   for (const record of records) {
     const candidate = [...current, record]
-    if (candidate.length <= MAX_COMBO_ENTRIES && projectedComboUrlBytes(candidate) <= MAX_COMBO_URL_BYTES) {
+    if (projectedComboUrlBytes(candidate) <= MAX_COMBO_URL_BYTES) {
       current = candidate
       continue
     }

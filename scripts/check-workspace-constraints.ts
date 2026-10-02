@@ -51,12 +51,15 @@ const publicationSourceAllowlist: Readonly<Record<string, readonly string[]>> = 
 }
 /** Public source home recorded in maintained package manifests. */
 const publishedRepositoryUrl = 'git+https://github.com/deepseek-ai/deepseek-harness.git'
+const selfuseRepositoryUrl = 'git+https://github.com/xsoc1/deepseek-harness.git'
 /** Packages that participate in the experimental policy. */
 const experimentalPackageDirectory = /^packages\/experimental\/[^/]+$/
 /** npm namespace reserved for experimental packages. */
 const experimentalPackageNamePrefix = '@deepseek-ai/dsh-experimental-'
 /** Ordinary directories whose packages this repository publishes: one release member each. */
-const standardReleaseMemberDirectory = /^(?:packages\/(?!experimental\/)[^/]+\/[^/]+|apps\/(?!desktop(?:-host)?$)[^/]+|vendor\/[^/]+)$/
+const standardReleaseMemberDirectory = new RegExp(
+  '^(?:packages/(?!experimental/|selfuse/)[^/]+/[^/]+|apps/(?!desktop(?:-host)?$)[^/]+|vendor/[^/]+)$',
+)
 /** Installable application assembled by electron-builder rather than published to npm. */
 const desktopApplicationDirectory = 'apps/desktop'
 const localArtifactDirs = new Set(['node_modules'])
@@ -385,6 +388,15 @@ export function checkDshFamilyVersion(manifest: PackageManifest, expected: strin
 export function checkWorkspaceManifest({ dir, manifest }: WorkspaceManifest): string[] {
   const errors = checkExperimentalManifest({ dir, manifest })
   const label = manifest.name ?? dir
+  if (/^packages\/selfuse\/[^/]+$/.test(dir)) {
+    if (!manifest.name?.startsWith('@dsh-selfuse/')) errors.push(`${label}: local package must use the @dsh-selfuse/ namespace`)
+    if (manifest.private !== true) errors.push(`${label}: local package must set private: true`)
+    if (manifest.publishConfig !== undefined) errors.push(`${label}: local package must omit publishConfig`)
+    if (manifest.repository?.type !== 'git'
+      || manifest.repository.url !== selfuseRepositoryUrl || manifest.repository.directory !== dir) {
+      errors.push(`${label}: local package repository must use ${selfuseRepositoryUrl} with directory ${dir}`)
+    }
+  }
   const familyVersionError = checkDshFamilyVersion(manifest, repositoryVersion)
   if (familyVersionError !== undefined) errors.push(familyVersionError)
   const isNativePackageDir = dir.startsWith('native/system/packages/')

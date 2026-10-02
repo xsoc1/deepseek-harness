@@ -9,7 +9,8 @@
  */
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots';
 import type { GitGraphInjected } from '../index.ts';
-/** Full props of the branch chip: either seat's runtime share (the session-maybe context hole or the dock fallback's blank-session hero) + the git-graph inject face + the locale seat. */
+/** Branch chip props: either session context or blank-session dock runtime,
+ * plus the Git graph service and localized text. */
 export type BranchChipProps = (PropsRuntime<'conversation.input.selector.context'> | PropsRuntime<'conversation.input.dock'>) & GitGraphInjected & PropsLocale<'git-graph'>;
 /** Minimum gap between window-focus git refetches (ms). */
 export declare const FOCUS_REFRESH_MIN_MS = 5000;

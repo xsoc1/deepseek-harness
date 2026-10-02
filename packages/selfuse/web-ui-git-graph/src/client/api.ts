@@ -31,7 +31,7 @@ async function post<T>(path: string, payload: Record<string, unknown>): Promise<
     return { ok: false, error: TRANSPORT_ERROR }
   }
   try {
-    const envelope = await response.json() as unknown
+    const envelope: unknown = await response.json()
     if (typeof envelope !== 'object' || envelope === null) return { ok: false, error: TRANSPORT_ERROR }
     const record = envelope as Record<string, unknown>
     if (record.ok === true) return { ok: true, value: record.value as T }

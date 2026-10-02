@@ -70,3 +70,4 @@ export function subscribeChanges(path, onChange) {
     // connections against the per-origin HTTP pool.
     return subscribeSharedEvents(`/git/events?path=${encodeURIComponent(path)}`, 'change', () => { onChange(); });
 }
+//# sourceMappingURL=api.js.map

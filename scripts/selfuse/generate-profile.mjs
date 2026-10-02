@@ -36,6 +36,10 @@ const bundleList = manifest.bundles || []
 const patchPlugins = manifest.patchPlugins || []
 const disabledRows = manifest.disabledRows || []
 const rowConfigs = manifest.rowConfigs || {}
+const retiredPackages = new Set(manifest.retiredPackages || [])
+if ([...bundleList, ...patchPlugins].some(pkg => retiredPackages.has(pkg))) {
+  throw new Error('profile manifest activates an explicitly retired package')
+}
 const profileDir = join(dshHome, 'profiles', name)
 const packagePath = join(profileDir, 'package.json')
 const patchPath = join(profileDir, 'cordis.patch.yml')
@@ -49,7 +53,7 @@ if (typeof existingDependencies !== 'object' || Array.isArray(existingDependenci
   throw new Error(`profile dependencies must be an object: ${packagePath}`)
 }
 const cliBundles = (existingPackage.dsh?.profile?.bundles ?? [])
-  .filter(pkg => Object.hasOwn(existingDependencies, pkg) && !bundleList.includes(pkg))
+  .filter(pkg => Object.hasOwn(existingDependencies, pkg) && !bundleList.includes(pkg) && !retiredPackages.has(pkg))
 
 function expandDshHome(value) {
   if (typeof value === 'string' && value.startsWith('${DSH_HOME}/')) {
@@ -71,7 +75,7 @@ function writeIfChanged(path, content) {
 const packageJson = {
   name: `dsh-profile-${name}`,
   private: true,
-  dependencies: existingDependencies,
+  dependencies: Object.fromEntries(Object.entries(existingDependencies).filter(([pkg]) => !retiredPackages.has(pkg))),
   dsh: {
     profile: {
       bundles: [...bundleList, ...cliBundles],

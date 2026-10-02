@@ -3,65 +3,56 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/selfuse/backup/README.md
 /:
-  en: ecd08041ef37c807
-  zh: d48e0dc6974515b7
+  en: d38f65c566fbcaee
+  zh: 218c5d45a9562b2e
 /dsh-selfuse-backup:
   en: 4514ecd4388c3274
   zh: 7648513bd7b00afb
 /dsh-selfuse-backup/summary:
-  en: 5378908e746c30a7
-  zh: b82f6a151cbd91d5
+  en: 953d4d04d8057e80
+  zh: a1d8a9eabf6a2370
 /dsh-selfuse-backup/table-of-contents:
-  en: 32d54e80ed5f3566
-  zh: 0a03c40e6559219d
-/dsh-selfuse-backup/commands:
-  en: bb07b1b10fcff917
-  zh: c336950f6ff6e797
-/dsh-selfuse-backup/github-sync:
-  en: 33a803a7e9e7d99c
-  zh: f06362d0f713d79b
-/dsh-selfuse-backup/settings-panel-web:
-  en: a5d5b8dbb230a3ac
-  zh: 0084a7bdc994b2d9
-/dsh-selfuse-backup/how-restore-works:
-  en: 99b0586d0834fad5
-  zh: 903f255efe9beb30
-/dsh-selfuse-backup/configuration-optional:
-  en: 9b9fabeb278d1207
-  zh: 237c2aa01a6ae1da
-/dsh-selfuse-backup/security-note:
-  en: 036a87ae6ed3afb7
-  zh: 2b2c86b1ca6015b2
-/dsh-selfuse-backup/install:
-  en: 9123fd09e8caac69
-  zh: a3de6276768d228b
-/dsh-selfuse-backup/requirements:
-  en: b1d26446fd178c77
-  zh: f40ae663cc3109b7
-/dsh-selfuse-backup/development:
-  en: 29485b0ea7e86c0a
-  zh: 9b39d1c9bd3614d3
-/dsh-selfuse-backup/license:
-  en: aad9b93c8b488fac
-  zh: 0a553bf347728a12
+  en: d152484eb41ac6b4
+  zh: 2a90a163aad29cf9
+/dsh-selfuse-backup/use-this-package:
+  en: bbff250eba0f1b89
+  zh: b20a47f82d8ab6e0
+/dsh-selfuse-backup/use-this-package/install-into-a-profile:
+  en: fd5b2461533036e7
+  zh: 9fe0e7cff88dd25d
+/dsh-selfuse-backup/use-this-package/what-you-get:
+  en: 281d6cf5acf914c1
+  zh: efa4c04e5eb04af9
+/dsh-selfuse-backup/use-this-package/configuration-and-restore:
+  en: f433d425e4e52653
+  zh: ef239b671a64dec4
+/dsh-selfuse-backup/use-this-package/optional-git-synchronization:
+  en: 625cd9c109e31bb2
+  zh: b4ccc99e12fb1f03
+/dsh-selfuse-backup/understand-the-implementation:
+  en: 204ebc63ef898945
+  zh: f902665b3ea7cd89
+/dsh-selfuse-backup/further-exploration:
+  en: 707251ce97507492
+  zh: efc14e6dfa99bd30
 /dsh-selfuse-backup/model-experience:
   en: 215e7ba838619b7b
-  zh: a311da3843709f90
+  zh: 215e7ba838619b7b
 /dsh-selfuse-backup/model-experience/backup-tool-result:
   en: 1222f6e653c181c2
   zh: 680d864cae006df6
 /dsh-selfuse-backup/model-experience/backup-tool-result/what-the-model-sees:
-  en: a3b83200bd2cebde
-  zh: 39ac129976da5609
+  en: 4ed9b00e4ea005a5
+  zh: 5198675d18e91a26
 /dsh-selfuse-backup/model-experience/backup-tool-result/token-effect:
-  en: 27c0da53dd0a353e
-  zh: ab6b89319fdd717a
+  en: 0ab831ebeb846a63
+  zh: f37011515ee3343f
 /dsh-selfuse-backup/model-experience/backup-tool-result/kv-cache-effect:
-  en: 65c3a5c37c59707c
-  zh: 484de112aadcdfd9
+  en: 957e158e0d2f4d0f
+  zh: eb1397d10f537fe6
 /dsh-selfuse-backup/known-limitations-and-deferred-work:
-  en: 3e760f22cf83c854
-  zh: fd505fe98226c274
+  en: fd0829d33c4c1607
+  zh: 901571a6ef94e6a8
 /dsh-selfuse-backup/known-limitations-and-deferred-work/dev-note:
-  en: 4e1daa52f1baee49
-  zh: 93124e3979b5cd83
+  en: 4921d1ead73e3161
+  zh: da591e830424d69a

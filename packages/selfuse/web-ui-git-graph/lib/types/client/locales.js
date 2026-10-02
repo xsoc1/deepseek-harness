@@ -77,3 +77,4 @@ export const en = {
     'toast.switchSuccess': 'Switched to branch {branchName}',
     'chip.aria.branch': 'Branch',
 };
+//# sourceMappingURL=locales.js.map

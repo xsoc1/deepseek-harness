@@ -1,0 +1,40 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/selfuse/plugin-mount/README.md
+/:
+  en: 43852fd25ac8151a
+  zh: f818459197d76caf
+/dsh-selfuse-plugin-mount:
+  en: b77836ba4ba24b22
+  zh: 308f2f8488ff753a
+/dsh-selfuse-plugin-mount/summary:
+  en: 502be90484f4c202
+  zh: 6f2472170a283ca2
+/dsh-selfuse-plugin-mount/table-of-contents:
+  en: 6fba6de8ce452dcd
+  zh: c41f5ab3c99bba2d
+/dsh-selfuse-plugin-mount/behavior:
+  en: c8137117afb6b9d1
+  zh: 5dff39bf0515c759
+/dsh-selfuse-plugin-mount/dev-note:
+  en: d5769fb4f7b6dc20
+  zh: 2ef0eee0911533d2
+/dsh-selfuse-plugin-mount/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/dsh-selfuse-plugin-mount/model-experience/mount-guard:
+  en: 2874e8c1274a339b
+  zh: 7f162be3ed123b03
+/dsh-selfuse-plugin-mount/model-experience/mount-guard/what-the-model-sees:
+  en: 31efc0a2e3dc6e45
+  zh: 6e0e10fe75039077
+/dsh-selfuse-plugin-mount/model-experience/mount-guard/token-effect:
+  en: 98f1fed50902ff17
+  zh: 736ee8e9fcee5310
+/dsh-selfuse-plugin-mount/model-experience/mount-guard/kv-cache-effect:
+  en: 609f077b830f0236
+  zh: 37fcca12374ffc9d
+/dsh-selfuse-plugin-mount/known-limitations-and-deferred-work:
+  en: f8610007724b7301
+  zh: 697b5b0fe6c0a204

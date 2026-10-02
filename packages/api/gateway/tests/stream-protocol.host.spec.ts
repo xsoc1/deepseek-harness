@@ -73,6 +73,8 @@ describe('Remote stream wire protocol', () => {
 
   it.each([
     { type: 'heartbeat', timeoutMs: 0 },
+    { type: 'heartbeat', timeoutMs: '6000' },
+    { type: 'heartbeat', timeoutMs: null },
     { type: 'heartbeat', timeoutMs: 1.5 },
     { type: 'heartbeat', timeoutMs: MAX_REMOTE_STREAM_HEARTBEAT_TIMEOUT_MS + 1 },
     { type: 'heartbeat', timeoutMs: 6_000, extra: true },

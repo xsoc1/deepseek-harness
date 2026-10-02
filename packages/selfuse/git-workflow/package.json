@@ -4,7 +4,8 @@
   "description": "DeepSeek Harness plugin: first-class Git workflow tools for the model — repo status, diffs, commit creation with validated messages, recent history, and branches. No bare-shell git calls; every invocation is a shell-free execFile with path and message validation.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/truelove-dreamer/@dsh-selfuse/git-workflow.git"
+    "url": "git+https://github.com/xsoc1/deepseek-harness.git",
+    "directory": "packages/selfuse/git-workflow"
   },
   "dsh": {
     "bundle": {
@@ -13,12 +14,42 @@
   },
   "type": "module",
   "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
   "files": [
     "lib",
     "cordis.patch.yml"
   ],
   "scripts": {
-    "test": "node --test test/"
+    "build": "tsc -b && tsdown",
+    "test": "node --test test/git.test.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/schemastery": "workspace:~",
+    "@deepseek-ai/dsh-tools": "workspace:*",
+    "@deepseek-ai/dsh-shell": "workspace:*",
+    "@deepseek-ai/dsh-sandbox-policy": "workspace:*"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/schemastery": "workspace:~",
+    "@deepseek-ai/dsh-tools": "workspace:*",
+    "@deepseek-ai/dsh-shell": "workspace:*",
+    "@deepseek-ai/dsh-sandbox-policy": "workspace:*",
+    "@deepseek-ai/dsh-bash-sandbox": "workspace:*",
+    "@deepseek-ai/dsh-subprocess-local": "workspace:*",
+    "@deepseek-ai/dsh-sandbox-local": "workspace:*",
+    "@deepseek-ai/dsh-system-prompt": "workspace:*",
+    "@deepseek-ai/dsh-session-projection": "workspace:*",
+    "@deepseek-ai/dsh-llm": "workspace:*",
+    "vitest": "^4.1.8",
+    "typescript": "^6.0.3",
+    "tsdown": "^0.22.2"
   },
   "keywords": [
     "dsh",
@@ -33,5 +64,7 @@
   "license": "MIT",
   "engines": {
     "node": ">=18"
-  }
+  },
+  "private": true,
+  "selfuseUpstream": "git+https://github.com/truelove-dreamer/dsh-plugin-git-workflow.git"
 }

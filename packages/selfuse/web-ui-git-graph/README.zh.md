@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-此 bundle 为 Web 空白会话增加分支选择器和 Git 图谱面板。切换分支前会检查冲突与其他 worktree 的占用，工作区选择仍由官方入口负责。它不增加模型工具或提示词上下文。自用 profile 通过 `web-ui-all` 加载此包。
+此 bundle 为 Web 空白会话增加分支选择器和 Git 图谱面板。切换分支前会检查冲突与其他 worktree 的占用，工作区选择仍由官方入口负责。它不增加模型工具或提示词上下文。自用候选 profile 直接加载此包。
 
 ## 目录
 
@@ -43,7 +43,7 @@ pnpm test
 pnpm run build
 ```
 
-`lib/client.js` 是浏览器 bundle（闭包工厂产物，`window.__ModuleLoader__.load`），由 host 的 client-modules 按 `/plugins/<id>/client.js` 伺服；构建预设 `build/tsdown.client.ts` + `build/web/src/platform.ts` 是从主仓 `packages/client/tsdown.client.ts` / `packages/client/web/src/platform.ts` 复制的副本，主仓版本变更时需同步。
+`lib/client.js` 是浏览器 bundle（闭包工厂产物，`window.__ModuleLoader__.load`），由 host 的 client-modules 按 `/plugins/<id>/client.js` 提供。此包直接导入工作区的 `packages/client/tsdown.client.ts`，不再维护构建预设副本。
 
 自用 profile 使用工作区包。此整合树尚未验证独立 Git 安装或其 prepare 路径。
 
@@ -51,34 +51,9 @@ pnpm run build
 
 本包是 dsh profile bundle（`package.json` 声明 `"dsh": { "bundle": { "patch": "./cordis.patch.yml" } }`）。激活后，下次启动 `dsh web`（或对应 profile）时，bundle patch 的 insert 行把 `ui-git-graph`（host half：git 服务 + `/git/*` 路由）与浏览器 half（dsh.client 声明）一起装进 Web 组合；页面刷新后，空白会话的分支胶囊显示在 hero 行的 agent-preset 座位右侧，active 会话不显示该控件。
 
-### 通用安装（任何机器）
+### 自用部署
 
-本插件已并入 dsh-web-ui 全家桶仓库（`github.com/zhu1090093659/dsh-web-ui`）。插件已发布到 npm，推荐一行安装：
-
-```sh
-dsh plugin --profile web add @dsh-selfuse/web-ui-git-graph@latest
-```
-
-或直接安装全家桶聚合包 `@dsh-selfuse/web-ui-all` 一次到位（同样一行 `dsh plugin --profile web add @dsh-selfuse/web-ui-all@latest`）。
-
-需要改代码调试时再从仓库安装：
-
-```sh
-git clone https://github.com/zhu1090093659/dsh-web-ui.git
-cd dsh-web-ui
-pnpm install && pnpm -r build
-dsh plugin --profile web add link:$(pwd)/packages/dsh-git-graph
-```
-
-> `github:` 安装方式适用于包位于仓库根部的独立仓库（`prepare` 脚本自包含构建；pnpm ≥10 首次会被拒绝，需按报错提示把包 key 加进 profile 的 `pnpm-workspace.yaml` `allowBuilds` 后重试）。monorepo 内的子包请用上面的 `link:` 方式。
-
-### 本地开发循环（本仓库 checkout）
-
-```sh
-dsh plugin --profile <name> add link:/absolute/path/to/dsh-git-graph
-```
-
-`link:` 安装直接引用本地目录，重建后立即生效、无需重装（改完 `pnpm run build` 后刷新页面即可）。注意 `link:` 后跟的是绝对路径（`~` 由 shell 展开，不是 pnpm 语义）。
+此分叉是私有工作区包，不是已发布的 `@dsh-selfuse/...@latest` npm 版本。候选 profile 生成器从当前工作区的 CLI 安装解析它。原生 Desktop 安装及视觉交互仍未验收，不能凭 bundle 构建成功就修改真实 profile。全家桶聚合包已经退役，此 bundle 与皮肤中心是独立条目。
 
 ## 卸载
 
@@ -110,4 +85,4 @@ pnpm run build
 
 ## 开发备注
 
-每次官方 Web 客户端更新后都需重跑浏览器交互检查；仅有包构建成功不能证明槽位视觉位置正确。
+包载荷包括 Host、客户端 bundle 和类型声明；`lib/types/` 下的中间 JavaScript 不是运行入口。不发布不变量 companion，因为 Git 状态位于会话日志外，此包没有维护可独立观察的会话状态关系。原来的空安装器已经移除。每次官方 Web 客户端更新后需重跑浏览器交互检查；仅有构建成功不能证明视觉位置正确。

@@ -8,7 +8,7 @@ Status: implemented
 
 浏览器通道的三个场景在捕获 aria 区域时，golden 记录的状态只是被指针、键盘或一次进行中的 Host 读取所隐含，因此每次捕获都可能落到另一种状态上。
 
-[workspace-new-session-folding](../../../../apps/web/tests/workspace-new-session-folding.e2e.ts) 捕获同一侧边栏的两份 golden。`sidebar.expected.md` 记录的是 Workspace 行显示出行操作单元格的状态，该行为由 [Rows.module.css](../../../../packages/client/ui-workspace/src/client/rows/Rows.module.css) 的 `.projectRow:hover` 提供；`first-batch.expected.md` 则以 `.sessionRow:hover` 记录第六个会话行，即该批次展开出的第一行。两次捕获因此都取决于指针所在位置，而场景自身的 “Show 11 more sessions” 点击会在指针静止时重排列表。串行自托管 master 通道在这个场景上失败时，两份 golden 的要求都没有满足——`treeitem "{{workspace}}"` 不带操作按钮，golden 记录为悬停的那一行渲染出普通的相对时间——2026-09-24 至 2026-09-27 观察到的九次失败运行全部如此。
+[workspace-new-session-folding](../../../../apps/web/tests/workspace-new-session-folding.e2e.ts) 捕获同一侧边栏的两份 golden。`sidebar.expected.md` 记录的是 Workspace 行显示出行操作单元格的状态，该行为由 [Rows.module.css](../../../../packages/client/ui-workspace/src/client/Rows.module.css) 的 `.projectRow:hover` 提供；`first-batch.expected.md` 则以 `.sessionRow:hover` 记录第六个会话行，即该批次展开出的第一行。两次捕获因此都取决于指针所在位置，而场景自身的 “Show 11 more sessions” 点击会在指针静止时重排列表。串行自托管 master 通道在这个场景上失败时，两份 golden 的要求都没有满足——`treeitem "{{workspace}}"` 不带操作按钮，golden 记录为悬停的那一行渲染出普通的相对时间——2026-09-24 至 2026-09-27 观察到的九次失败运行全部如此。
 
 [turn-tail-actions](../../../../apps/web/tests/turn-tail-actions.e2e.ts) 两次捕获聚焦后的 Copy 页脚：`running.expected.md` 记录其旁有一个 `tooltip "Copy"`，`settled.expected.md` 则不记录。只要最后一次输入来自指针，[Tooltip](../../../../packages/client/ui-primitives/src/Tooltip.tsx) 就忽略聚焦，而只有 keydown 会清除该标记，因此第一次捕获是否出现气泡，取决于场景最后一次点击之后测试框架是否按过键。
 

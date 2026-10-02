@@ -30,23 +30,11 @@ interface SentenceContract {
  * so an absent section cannot be mistaken for forgotten documentation.
  */
 const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
-  'packages/client/runtime': 'Legacy browser runtime artifact consumed by old selfuse clients; it does not register agent tools or prompt text.',
-  'packages/host/apiproxy': 'Compatibility API transport artifact forwards browser requests; the called service owns any model-facing effect.',
-  'packages/selfuse/eac-client-file-changes': 'Human-facing browser file-change view; it reads already-recorded diffs and adds no model input.',
-  'packages/selfuse/eac-easy-setup': 'Human-facing settings UI; consumers of selected settings own any later model-facing effect.',
-  'packages/selfuse/eac-file-changes': 'Session file-change projection serves browser views from logged metadata and adds no model input.',
-  'packages/selfuse/eac-shell-terminal': 'Interactive human terminal; terminal bytes do not become an agent tool result through this package.',
-  'packages/selfuse/eac-task-notify': 'Human operating-system notification from turn-end events; adds no prompt or tool result.',
-  'packages/selfuse/eac-web-shell-bridge': 'Human browser-to-desktop compatibility bridge; registers no agent tool or prompt.',
-  'packages/selfuse/control-gui': 'Windows-only human control console; its status polling and process controls never register model-visible context.',
-  'packages/selfuse/market': 'The browser catalog and Host package manager act on explicit user choices; the plugin adds no model-facing tool, prompt, or result.',
+  'packages/selfuse/task-notify': 'Human operating-system notification from turn-end events; adds no prompt or tool result.',
   'packages/selfuse/memory-panel': 'The local memory panel exposes files to the human settings UI, not to model requests or tool schemas.',
   'packages/selfuse/skin-center': 'The skin loader changes browser presentation only; wallpapers and styles never enter model context.',
-  'packages/selfuse/skins': 'This compatibility carrier only installs the presentation-only skin center.',
-  'packages/selfuse/web-ui-community-plugins': 'This browser catalog displays community plugin metadata to a human and registers no model-facing context.',
+  'packages/selfuse/skin-layout-compat': 'This browser-only adapter stamps layout attributes and registers no model-facing tools or context.',
   'packages/selfuse/web-ui-git-graph': 'The branch selector and graph are human-facing browser controls; their Host Git requests do not register model tools or prompts.',
-  'packages/selfuse/web-ui-settings': 'The Web UI settings group renders human plugin cards without creating model input.',
-  'packages/selfuse/web-ui-all': 'This bundle composes presentation-only Git graph, remote UI, and skin packages without adding model-facing content.',
   'packages/core/scope': 'The package is a model-agnostic registration and lifecycle primitive; model-facing consumers own any context selection.',
   'packages/util/brand': 'The package only constructs plain string values and registers nothing model-facing.',
   'packages/util/home-paths': 'The package only resolves harness-owned host paths; model-facing consumers own any rendered use.',
@@ -62,7 +50,6 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
  * blocks. A package moves on or off this list with its context behavior.
  */
 const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
-  'packages/selfuse/wsl-workspace': { kind: 'indirect', reason: 'Legacy WSL routing delegates model-visible path and result rendering to the existing shell and filesystem tools.' },
   'packages/client/product-analytics': { kind: 'none', reason: 'Desktop analytics observes selected interactions without contributing model context or Session events.' },
   'packages/experimental/speech-to-text': { kind: 'none', reason: 'Routes transient recognition without adding model requests or Session events.' },
   'packages/experimental/api-speech-to-text': { kind: 'none', reason: 'Transports audio and preparation state; ordinary user submission owns model-visible text.' },

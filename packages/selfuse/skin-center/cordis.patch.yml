@@ -2,5 +2,7 @@
 # The bundle is the official dsh plugin shape — install it with
 # `dsh plugin --profile <name> add <path-or-git-url>`.
 - insert:
+    - id: ui-skin-layout-compat
+      name: '@dsh-selfuse/skin-layout-compat'
     - id: ui-skin-center
       name: '@dsh-selfuse/skin-center'

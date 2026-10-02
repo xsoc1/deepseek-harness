@@ -17,7 +17,7 @@ import { readdir, readFile, stat } from 'node:fs/promises'
 import { homedir, platform as osPlatform } from 'node:os'
 import { dirname, isAbsolute, join } from 'node:path'
 import {
-  canOpenNativePath, openNativePath, runNativeCommand, desktopEntryFields, desktopDataDirectories, type NativeCommandRunner,
+  openNativePath, runNativeCommand, desktopEntryFields, desktopDataDirectories, type NativeCommandRunner,
 } from '@deepseek-ai/dsh-native-command'
 import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
 import {
@@ -504,10 +504,8 @@ async function locate(
       }
     }
     case 'cli': {
-      if (locator.requiresDesktop === true && !canOpenNativePath({
-        platform: internals.platform,
-        env: { ...internals.env },
-      })) return null
+      if (locator.requiresDesktop === true && internals.platform === 'linux'
+        && !internals.env.DISPLAY && !internals.env.WAYLAND_DISPLAY) return null
       const found = await internals.resolveExecutable(locator.name)
       return found === null
         ? null

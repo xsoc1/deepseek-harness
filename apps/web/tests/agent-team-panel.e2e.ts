@@ -187,7 +187,11 @@ describe('web e2e: Agent Teams panel', () => {
     const card = panel.locator('article').filter({ hasText: 'Responsive task' })
     await trigger.click()
     await card.waitFor()
-    expect(await card.getByRole('button', { name: 'Show more' }).count()).toBe(0)
+    const descriptionLayout = await card.locator('p').evaluate(paragraph => ({
+      width: paragraph.clientWidth, height: paragraph.clientHeight, scrollHeight: paragraph.scrollHeight,
+      font: getComputedStyle(paragraph).font, text: paragraph.textContent,
+    }))
+    expect(await card.getByRole('button', { name: 'Show more' }).count(), JSON.stringify(descriptionLayout)).toBe(0)
     try {
       await page.setViewportSize({ width: 360, height: 700 })
       await card.getByRole('button', { name: 'Show more' }).waitFor()

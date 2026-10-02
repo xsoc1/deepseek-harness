@@ -85,6 +85,8 @@ const GENERIC_SKIPS: readonly GenericSkip[] = [
   { file: 'packages/boot/app-boot/tests/config-schema.spec.ts', upstream: ['schemastery'] },
   // Asserts the vendored-manifest table, which gains an upstream-name column.
   { file: 'scripts/gen-third-party-notices.spec.ts', upstream: RENAMES.map(rename => rename.upstream) },
+  // Golden inputs exercise the package-token mapping itself.
+  { file: 'scripts/rescope-vendor.spec.ts', upstream: ['cordis'] },
   // `cordis` is also an agent-preset id, so in these files the bare name is
   // product data, not a package reference. Renaming it changed which preset
   // the creator flow stages and which id the roster reports.
@@ -118,6 +120,9 @@ const GENERIC_SKIPS: readonly GenericSkip[] = [
   { file: 'packages/extensions/cordis-host-runner/src/inspect-registry.ts', upstream: ['cordis'] },
   { file: 'packages/extensions/cordis-host-runner/src/types.ts', upstream: ['cordis'] },
   { file: 'packages/extensions/cordis-host-runner/tests/helpers.ts', upstream: ['cordis'] },
+  { file: 'packages/extensions/cordis-host-runner/tests/inspect-registry.spec.ts', upstream: ['cordis'] },
+  { file: 'snapshots/session/cordis-inspect-liveness/client-fixture.mjs', upstream: ['cordis'] },
+  { file: 'snapshots/session/cordis-inspect-timeout/client-fixture.mjs', upstream: ['cordis'] },
   { file: 'packages/extensions/cordis-host-runner/tests/runner.spec.ts', upstream: ['cordis'] },
   { file: 'packages/extensions/cordis-host-runner/tests/versioning.spec.ts', upstream: ['cordis'] },
   { file: 'packages/extensions/tool-cordis/src/api-catalog.ts', upstream: ['cordis'] },
@@ -520,6 +525,16 @@ function rewrite(text: string, file: string, all: readonly Pattern[]): { text: s
   return { text: out.join('\n'), lines }
 }
 
+/**
+ * Apply the forward package-name mapping with file-owned protocol exclusions.
+ * @param text - Authored file contents to transform.
+ * @param file - Repository-relative file path used by the exclusion policy.
+ * @returns The renamed contents, preserving product identifiers at their owners.
+ */
+export function rescopeText(text: string, file: string): string {
+  return rewrite(text, file, patterns(false)).text
+}
+
 function classify(file: string): string {
   if (/^vendor\/[^/]+\/package\.json$/.test(file)) return 'vendor manifest name'
   if (file.endsWith('package.json')) return 'package.json dependencies'
@@ -571,7 +586,8 @@ function main(): void {
   const all = patterns(reverse)
   const files = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
     .split('\0')
-    .filter(file => file !== '' && !isRescopeExcluded(file))
+    // The codemod operates on current files, not deleted index snapshots.
+    .filter(file => file !== '' && !isRescopeExcluded(file) && existsSync(resolve(root, file)))
 
   const counts = new Map<string, { files: number; lines: number }>()
   const failures: string[] = []

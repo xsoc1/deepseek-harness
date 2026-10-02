@@ -543,6 +543,67 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'backupPanel',
+    summary: '`backupPanel` 宿主服务：Settings 标签页的 RPC 面。方法签名与描述符的 parameters 顺序一致（取消型方法末位是 signal），实现全部委托 ops 闭包， 与 `/backup` 命令、`backup_dsh` 工具共用同一套核心操作。',
+    description: '`backupPanel` 宿主服务：Settings 标签页的 RPC 面。方法签名与描述符的 parameters 顺序一致（取消型方法末位是 signal），实现全部委托 ops 闭包， 与 `/backup` 命令、`backup_dsh` 工具共用同一套核心操作。',
+    methods: [
+      {
+        signature: 'status(): Promise<BackupStatus>',
+        description: 'Read the current archive and schedule overview.',
+        parameters: [],
+        returns: 'Status without archive contents or credentials.',
+      },
+      {
+        signature: 'backup(keep?: number, signal?: AbortSignal): Promise<BackupResult>',
+        description: 'Create an archive and apply retention.',
+        parameters: [{ name: 'keep', description: 'Optional retention override.' }, { name: 'signal', description: 'Optional cancellation for subprocess and filesystem work.' }],
+        returns: 'Archive metadata or an operation failure.',
+      },
+      {
+        signature: 'verify(selector?: string, signal?: AbortSignal): Promise<VerifyResult>',
+        description: 'Verify archive checksum sidecars.',
+        parameters: [{ name: 'selector', description: 'Archive prefix, all or latest; defaults to latest.' }, { name: 'signal', description: 'Optional cancellation.' }],
+        returns: 'Per-archive verification results.',
+      },
+      {
+        signature: 'restore(selector?: string, dryRun?: boolean, signal?: AbortSignal): Promise<RestoreResult>',
+        description: 'Preview or replace the local data root from a verified archive.',
+        parameters: [{ name: 'selector', description: 'Unique archive name or prefix; defaults to latest.' }, { name: 'dryRun', description: 'True previews without writing; false performs restoration.' }, { name: 'signal', description: 'Optional cancellation; existing aside data is retained.' }],
+        returns: 'Preview or restoration metadata, or a failure.',
+      },
+      {
+        signature: 'setAuto(hours: number): Promise<AutoResult>',
+        description: 'Persist a schedule and replace this instance\'s timer.',
+        parameters: [{ name: 'hours', description: 'Integer interval from 1 to 720, or zero to disable.' }],
+        returns: 'Accepted or rejected update with the effective interval.',
+      },
+      {
+        signature: 'githubStatus(): Promise<GithubStatus>',
+        description: 'Read the selected remote and last synchronization outcome.',
+        parameters: [],
+        returns: 'Status and credential presence, never a token value.',
+      },
+      {
+        signature: 'githubSyncNow(signal?: AbortSignal): Promise<GithubResult>',
+        description: 'Synchronize archives to the configured dedicated Git remote.',
+        parameters: [{ name: 'signal', description: 'Optional cancellation.' }],
+        returns: 'Push outcome and any skipped large filenames.',
+      },
+      {
+        signature: 'deleteBackup(selector?: string, signal?: AbortSignal): Promise<BackupSummaryResult>',
+        description: 'Unlink one selected archive and its checksum sidecar.',
+        parameters: [{ name: 'selector', description: 'Unique name or prefix; defaults to latest.' }, { name: 'signal', description: 'Optional cancellation checked before each unlink.' }],
+        returns: 'Deletion summary or a failure.',
+      },
+      {
+        signature: 'setGithubRepo(repo?: string): Promise<RepoResult>',
+        description: 'Persist a remote override without performing a push.',
+        parameters: [{ name: 'repo', description: 'Repository path or URL; empty/off clears the override.' }],
+        returns: 'Accepted or rejected update with the effective override.',
+      },
+    ],
+  },
+  {
     key: 'browserUse',
     summary: 'Owns one optional provider registration in the shared browser-use service.',
     description: 'Owns one optional provider registration in the shared browser-use service.',
@@ -1488,6 +1549,55 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Register one server and expose resource tools while that scope has providers.',
         parameters: [{ name: 'server', description: 'configured server name, unique in this scope.' }, { name: 'provider', description: 'connection-owned resource operations.' }],
         returns: 'the effect disposer for this exact registration.',
+      },
+    ],
+  },
+  {
+    key: 'memoryPanel',
+    summary: 'Local Markdown access; only the settings tab consumes this service.',
+    description: 'Local Markdown access; only the settings tab consumes this service.',
+    methods: [
+      {
+        signature: 'status(signal?: AbortSignal): Promise<MemoryPanelStatus>',
+        description: 'Read directory counts and bytes.',
+        parameters: [{ name: 'signal', description: 'Optional cancellation.' }],
+        returns: 'Metadata without file content.',
+      },
+      {
+        signature: 'pages(signal?: AbortSignal): Promise<MemoryPanelPages>',
+        description: 'List permitted knowledge files.',
+        parameters: [{ name: 'signal', description: 'Optional cancellation.' }],
+        returns: 'File names and sizes; IO failures reject.',
+      },
+      {
+        signature: 'page(id: string, signal?: AbortSignal): Promise<MemoryPanelPage>',
+        description: 'Read one knowledge page.',
+        parameters: [{ name: 'id', description: 'Restricted basename without extension.' }, { name: 'signal', description: 'Optional cancellation.' }],
+        returns: 'Complete bounded UTF-8 content; invalid ids and links reject.',
+      },
+      {
+        signature: 'notes(limit: number, offset: number, signal?: AbortSignal): Promise<MemoryPanelNotes>',
+        description: 'List a page of notes in descending modification-time order.',
+        parameters: [{ name: 'limit', description: 'Integer from 1 to 500.' }, { name: 'offset', description: 'Integer from 0 to 100000.' }, { name: 'signal', description: 'Optional cancellation.' }],
+        returns: 'Note metadata and total count.',
+      },
+      {
+        signature: 'note(id: string, signal?: AbortSignal): Promise<MemoryPanelNote>',
+        description: 'Read one note.',
+        parameters: [{ name: 'id', description: 'Restricted basename without extension.' }, { name: 'signal', description: 'Optional cancellation.' }],
+        returns: 'Complete bounded UTF-8 content; invalid ids and links reject.',
+      },
+      {
+        signature: 'search(query: string, signal?: AbortSignal): Promise<MemoryPanelSearch>',
+        description: 'Search both collections by case-insensitive substring.',
+        parameters: [{ name: 'query', description: 'At most 1024 characters; empty returns no matches.' }, { name: 'signal', description: 'Optional cancellation.' }],
+        returns: 'Bounded snippets; unreadable or oversized files reject.',
+      },
+      {
+        signature: 'saveNote(title: string, text: string, signal?: AbortSignal): Promise<MemoryPanelSaved>',
+        description: 'Create a uniquely named note without overwriting an existing file.',
+        parameters: [{ name: 'title', description: 'Optional one-line title represented by an empty string.' }, { name: 'text', description: 'Non-empty note body.' }, { name: 'signal', description: 'Optional cancellation before the write commits.' }],
+        returns: 'The saved note id and actual configured path.',
       },
     ],
   },
@@ -4684,8 +4794,28 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AuthorizationStatus = \'authorized\' | \'cancelled\';',
   },
   {
+    name: 'AutoResult',
+    declaration: 'export interface AutoResult extends BackupSummaryResult {\n    hours: number;\n}',
+  },
+  {
     name: 'BackendRegistry',
     declaration: 'export class BackendRegistry {\n    register(name: string, backend: StorageBackend): () => void;\n    get(name: string): StorageBackend;\n    names(): string[];\n}',
+  },
+  {
+    name: 'BackupEntry',
+    declaration: 'export interface BackupEntry {\n    name: string;\n    size: number | null;\n}',
+  },
+  {
+    name: 'BackupResult',
+    declaration: 'export interface BackupResult extends BackupSummaryResult {\n    path: string;\n    sha: string;\n    stale: number;\n    keep: number;\n}',
+  },
+  {
+    name: 'BackupStatus',
+    declaration: 'export interface BackupStatus {\n    destination: string;\n    dshHome: string;\n    keepDefault: number;\n    autoHours: number;\n    lastAuto: string | null;\n    downloadAvailable: boolean;\n    backups: BackupEntry[];\n}',
+  },
+  {
+    name: 'BackupSummaryResult',
+    declaration: 'export interface BackupSummaryResult {\n    ok: boolean;\n    summary: string;\n}',
   },
   {
     name: 'BashEnvContributor',
@@ -5280,6 +5410,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GenericResultView {\n    card: \'generic\';\n    title?: string;\n    content?: ContentBlock[];\n}',
   },
   {
+    name: 'GithubResult',
+    declaration: 'export interface GithubResult extends BackupSummaryResult {\n    pushed: boolean;\n    tooBig: string[];\n}',
+  },
+  {
+    name: 'GithubStatus',
+    declaration: 'export interface GithubStatus {\n    repoRaw: string | null;\n    repo: string | null;\n    tokenSet: boolean;\n    syncDir: string;\n    lastPush: string | null;\n    lastError: string | null;\n}',
+  },
+  {
     name: 'GoalActivation',
     declaration: 'export type GoalActivation = \'armed\' | \'disarmed\';',
   },
@@ -5710,6 +5848,50 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'McpResourceRequest',
     declaration: 'export type McpResourceRequest = {\n    method: \'resources/list\' | \'resources/templates/list\';\n    cursor?: string;\n} | {\n    method: \'resources/read\';\n    uri: string;\n};',
+  },
+  {
+    name: 'MemoryPanelDocument',
+    declaration: 'export interface MemoryPanelDocument {\n    id: string;\n    name: string;\n    content: string;\n}',
+  },
+  {
+    name: 'MemoryPanelItem',
+    declaration: 'export interface MemoryPanelItem {\n    id: string;\n    name: string;\n    size: number;\n}',
+  },
+  {
+    name: 'MemoryPanelMatch',
+    declaration: 'export interface MemoryPanelMatch {\n    id: string;\n    kind: \'page\' | \'note\';\n    name: string;\n    snippet: string;\n}',
+  },
+  {
+    name: 'MemoryPanelNote',
+    declaration: 'export interface MemoryPanelNote {\n    note: MemoryPanelDocument;\n}',
+  },
+  {
+    name: 'MemoryPanelNoteItem',
+    declaration: 'export interface MemoryPanelNoteItem extends MemoryPanelItem {\n    mtime: number;\n}',
+  },
+  {
+    name: 'MemoryPanelNotes',
+    declaration: 'export interface MemoryPanelNotes {\n    items: MemoryPanelNoteItem[];\n    total: number;\n    limit: number;\n    offset: number;\n}',
+  },
+  {
+    name: 'MemoryPanelPage',
+    declaration: 'export interface MemoryPanelPage {\n    page: MemoryPanelDocument;\n}',
+  },
+  {
+    name: 'MemoryPanelPages',
+    declaration: 'export interface MemoryPanelPages {\n    items: MemoryPanelItem[];\n}',
+  },
+  {
+    name: 'MemoryPanelSaved',
+    declaration: 'export interface MemoryPanelSaved {\n    id: string;\n    name: string;\n    path: string;\n}',
+  },
+  {
+    name: 'MemoryPanelSearch',
+    declaration: 'export interface MemoryPanelSearch {\n    results: MemoryPanelMatch[];\n}',
+  },
+  {
+    name: 'MemoryPanelStatus',
+    declaration: 'export interface MemoryPanelStatus {\n    store: string;\n    counts: {\n        pages: number;\n        notes: number;\n    };\n    bytes: number;\n}',
   },
   {
     name: 'Message',
@@ -6208,6 +6390,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ReplayEnvelope {\n    response: unknown;\n    blocks?: readonly unknown[];\n}',
   },
   {
+    name: 'RepoResult',
+    declaration: 'export interface RepoResult extends BackupSummaryResult {\n    repo: string | null;\n}',
+  },
+  {
     name: 'RequestContext',
     declaration: 'export interface RequestContext {\n    provider: string;\n    model: string;\n    contextWindow?: number;\n    systemPromptUpdate?: SystemPromptUpdate;\n}',
   },
@@ -6262,6 +6448,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RestoredSessionOptions',
     declaration: 'export interface RestoredSessionOptions {\n    readonly seed: SessionEvent[];\n    readonly meta: SessionHeader;\n    readonly inheritedEventCount: SessionLogOffset;\n    readonly eventState: SessionSeedEventState;\n}',
+  },
+  {
+    name: 'RestoreResult',
+    declaration: 'export interface RestoreResult extends BackupSummaryResult {\n    dryRun: boolean;\n    archive?: string;\n    files?: number;\n    sample?: string[];\n    aside?: string | null;\n    snapshotPath?: string | null;\n}',
   },
   {
     name: 'ResumeAgentOptions',
@@ -7846,6 +8036,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'VerifiedWebhookDelivery',
     declaration: 'export interface VerifiedWebhookDelivery<K extends string = string> {\n    readonly kind: K;\n    readonly source: WebhookSourceId;\n    readonly deliveryId: WebhookDeliveryId;\n    readonly event: WebhookEventOf<K>;\n    readonly receivedAt: number;\n}',
+  },
+  {
+    name: 'VerifyEntry',
+    declaration: 'export interface VerifyEntry {\n    name: string;\n    ok: boolean;\n    note: string;\n}',
+  },
+  {
+    name: 'VerifyResult',
+    declaration: 'export interface VerifyResult extends BackupSummaryResult {\n    results: VerifyEntry[];\n}',
   },
   {
     name: 'WebBootBatch',

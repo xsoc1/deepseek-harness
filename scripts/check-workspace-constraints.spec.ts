@@ -27,6 +27,31 @@ const experimental = {
   },
 } satisfies WorkspaceManifest
 
+describe('local selfuse package ownership', () => {
+  const selfuse = {
+    dir: 'packages/selfuse/example',
+    manifest: {
+      name: '@dsh-selfuse/example', version: '0.1.0', private: true, type: 'module',
+      repository: {
+        type: 'git', url: 'git+https://github.com/xsoc1/deepseek-harness.git', directory: 'packages/selfuse/example',
+      },
+    },
+  } satisfies WorkspaceManifest
+
+  it('keeps local packages private with their actual source owner', () => {
+    expect(checkWorkspaceManifest(selfuse)).toEqual([])
+  })
+
+  it('rejects publication, official namespace impersonation and a wrong source directory', () => {
+    for (const manifest of [
+      { ...selfuse.manifest, private: false },
+      { ...selfuse.manifest, publishConfig: { access: 'public' } },
+      { ...selfuse.manifest, name: '@deepseek-ai/dsh-example' },
+      { ...selfuse.manifest, repository: { ...selfuse.manifest.repository, directory: 'elsewhere' } },
+    ]) expect(checkWorkspaceManifest({ ...selfuse, manifest }).length).toBeGreaterThan(0)
+  })
+})
+
 describe('workspace dependency ranges', () => {
   const dependency = { dir: 'packages/core/runtime', manifest: { name: '@deepseek-ai/dsh-runtime' } }
   const cli = { dir: 'apps/cli', manifest: { name: '@deepseek-ai/dsh' } }

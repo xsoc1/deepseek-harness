@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TabId } from '@deepseek-ai/dsh-client-ui-dockkit'
-import { BrowserNavigation } from '../src/client/browser/BrowserNavigation.ts'
-import { createBrowserStore } from '../src/client/browser/store.ts'
+import { BrowserNavigation } from '../src/client/BrowserNavigation.ts'
+import { createBrowserStore } from '../src/client/browser-store.ts'
 
 const TAB = 'browser-tab' as TabId
 

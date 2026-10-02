@@ -351,10 +351,13 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 
 | Package | Config | Description |
 |---|---|---|
+| `@dsh-selfuse/backup` | yes | Backup, restore, download and GitHub-sync DeepSeek Harness user data (~/.dsh): /backup, scheduled auto-backup that survives restarts, sha256 checksums, integrity verify, rotation and a visual Settings panel. Cross-platform (macOS/Linux/Windows). 一键备份与恢复 DSH 数据：定时自动备份、完整性校验、下载与 GitHub 同步，附 Settings 可视面板。 |
 | `@dsh-selfuse/content-risk-guard` | yes | Keep detected sensitive network tool output local and expose only session-scoped safe facts to the model |
-| `@dsh-selfuse/market` | yes | Visual plugin market inside DeepSeek Harness — browse, search, and one-click install community plugins. · DSH 可视化插件市场：逛一逛，点一下，装好。 |
-| `@dsh-selfuse/skill-router` | yes | 全局技能路由提示段：按任务桶 + 中文触发词路由到 mattpocock 技能与数学技能 |
-| `@dsh-selfuse/wsl-workspace` | yes | WSL workspace support for DeepSeek Harness: add a WSL workspace from the web GUI and run the whole agent session (bash + file tools) inside the WSL distribution, VS Code Remote-WSL style. No toolchain install inside WSL required. |
+| `@dsh-selfuse/git-workflow` | yes | DeepSeek Harness plugin: first-class Git workflow tools for the model — repo status, diffs, commit creation with validated messages, recent history, and branches. No bare-shell git calls; every invocation is a shell-free execFile with path and message validation. |
+| `@dsh-selfuse/memory-panel` | yes | Optional human-facing settings panel for local Markdown knowledge pages and notes, with native RPC and no model-context injection. |
+| `@dsh-selfuse/skin-layout-compat` | no | Lifecycle-scoped legacy layout attributes for retained Skin Center assets. |
+| `@dsh-selfuse/soul-md` | yes | Load local soul.md persona cards through native DSH prompt sections and configuration forms. |
+| `@dsh-selfuse/task-notify` | no | 任务完成通知（web 版）：监听会话 turn/end 事件，弹 Windows 系统通知；子代理会话不通知 |
 
 ## session
 

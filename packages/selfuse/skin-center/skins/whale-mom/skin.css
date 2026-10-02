@@ -119,7 +119,6 @@ body[data-ds-dark-theme] {
   --dsw-specific-bubble-highlight: #78c0f047;
   --dsw-specific-input-major: #f0f7fd85;
   --dsw-specific-login-input: #f0f7fd85;
-  --dsw-specific-menu: #f0f7fdf5;
   --dsw-specific-selector: #ecf4fce6;
   --dsw-specific-sidebar-fill: #ecf4fcd9;
   --dsw-specific-sidebar-nav-item-active: var(--dsw-static-blue-500);
@@ -218,7 +217,6 @@ body[data-ds-dark-theme] {
   --dsw-specific-bubble-highlight: #78c0f024;
   --dsw-specific-input-major: #060a14db;
   --dsw-specific-login-input: #060a14db;
-  --dsw-specific-menu: #080c18f0;
   --dsw-specific-selector: #080c18db;
   --dsw-specific-sidebar-fill: #050810d1;
   --dsw-specific-sidebar-nav-item-active: var(--dsw-static-blue-450);

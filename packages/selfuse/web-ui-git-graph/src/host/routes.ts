@@ -99,7 +99,8 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   const text = Buffer.concat(chunks).toString('utf8')
   if (text === '') return null
   try {
-    return JSON.parse(text) as unknown
+    const payload: unknown = JSON.parse(text)
+    return payload
   } catch {
     return null
   }
@@ -150,7 +151,7 @@ export function registerGitRoutes(ctx: Context, service: GitService): () => void
 
   const removeSubscriber = (subscriber: Subscriber): void => {
     subscriber.statusAbort?.abort(new Error('git status subscriber closed'))
-    subscriber.statusAbort = undefined
+    delete subscriber.statusAbort
     subscribers.delete(subscriber)
     if (subscribers.size === 0) {
       guard?.stop()
@@ -200,7 +201,7 @@ export function registerGitRoutes(ctx: Context, service: GitService): () => void
           ctx.logger.warn(`dsh-git-graph: status poll failed for ${subscriber.path}: ${String(error)}`)
         }
       } finally {
-        if (subscriber.statusAbort === controller) subscriber.statusAbort = undefined
+        if (subscriber.statusAbort === controller) delete subscriber.statusAbort
       }
     }))
   }

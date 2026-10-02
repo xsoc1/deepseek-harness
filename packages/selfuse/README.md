@@ -9,32 +9,44 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This group contains integrated local and third-party packages used or retained by the selfuse DSH deployment. A package being present here does not mean it is enabled in the active profile. Official DSH source, candidate upgrades, selfuse configuration, and generated runtime state have distinct owners and must not be overwritten interchangeably.
+This group contains retained local and third-party integrations for development and compatibility testing. Directory presence does not imply activation in the official Windows Desktop. The Desktop runtime, this WSL source checkout, and generated candidate profiles have separate owners. Retired integrations are archived outside the build workspace.
 
 ## Table of Contents
 
-- Ownership
-- Deployment
-- Historical sessions
-- Package status
-- Dev Note
+- [Packages](#packages)
+- [Related documentation](#related-documentation)
+- [Dev Note](#dev-note)
 
-## Ownership
+-----
 
-The official repository is tracked separately from selfuse changes. `config/selfuse/` defines deployment composition and presets; this directory contains integrated package code or compatibility artifacts; `scripts/selfuse/` generates, installs, and checks the deployment. The active DSH home contains generated profiles, settings, skills, and session data and is not the only source of configuration truth.
+<a id="packages"></a>
+## Packages
 
-## Deployment
+Retained packages have independent activation and verification requirements:
 
-The live service remains on its existing checkout until an isolated candidate passes build, package tests, full documentation gates, and an application smoke. `scripts/selfuse/generate-profile.mjs` generates a candidate profile; `scripts/selfuse/install.mjs` installs a selected candidate. Neither command should be run against the live DSH home merely to satisfy a documentation gate.
+| Package | Role |
+|---|---|
+| [backup](backup/README.md) | Backup and restore controls |
+| [content-risk-guard](content-risk-guard/README.md) | Local private-content checks |
+| [task-notify](task-notify/README.md) | Retained turn-completion notifications |
+| [git-workflow](git-workflow/README.md) | Git workflow integration |
+| [memory-panel](memory-panel/README.md) | Local Markdown memory management |
+| [skin-center](skin-center/README.md) | Skin and wallpaper management |
+| [skin-layout-compat](skin-layout-compat/README.md) | Skin-only layout attribute adapter |
+| [soul-md](soul-md/README.md) | Personal context file integration |
+| [plugin-mount](plugin-mount/README.md) | Root-scoped Host activation guard |
+| [web-ui-git-graph](web-ui-git-graph/README.md) | Git graph and branch selection |
 
-## Historical sessions
+<a id="related-documentation"></a>
+## Related documentation
 
-Session headers retain their original preset ids. Preserve or remap those ids before resuming old sessions; otherwise a new session may work while resume fails. The pre-start `--presets-only` path fills missing standard presets without overwriting profile settings or skills.
+- [Selfuse configuration](../../config/selfuse/profiles.build.yml) — development candidate composition and legacy preset aliases.
+- [Selfuse scripts](../../scripts/selfuse/README.md) — isolated generation and installation; not the live Desktop launcher.
+- `xsoc1/dsh-selfuse/docs/current-deployment.md` — official Desktop installation and archived sessions.
 
-## Package status
+<a id="dev-note"></a>
+## Dev Note
 
-The directory includes active selfuse packages, retired or inactive packages such as the old market and WSL workspace bundle, and frozen compatibility artifacts for old desktop integrations. Inspect the generated profile rather than assuming every manifest is loaded. The current official CLI is preferred where it duplicates a browser plugin.
+Five retired EAC integrations, market, skill-router and wsl-workspace are outside this checkout in the local `dsh-retired-20261001/source-packages` archive. task-notify remains a candidate dependency. Use disposable homes for source tests; preserve historical session headers and verify Desktop behavior independently. Full gates must pass before publication.
 
-### Dev Note
-
-For this upgrade, use the isolated candidate checkout and a disposable DSH home first. Record the exact official revision, third-party origins, tests, and remaining unverified runtime behavior in `AGENTS.md` and the selfuse deployment guide before a release.
+The old settings group, community catalog, skins carrier and web-ui-all are archived in `dsh-retired-20261001/native-ui-packages`. Candidate profiles load Git graph and Skin Center directly. SSH, task-board, MinerU and their obsolete ClientRuntime/ApiProxy packages are archived in `dsh-retired-20261001/conditional-packages`; use official SSH and scheduled tasks instead. Plugin data and sessions remain untouched.

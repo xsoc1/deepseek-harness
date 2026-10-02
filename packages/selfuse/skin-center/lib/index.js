@@ -10,6 +10,7 @@ import { execFileSync } from "node:child_process";
 import { Buffer as Buffer$1 } from "node:buffer";
 import { decode } from "jpeg-js";
 import { deflateSync, inflateSync } from "node:zlib";
+import { mountOnce } from "@dsh-selfuse/plugin-mount";
 //#region \0rolldown/runtime.js
 var __defProp = Object.defineProperty;
 var __exportAll = (all, no_symbols) => {
@@ -22,7 +23,14 @@ var __exportAll = (all, no_symbols) => {
 	return target;
 };
 //#endregion
-//#region src/http-utils.ts
+//#region lib/types/http-utils.js
+/**
+* Shared HTTP helpers for the skin-center route families (extracted from the
+* retired v1 routes.ts; issue #506). Same-origin fence: /active writes the
+* user's GUI state, so a malicious webpage must not be able to switch the
+* user's skin through a localhost CSRF post.
+* @module @linxin666/dsh-client-ui-skin-center/http-utils
+*/
 /** One JSON response. */
 function json(res, status, body) {
 	res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
@@ -88,7 +96,19 @@ function readJsonBody(req) {
 	});
 }
 //#endregion
-//#region src/core/manifest-v2/types.ts
+//#region lib/types/core/manifest-v2/types.js
+/**
+* skin.json manifest v2 — TypeScript contract types.
+*
+* Mirrors contracts/skin-manifest-v2.schema.json (the JSON Schema copy used
+* by editors and external validators). Keep both in sync; the runtime
+* validator in ./validate.ts is the authoritative fail-closed check.
+*
+* v2 in a nutshell: a skin is a pure asset directory (skin.json + skin.css +
+* optional patches.css / hooks.mjs / assets/). The skin-center package is the
+* only loader and renderer; skins never ship package.json, never enter the
+* boot graph, and never touch cordis.patch.yml.
+*/
 /** v1 fields accepted but ignored with a migration warning (never fail-closed). */
 const DEPRECATED_V1_FIELDS = [
 	"package",
@@ -96,7 +116,7 @@ const DEPRECATED_V1_FIELDS = [
 	"bodyAttr"
 ];
 //#endregion
-//#region src/core/manifest-v2/validate.ts
+//#region lib/types/core/manifest-v2/validate.js
 /**
 * Fail-closed validator for skin.json manifest v2.
 *
@@ -118,7 +138,7 @@ const SKIN_ID$1 = /^[a-z][a-z0-9-]{0,31}$/;
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 const API_VERSION = /^x-org\.linxin666\.skin-center\/[a-z0-9]+$/;
-const TOP_LEVEL_KEYS = /* @__PURE__ */ new Set([
+const TOP_LEVEL_KEYS = new Set([
 	"$schema",
 	"skinManifestVersion",
 	"id",
@@ -161,7 +181,7 @@ function checkBackgroundLayer(value, path, errors) {
 		errors.push(`${path}: must be an object`);
 		return;
 	}
-	checkKeys(value, /* @__PURE__ */ new Set([
+	checkKeys(value, new Set([
 		"type",
 		"src",
 		"scrim"
@@ -182,7 +202,7 @@ function checkContracts(value, path, errors) {
 			errors.push(`${p}: must be an object`);
 			return;
 		}
-		checkKeys(entry, /* @__PURE__ */ new Set([
+		checkKeys(entry, new Set([
 			"apiVersion",
 			"kind",
 			"optional"
@@ -195,8 +215,11 @@ function checkContracts(value, path, errors) {
 /**
 * Validate a parsed skin.json payload against the v2 contract.
 * Never throws; malformed input yields `ok: false` with human-readable errors.
+* @param input - untrusted parsed JSON value.
+* @returns diagnostics and a typed manifest only when validation succeeds.
 */
 function validateSkinManifestV2(input) {
+	const candidate = input;
 	const errors = [];
 	const warnings = [];
 	if (!isRecord(input)) return {
@@ -231,19 +254,19 @@ function validateSkinManifestV2(input) {
 	if (input.$schema !== void 0 && typeof input.$schema !== "string") errors.push("manifest.$schema: must be a string");
 	if (input.preview !== void 0) if (!isRecord(input.preview)) errors.push("manifest.preview: must be an object");
 	else {
-		checkKeys(input.preview, /* @__PURE__ */ new Set(["light", "dark"]), "manifest.preview", errors);
+		checkKeys(input.preview, new Set(["light", "dark"]), "manifest.preview", errors);
 		checkRelPath(input.preview.light, "manifest.preview.light", errors);
 		checkRelPath(input.preview.dark, "manifest.preview.dark", errors);
 	}
 	if (input.requires !== void 0) if (!isRecord(input.requires)) errors.push("manifest.requires: must be an object");
 	else {
-		checkKeys(input.requires, /* @__PURE__ */ new Set(["contracts"]), "manifest.requires", errors);
+		checkKeys(input.requires, new Set(["contracts"]), "manifest.requires", errors);
 		checkContracts(input.requires.contracts, "manifest.requires.contracts", errors);
 	}
 	if (!isRecord(input.contributes)) errors.push("manifest.contributes: required object with at least \"stylesheet\"");
 	else {
 		const contributes = input.contributes;
-		checkKeys(contributes, /* @__PURE__ */ new Set([
+		checkKeys(contributes, new Set([
 			"stylesheet",
 			"patches",
 			"backgroundMedia"
@@ -252,34 +275,37 @@ function validateSkinManifestV2(input) {
 		if (contributes.patches !== void 0) checkRelPath(contributes.patches, "manifest.contributes.patches", errors);
 		if (contributes.backgroundMedia !== void 0) if (!isRecord(contributes.backgroundMedia)) errors.push("manifest.contributes.backgroundMedia: must be an object");
 		else {
-			checkKeys(contributes.backgroundMedia, /* @__PURE__ */ new Set(["light", "dark"]), "manifest.contributes.backgroundMedia", errors);
+			checkKeys(contributes.backgroundMedia, new Set(["light", "dark"]), "manifest.contributes.backgroundMedia", errors);
 			checkBackgroundLayer(contributes.backgroundMedia.light, "manifest.contributes.backgroundMedia.light", errors);
 			checkBackgroundLayer(contributes.backgroundMedia.dark, "manifest.contributes.backgroundMedia.dark", errors);
 		}
 	}
 	if (input.facets !== void 0) if (!isRecord(input.facets)) errors.push("manifest.facets: must be an object");
 	else {
-		checkKeys(input.facets, /* @__PURE__ */ new Set(["client"]), "manifest.facets", errors);
+		checkKeys(input.facets, new Set(["client"]), "manifest.facets", errors);
 		if (input.facets.client !== void 0) {
 			const client = input.facets.client;
 			if (!isRecord(client)) errors.push("manifest.facets.client: must be an object");
 			else {
-				checkKeys(client, /* @__PURE__ */ new Set(["entry", "apiVersion"]), "manifest.facets.client", errors);
+				checkKeys(client, new Set(["entry", "apiVersion"]), "manifest.facets.client", errors);
 				checkRelPath(client.entry, "manifest.facets.client.entry", errors);
 				if (typeof client.apiVersion !== "string" || !API_VERSION.test(client.apiVersion)) errors.push("manifest.facets.client.apiVersion: must match x-org.linxin666.skin-center/<tag>");
 			}
 		}
 	}
-	const manifest = errors.length === 0 ? input : void 0;
-	return {
-		ok: errors.length === 0,
+	return errors.length === 0 ? {
+		ok: true,
 		errors,
 		warnings,
-		manifest
+		manifest: candidate
+	} : {
+		ok: false,
+		errors,
+		warnings
 	};
 }
 //#endregion
-//#region src/harness-home.ts
+//#region lib/types/harness-home.js
 /**
 * DSH harness-home / profile path resolution. Extracted from the retired
 * skin-switch.ts (issue #506): the v2 runtime only needs to KNOW where the
@@ -289,7 +315,7 @@ function validateSkinManifestV2(input) {
 *
 * Precedence rules are the dsh launcher's own (kept byte-compatible with the
 * retired module so the bridge reads the same file the old CLI wrote).
-* @module @dsh-selfuse/skin-center/harness-home
+* @module @linxin666/dsh-client-ui-skin-center/harness-home
 */
 /** First non-blank string in a list of candidate values. */
 function firstNonBlank$1(...values) {
@@ -304,10 +330,11 @@ function firstNonBlank$1(...values) {
 * null outside such a layout (repo checkouts, tests).
 */
 function resolveInstallLayout(fromUrl = import.meta.url) {
-	const starts = [fileURLToPath(fromUrl)];
+	const literalPath = fileURLToPath(fromUrl);
+	const starts = [literalPath];
 	try {
-		const real = realpathSync(starts[0]);
-		if (real !== starts[0]) starts.push(real);
+		const real = realpathSync(literalPath);
+		if (real !== literalPath) starts.push(real);
 	} catch {}
 	for (const start of starts) {
 		let current = dirname(start);
@@ -374,7 +401,7 @@ function resolveHarnessPaths(home, profile, fromUrl = import.meta.url) {
 	};
 }
 //#endregion
-//#region src/skin-repo.ts
+//#region lib/types/skin-repo.js
 /**
 * Skin repository (issue #506, M2): dual-source discovery of v2 skin asset
 * directories.
@@ -394,13 +421,21 @@ function resolveHarnessPaths(home, profile, fromUrl = import.meta.url) {
 * The catalog is an immutable snapshot: callers keep the object they got and
 * an activation never sees the catalog change underneath it (contract
 * section 8, "catalog immutable snapshot per activation").
-* @module @dsh-selfuse/skin-center/skin-repo
+* @module @linxin666/dsh-client-ui-skin-center/skin-repo
 */
-/** Built-in skins ship inside the skin-center package under skins/. */
+/**
+* Locate built-in assets relative to the source or bundled Host module.
+* @param fromUrl - module URL inside src/ or lib/ of this package.
+* @returns absolute package skins directory, without checking its existence.
+*/
 function builtinSkinsDir(fromUrl = import.meta.url) {
 	return join(dirname(fileURLToPath(fromUrl)), "..", "skins");
 }
-/** User skins live in $DSH_HOME/skins/. DSH_SKINS_HOME overrides (tests). */
+/**
+* Locate user assets under the Harness home unless DSH_SKINS_HOME overrides it.
+* @param env - environment containing the optional skin-root override.
+* @returns absolute user skin directory, without creating it.
+*/
 function userSkinsDir(env = process.env) {
 	const override = env.DSH_SKINS_HOME;
 	if (override && override.trim() !== "") return resolve(override);
@@ -482,8 +517,9 @@ function collectSource(spec, catalog, claimed) {
 	}
 }
 /**
-* Snapshot the skin catalog from both sources. Never throws: unreadable
-* roots and invalid skins land in diagnostics instead.
+* Snapshot both sources; unreadable roots and invalid skins become diagnostics.
+* @param options - optional asset roots and capture clock; user ids shadow built-ins.
+* @returns sorted validated entries and discovery diagnostics with a capture timestamp.
 */
 function loadSkinCatalog(options = {}) {
 	const catalog = {
@@ -503,13 +539,21 @@ function loadSkinCatalog(options = {}) {
 	catalog.skins.sort((a, b) => (a.manifest.order ?? Number.MAX_SAFE_INTEGER) - (b.manifest.order ?? Number.MAX_SAFE_INTEGER) || a.manifest.id.localeCompare(b.manifest.id));
 	return catalog;
 }
-/** Find one skin in a snapshot by id. */
+/**
+* Find one skin in a captured catalog without rescanning disk.
+* @param catalog - discovery snapshot.
+* @param id - exact case-sensitive manifest id.
+* @returns matching entry, or null when absent.
+*/
 function findSkin(catalog, id) {
 	return catalog.skins.find((s) => s.manifest.id === id) ?? null;
 }
 /**
 * Resolve a file inside a skin directory, refusing any escape. Returns null
 * when the resolved path leaves the skin root.
+* @param entry - catalog entry owning the asset directory.
+* @param relPath - manifest-relative asset path.
+* @returns lexically contained absolute path, or null for an escaping path; existence is unchecked.
 */
 function resolveInsideSkin(entry, relPath) {
 	const abs = resolve(entry.dir, relPath);
@@ -519,19 +563,26 @@ function resolveInsideSkin(entry, relPath) {
 	return abs;
 }
 //#endregion
-//#region src/active-state.ts
+//#region lib/types/active-state.js
 /**
 * Active-skin selection persistence (issue #506): a tiny JSON document under
 * $DSH_HOME written by POST /api/skin-center/v2/active and read on every
 * index.html response by the tapIndex adapter. Kept dependency-free and
 * synchronous: the tap runs per response and must never await.
-* @module @dsh-selfuse/skin-center/active-state
+* @module @linxin666/dsh-client-ui-skin-center/active-state
 */
-/** Default location: $DSH_HOME/skin-center-active.json. */
+/**
+* Locate the active-selection document beside the user skin directory.
+* @returns absolute path to skin-center-active.json without creating it.
+*/
 function defaultActiveStatePath() {
 	return join(userSkinsDir(), "..", "skin-center-active.json");
 }
-/** Read the persisted active skin id (null = stock look / unreadable). */
+/**
+* Read the persisted active skin id; malformed or unreadable files use the stock look.
+* @param path - selection document to read synchronously.
+* @returns persisted string id, or null when absent, malformed or unreadable.
+*/
 function readActiveSelection(path) {
 	try {
 		const parsed = JSON.parse(readFileSync(path, "utf8"));
@@ -540,7 +591,12 @@ function readActiveSelection(path) {
 		return null;
 	}
 }
-/** Persist the active skin id (creates the parent directory). */
+/**
+* Atomically replace the selection document, creating its parent directory.
+* Filesystem errors propagate; the sibling temporary directory is always removed.
+* @param path - destination JSON document.
+* @param id - selected skin id, or null to restore the stock look.
+*/
 function writeActiveSelection(path, id) {
 	const dir = dirname(path);
 	mkdirSync(dir, { recursive: true });
@@ -560,7 +616,7 @@ function writeActiveSelection(path, id) {
 	}
 }
 //#endregion
-//#region src/core/css-safety/official-tokens.generated.ts
+//#region lib/types/core/css-safety/official-tokens.generated.js
 /**
 * GENERATED by scripts/official-tokens-snapshot.mjs — do not edit.
 * Official shell custom-property surface (--dsw-*, static palette excluded).
@@ -846,7 +902,7 @@ const OFFICIAL_TOKENS = [
 	"--dsw-specific-tip"
 ];
 //#endregion
-//#region src/core/css-safety/fallback.ts
+//#region lib/types/core/css-safety/fallback.js
 /**
 * Automatic token fallbacks (issue #506 follow-up): for every official
 * --dsw-* token a skin does NOT remap, derive a translucent tint of the
@@ -926,7 +982,7 @@ function deriveFallbackTokens(defined) {
 	return out;
 }
 //#endregion
-//#region src/core/css-safety/transform.ts
+//#region lib/types/core/css-safety/transform.js
 /**
 * Skin CSS safety pipeline (issue #506, contract section "校验纪律").
 *
@@ -961,11 +1017,12 @@ function deriveFallbackTokens(defined) {
 * NOTE: this module runs host-side (node) in the M2 loader. lightningcss is
 * a native dependency and must stay OUT of the browser bundle (external in
 * tsdown.config.ts).
-* @module @dsh-selfuse/skin-center/css-safety
+* @module @linxin666/dsh-client-ui-skin-center/css-safety
 */
 /** Violation of the CSS whitelist. Always fatal (fail-closed). */
 var SkinCssSafetyError = class extends Error {
 	name = "SkinCssSafetyError";
+	/** Collected policy violations that prevented stylesheet publication. */
 	violations;
 	constructor(message, violations) {
 		super(message);
@@ -1021,7 +1078,7 @@ function splitSelectors(selectorText) {
 	let quote = null;
 	let current = "";
 	for (let i = 0; i < selectorText.length; i += 1) {
-		const ch = selectorText[i];
+		const ch = selectorText.charAt(i);
 		if (quote !== null) {
 			current += ch;
 			if (ch === "\\") {
@@ -1113,7 +1170,7 @@ function checkUrl(raw, context, violations, warnings) {
 	else if (/^(?:\.\.\/)/.test(url)) violations.push(`${context}: path "${url}" escapes the skin directory`);
 	else if (/^data:/i.test(url)) warnings.push(`${context}: inline data: URL — prefer a file under assets/`);
 }
-const GENERIC_KEYFRAMES = /* @__PURE__ */ new Set([
+const GENERIC_KEYFRAMES = new Set([
 	"spin",
 	"pulse",
 	"fade",
@@ -1135,6 +1192,9 @@ const GENERIC_KEYFRAMES = /* @__PURE__ */ new Set([
 * html[data-dsh-skin="<id>"] and enforce the whitelist. Throws
 * SkinCssSafetyError on any violation (fail-closed); lightningcss parse
 * errors propagate as-is (malformed CSS is also a hard failure).
+* @param css - authored stylesheet text.
+* @param options - skin identity, source filename and token-fallback policy.
+* @returns scoped stylesheet and nonfatal diagnostics.
 */
 function transformSkinCss(css, options) {
 	const { skinId } = options;
@@ -1152,25 +1212,22 @@ function transformSkinCss(css, options) {
 					violations.push(`${filename}: @import "${rule.value.url}" is not allowed; skins are single-file stylesheets`);
 				},
 				keyframes(rule) {
-					const name = rule.value.name;
-					const value = typeof name === "string" ? name : name?.value;
+					const value = rule.value.name.value;
 					if (typeof value === "string" && GENERIC_KEYFRAMES.has(value.toLowerCase())) warnings.push(`${filename}: generic @keyframes name "${value}" may collide across skins; prefix it (e.g. ${skinId}-${value})`);
 				},
 				style(rule) {
 					const loc = rule.value.loc;
-					if (loc) {
-						const start = locToOffset(css, loc.line, loc.column);
-						const openBrace = findOpenBrace(css, start);
-						if (openBrace !== -1) spans.push({
-							start,
-							openBrace
-						});
-					}
-					for (const sel of rule.value.selectors) for (const c of sel) if (c.type === "attribute" && c.name === "class" && [
+					const start = locToOffset(css, loc.line, loc.column);
+					const openBrace = findOpenBrace(css, start);
+					if (openBrace !== -1) spans.push({
+						start,
+						openBrace
+					});
+					for (const sel of rule.value.selectors) for (const c of sel) if (c.type === "attribute" && c.name === "class" && c.operation && [
 						"substring",
 						"prefix",
 						"suffix"
-					].includes(c.operation?.operator)) warnings.push(`${filename}: [class*=...]-style attribute matching relies on CSS-Modules hash class names and may break on any official rebuild`);
+					].includes(c.operation.operator)) warnings.push(`${filename}: [class*=...]-style attribute matching relies on CSS-Modules hash class names and may break on any official rebuild`);
 				}
 			},
 			Declaration: { custom(property) {
@@ -1258,7 +1315,7 @@ function findCloseBrace(css, openBrace) {
 	return -1;
 }
 //#endregion
-//#region src/routes-v2.ts
+//#region lib/types/routes-v2.js
 /**
 * Skin-center v2 HTTP routes (issue #506, M2) — the loading/serving half of
 * the new architecture. Pure read-only asset serving plus the active-skin
@@ -1278,8 +1335,9 @@ function findCloseBrace(css, openBrace) {
 * (force-scoped under html[data-dsh-skin="<id>"], whitelist fail-closed), so
 * the browser can inject them blindly. hooks.mjs is served verbatim — it is
 * trusted, same-review same-release code (high sensitivity, see contracts/).
-* @module @dsh-selfuse/skin-center/routes-v2
+* @module @linxin666/dsh-client-ui-skin-center/routes-v2
 */
+/** Absolute Host route prefix shared by the catalog, selection and asset handlers. */
 const SKIN_CENTER_V2_PREFIX = "/api/skin-center/v2";
 const MIME = {
 	".png": "image/png",
@@ -1301,7 +1359,7 @@ const MIME = {
 function sendCss(res, status, code) {
 	res.writeHead(status, {
 		"content-type": "text/css; charset=utf-8",
-		"cache-control": "public, max-age=86400, stale-while-revalidate=3600"
+		"cache-control": "no-store"
 	});
 	res.end(code);
 }
@@ -1334,19 +1392,13 @@ function serveStylesheet(res, entry, relPath, filename) {
 		json(res, 500, {
 			ok: false,
 			error: "css-transform-failed",
-			detail: error?.message ?? String(error)
+			detail: error instanceof Error ? error.message : String(error)
 		});
 	}
 }
 /** Serve one static file from inside the skin directory (fail-closed). */
 function serveAsset(res, entry, relPath) {
-	let abs = resolveInsideSkin(entry, relPath);
-	if ((!abs || !existsSync(abs) || !statSync(abs).isFile()) && relPath.endsWith(".png")) {
-		const jpgCandidate = resolveInsideSkin(entry, relPath.replace(/\.png$/, ".jpg"));
-		if (jpgCandidate && existsSync(jpgCandidate) && statSync(jpgCandidate).isFile()) {
-			abs = jpgCandidate;
-		}
-	}
+	const abs = resolveInsideSkin(entry, relPath);
 	if (!abs || !existsSync(abs) || !statSync(abs).isFile()) {
 		json(res, 404, {
 			ok: false,
@@ -1357,7 +1409,7 @@ function serveAsset(res, entry, relPath) {
 	const mime = MIME[extname(abs).toLowerCase()] ?? "application/octet-stream";
 	res.writeHead(200, {
 		"content-type": mime,
-		"cache-control": "public, max-age=604800, stale-while-revalidate=86400"
+		"cache-control": "no-store"
 	});
 	res.end(readFileSync(abs));
 }
@@ -1387,6 +1439,8 @@ function readBody(req) {
 /**
 * Build the v2 route set. Registration is the caller's job (the host entry
 * keeps the mount-once discipline).
+* @param deps - optional catalog, selection path and clock overrides.
+* @returns unregistered routes; handlers serve assets or persist the active selection.
 */
 function makeSkinCenterV2Routes(deps = {}) {
 	const loadCatalog = deps.loadCatalog ?? (() => loadSkinCatalog());
@@ -1539,7 +1593,19 @@ function makeSkinCenterV2Routes(deps = {}) {
 	];
 }
 //#endregion
-//#region src/tap-index-adapter.ts
+//#region lib/types/tap-index-adapter.js
+/**
+* Skin bootstrap adapter (issue #506, contract section 8). Stylesheets use the
+* structured `webserver/index-inject` table introduced in DSH 0.1.1, so the
+* same rows work in served HTML and worker boot payloads. The raw `tapIndex`
+* escape hatch remains only for stamping html[data-dsh-skin], which no
+* structured row can express, and as a compatibility fallback when rows were
+* not rendered ahead of the tap.
+*
+* Fail-closed: any problem yields the stock look plus at most one warning per
+* adapter and reason. Neither the row collector nor the tap throws.
+* @module @linxin666/dsh-client-ui-skin-center/tap-index-adapter
+*/
 const HTML_TAG = /<html(\s[^>]*)?>/i;
 const HEAD_CLOSE = /<\/head>/i;
 const SKIN_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -1559,16 +1625,22 @@ function skinLinkTags(skinId, hasPatches) {
 	if (hasPatches) links.push(`<link rel="stylesheet" href="${base}/patches" data-dsh-skin-link="patches">`);
 	return links.join("");
 }
-/** Build the structured rows collected fresh for every index render. */
-function makeSkinIndexRows(deps) {
-	const loadCatalog = deps.loadCatalog ?? (() => loadSkinCatalog());
-	const warn = deps.warn ?? ((message) => console.warn(`[skin-center] ${message}`));
+/** Each adapter owns its warning ledger so failures are logged once per reason. */
+function warningLedger(deps) {
+	const warn = deps.warn ?? ((message) => {
+		console.warn(`[skin-center] ${message}`);
+	});
 	const warned = /* @__PURE__ */ new Set();
-	const warnOnce = (reason, message) => {
+	return (reason, message) => {
 		if (warned.has(reason)) return;
 		warned.add(reason);
 		warn(message);
 	};
+}
+/** Build the structured rows collected fresh for every index render. */
+function makeSkinIndexRows(deps) {
+	const loadCatalog = deps.loadCatalog ?? (() => loadSkinCatalog());
+	const warnOnce = warningLedger(deps);
 	return () => {
 		try {
 			const active = deps.readActiveId();
@@ -1584,7 +1656,7 @@ function makeSkinIndexRows(deps) {
 				html: skinLinkTags(active, entry.manifest.contributes.patches !== void 0)
 			}];
 		} catch (error) {
-			warnOnce("row-error", `skin index rows failed closed: ${error?.message ?? error}`);
+			warnOnce("row-error", `skin index rows failed closed: ${error instanceof Error ? error.message : String(error)}`);
 			return [];
 		}
 	};
@@ -1596,13 +1668,7 @@ function makeSkinIndexRows(deps) {
 */
 function makeSkinIndexTap(deps) {
 	const loadCatalog = deps.loadCatalog ?? (() => loadSkinCatalog());
-	const warn = deps.warn ?? ((message) => console.warn(`[skin-center] ${message}`));
-	const warned = /* @__PURE__ */ new Set();
-	const warnOnce = (reason, message) => {
-		if (warned.has(reason)) return;
-		warned.add(reason);
-		warn(message);
-	};
+	const warnOnce = warningLedger(deps);
 	return (html) => {
 		try {
 			const active = deps.readActiveId();
@@ -1621,13 +1687,13 @@ function makeSkinIndexTap(deps) {
 			const links = skinLinkTags(active, entry.manifest.contributes.patches !== void 0);
 			return stamped.replace(HEAD_CLOSE, `${links}</head>`);
 		} catch (error) {
-			warnOnce("tap-error", `skin index tap failed closed: ${error?.message ?? error}`);
+			warnOnce("tap-error", `skin index tap failed closed: ${error instanceof Error ? error.message : String(error)}`);
 			return html;
 		}
 	};
 }
 //#endregion
-//#region src/legacy-bridge.ts
+//#region lib/types/legacy-bridge.js
 /**
 * Legacy bridge (issue #506, migration path): ONE-SHOT, THIN. On the first
 * v2 boot it reads the retired dsh-skin machinery's state — the
@@ -1645,7 +1711,7 @@ function makeSkinIndexTap(deps) {
 *     whose ui-skin-<id> row is NOT disabled inside the managed section
 *     (bundle-wired active skins carried no row of their own);
 *  3. a managed section disabling everything (or no section at all) → stock.
-* @module @dsh-selfuse/skin-center/legacy-bridge
+* @module @linxin666/dsh-client-ui-skin-center/legacy-bridge
 */
 /**
 * Atomic replace: write a sibling temp file then rename over the target, so
@@ -1709,6 +1775,7 @@ function dropEmptyInserts(text) {
 	let i = 0;
 	while (i < lines.length) {
 		const line = lines[i];
+		if (line === void 0) throw new Error("legacy patch line disappeared");
 		const trimmed = line.trim();
 		if (/^-\s*insert:\s*(?:\[\s*\])?\s*$/.exec(trimmed) === null) {
 			out.push(line);
@@ -1719,16 +1786,18 @@ function dropEmptyInserts(text) {
 		let j = i + 1;
 		let hasRow = false;
 		while (j < lines.length) {
-			const t = lines[j].trim();
+			const nextLine = lines[j];
+			if (nextLine === void 0) throw new Error("legacy patch line disappeared");
+			const t = nextLine.trim();
 			if (t === "") {
 				j += 1;
 				continue;
 			}
-			if (lines[j].length - t.length <= indent) break;
+			if (nextLine.length - t.length <= indent) break;
 			if (!t.startsWith("#") && /^- id:/.test(t)) hasRow = true;
 			j += 1;
 		}
-		if (hasRow) for (let k = i; k < j; k += 1) out.push(lines[k]);
+		if (hasRow) out.push(...lines.slice(i, j));
 		i = j;
 	}
 	return out.join("\n");
@@ -1745,10 +1814,12 @@ function stripLegacySkinRows(patch) {
 	const kept = [];
 	for (let i = 0; i < lines.length; i += 1) {
 		const line = lines[i];
+		if (line === void 0) throw new Error("legacy patch line disappeared");
 		if (/^\s*- id:\s*(ui-skin-[a-z0-9-]+)\s*$/.exec(line) !== null) {
 			const next = lines[i + 1];
 			if ((next === void 0 ? null : /^\s*name:\s*['"]?@[a-z0-9][a-z0-9._-]*\/dsh-client-ui-skin-(?!center['"]?\s*$)[^'"]*['"]?\s*$/.exec(next)) !== null) {
-				if (i > 0 && /^\s*#[^\n]*$/.test(lines[i - 1]) && kept[kept.length - 1] === lines[i - 1]) kept.pop();
+				const previous = lines[i - 1];
+				if (previous !== void 0 && /^\s*#[^\n]*$/.test(previous) && kept.at(-1) === previous) kept.pop();
 				i += 1;
 				continue;
 			}
@@ -1773,12 +1844,12 @@ function stripLegacySkinState(patch) {
 * @param knownIds - the v2 catalog's known skin ids (bundle-wired detection).
 */
 function readLegacyActiveId(patch, knownIds) {
-	for (const m of patch.matchAll(/name:\s*['"]?@dsh-selfuse\/dsh-client-ui-skin-([a-z0-9-]+)['"]?/g)) if (m[1] !== "center") return m[1];
+	for (const m of patch.matchAll(/name:\s*['"]?@linxin666\/dsh-client-ui-skin-([a-z0-9-]+)['"]?/g)) if (m[1] !== void 0 && m[1] !== "center") return m[1];
 	if (!patch.includes("# --- dsh-skin managed (auto-generated; do not edit) ---")) return null;
 	const disabled = /* @__PURE__ */ new Set();
-	for (const m of patch.matchAll(/^- id: (ui-skin-[a-z0-9-]+)\r?\n  disabled: true/gm)) disabled.add(m[1].replace("ui-skin-", ""));
+	for (const m of patch.matchAll(/^- id: (ui-skin-[a-z0-9-]+)\r?\n  disabled: true/gm)) if (m[1] !== void 0) disabled.add(m[1].replace("ui-skin-", ""));
 	const candidates = knownIds.filter((id) => !disabled.has(id));
-	return candidates.length === 1 ? candidates[0] : null;
+	return candidates.length === 1 ? candidates[0] ?? null : null;
 }
 /**
 * Candidate patch paths, harness home first (issue #788): the v1 dsh-skin
@@ -1816,7 +1887,7 @@ function migrateLegacySelection(options) {
 			} catch {
 				continue;
 			}
-			if (!(patch.includes("# --- dsh-skin managed (auto-generated; do not edit) ---") || /name:\s*['"]?@dsh-selfuse\/dsh-client-ui-skin-/.test(patch))) continue;
+			if (!(patch.includes("# --- dsh-skin managed (auto-generated; do not edit) ---") || /name:\s*['"]?@linxin666\/dsh-client-ui-skin-/.test(patch))) continue;
 			sawLegacyState = true;
 			if (!idMigrationDone) {
 				if (readActiveSelection(options.activeStatePath) !== null) notes.push("v2 selection already present; skipped id migration");
@@ -1842,12 +1913,12 @@ function migrateLegacySelection(options) {
 		return result;
 	} catch (error) {
 		result.failed = true;
-		notes.push(`legacy migration failed closed: ${error?.message ?? error}`);
+		notes.push(`legacy migration failed closed: ${error instanceof Error ? error.message : String(error)}`);
 		return result;
 	}
 }
 //#endregion
-//#region src/we-library.ts
+//#region lib/types/we-library.js
 /**
 * Wallpaper Engine library discovery for the skin center (host half).
 *
@@ -1873,7 +1944,7 @@ function migrateLegacySelection(options) {
 * Entries are plain data; the HTTP layer (src/we-routes.ts) assigns media
 * tokens and decides what is playable. Everything here is injectable for
 * tests: roots, platform and environment are parameters, never hard reads.
-* @module @dsh-selfuse/skin-center/we-library
+* @module @linxin666/dsh-client-ui-skin-center/we-library
 */
 /** Steam appid of Wallpaper Engine. */
 const WE_APPID = "431960";
@@ -1920,8 +1991,7 @@ function steamPathFromRegistry(run = () => execFileSync(join(process.env.SystemR
 })) {
 	if (process.platform !== "win32") return null;
 	try {
-		const match = /SteamPath\s+REG_SZ\s+(.+)/i.exec(run());
-		return match ? match[1].trim() : null;
+		return /SteamPath\s+REG_SZ\s+(.+)/i.exec(run())?.[1]?.trim() ?? null;
 	} catch {
 		return null;
 	}
@@ -1932,13 +2002,28 @@ function librariesFromVdf(vdfText) {
 	let current = null;
 	for (const line of vdfText.split(/\r?\n/)) {
 		const match = /^\s*"path"\s+"([^"]+)"\s*$/.exec(line);
-		if (match) {
+		if (match?.[1] !== void 0) {
 			current = match[1].replace(/\\\\/g, "\\");
 			continue;
 		}
 		if (current && line.includes("431960") && !libraries.includes(current)) libraries.push(current);
 	}
 	return libraries;
+}
+function steamLibraries(probes, exists) {
+	const libraries = [];
+	for (const probe of probes) {
+		const vdf = join(probe, "steamapps", "libraryfolders.vdf");
+		if (!exists(vdf)) continue;
+		let source;
+		try {
+			source = readFileSync(vdf, "utf8");
+		} catch (_error) {
+			continue;
+		}
+		libraries.push(...librariesFromVdf(source));
+	}
+	return [...new Set(libraries)];
 }
 /**
 * Locate the Wallpaper Engine install directory (holds wallpaper32.exe).
@@ -1953,13 +2038,7 @@ function locateWallpaperEngine(opts = {}) {
 	if (((opts.env ?? process.env).OS ?? "") !== "" || process.platform === "win32") {
 		const registry = opts.registry ?? (() => steamPathFromRegistry());
 		const probes = [...new Set([registry(), ...STEAM_PROBE_DIRS].filter((d) => !!d))];
-		const libraries = [];
-		for (const probe of probes) {
-			const vdf = join(probe, "steamapps", "libraryfolders.vdf");
-			if (exists(vdf)) try {
-				libraries.push(...librariesFromVdf(readFileSync(vdf, "utf8")));
-			} catch {}
-		}
+		const libraries = steamLibraries(probes, exists);
 		const candidates = [];
 		for (const root of [...probes, ...libraries]) candidates.push(join(root, "steamapps", "common", "wallpaper_engine"));
 		candidates.push("C:\\Program Files (x86)\\Wallpaper Engine");
@@ -1975,15 +2054,7 @@ function owningLibraries(opts = {}) {
 	const exists = opts.exists ?? existsSync;
 	if (process.platform !== "win32" && !opts.exists) return [];
 	const registry = opts.registry ?? (() => steamPathFromRegistry());
-	const probes = [...new Set([registry(), ...STEAM_PROBE_DIRS].filter((d) => !!d))];
-	const libraries = [];
-	for (const probe of probes) {
-		const vdf = join(probe, "steamapps", "libraryfolders.vdf");
-		if (exists(vdf)) try {
-			libraries.push(...librariesFromVdf(readFileSync(vdf, "utf8")));
-		} catch {}
-	}
-	return [...new Set(libraries)];
+	return steamLibraries([...new Set([registry(), ...STEAM_PROBE_DIRS].filter((d) => !!d))], exists);
 }
 /** Infer the wallpaper type from the main file extension (project.json fallback). */
 function inferType(file) {
@@ -2076,7 +2147,7 @@ function resolveSceneMainFile(dir, declared) {
 	} catch {
 		return null;
 	}
-	return pkgs.length === 1 ? pkgs[0] : null;
+	return pkgs.length === 1 ? pkgs[0] ?? null : null;
 }
 /** Build one entry from a project directory. */
 function entryFromDir(dir, source, project, id) {
@@ -2269,7 +2340,32 @@ function buildInventory(opts = {}) {
 	};
 }
 //#endregion
-//#region src/pkg-extract.ts
+//#region lib/types/checked-at.js
+/** Bounds-checked access for untrusted wallpaper binary input and decode buffers. */
+/**
+* Read one initialized numeric/array entry, rejecting truncated input.
+* @param values - byte, pixel, lookup or decoded-entry array.
+* @param index - offset that the format decoder requires to exist.
+* @returns the present entry; absent entries never silently become zero.
+*/
+function checkedAt(values, index) {
+	const value = values[index];
+	if (value === void 0) throw new RangeError(`wallpaper data is truncated at offset ${index}`);
+	return value;
+}
+//#endregion
+//#region lib/types/defined-fields.js
+/** Omit absent optional fields when constructing wallpaper JSON records. */
+/**
+* Drop only undefined, preserving false, zero, empty text and explicit null.
+* @param fields - one constructed wire record, not recursively transformed.
+* @returns exactly the fields whose values are present.
+*/
+function definedFields(fields) {
+	return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== void 0));
+}
+//#endregion
+//#region lib/types/pkg-extract.js
 /**
 * Wallpaper Engine scene.pkg / .tex resource extraction.
 *
@@ -2306,7 +2402,7 @@ function buildInventory(opts = {}) {
 * BC1/BC2/BC3 follow the standard public algorithms. One npm dependency:
 * jpeg-js (pure JavaScript, no native builds) for FreeImage JPEG mipmaps.
 *
-* @module @dsh-selfuse/skin-center/pkg-extract
+* @module @linxin666/dsh-client-ui-skin-center/pkg-extract
 */
 var pkg_extract_exports = /* @__PURE__ */ __exportAll({
 	PKG_ENTRY_FLAG_LZ4: () => 1,
@@ -2385,20 +2481,20 @@ function decodePngToRgba(pngBuf) {
 	const view = new DataView(pngBuf.buffer, pngBuf.byteOffset, pngBuf.byteLength);
 	while (pos < pngBuf.length) {
 		const len = view.getUint32(pos, false);
-		const type = String.fromCharCode(pngBuf[pos + 4], pngBuf[pos + 5], pngBuf[pos + 6], pngBuf[pos + 7]);
+		const type = String.fromCharCode(checkedAt(pngBuf, pos + 4), checkedAt(pngBuf, pos + 5), checkedAt(pngBuf, pos + 6), checkedAt(pngBuf, pos + 7));
 		const data = pngBuf.subarray(pos + 8, pos + 8 + len);
 		if (type === "IHDR") {
 			const ihdrView = new DataView(data.buffer, data.byteOffset, data.byteLength);
 			width = ihdrView.getUint32(0, false);
 			height = ihdrView.getUint32(4, false);
-			colorType = data[9];
-			if (width <= 0 || height <= 0 || width > MAX_TEX_DIMENSION || height > MAX_TEX_DIMENSION || width * height > MAX_TEX_PIXELS) throw new Error("png: invalid dimensions " + width + "x" + height);
+			colorType = checkedAt(data, 9);
+			if (width <= 0 || height <= 0 || width > MAX_TEX_DIMENSION || height > MAX_TEX_DIMENSION || width * height > MAX_TEX_PIXELS) throw new Error(`png: invalid dimensions ${width}x${height}`);
 		} else if (type === "IDAT") idatChunks.push(data);
 		else if (type === "IEND") break;
 		pos += 12 + len;
 	}
 	const totalIdat = idatChunks.reduce((acc, c) => acc + c.length, 0);
-	if (totalIdat > MAX_DECOMPRESSED_BYTES) throw new Error("png: idat stream too large (" + totalIdat + " bytes)");
+	if (totalIdat > MAX_DECOMPRESSED_BYTES) throw new Error(`png: idat stream too large (${totalIdat} bytes)`);
 	const combined = new Uint8Array(totalIdat);
 	let cur = 0;
 	for (const c of idatChunks) {
@@ -2413,12 +2509,12 @@ function decodePngToRgba(pngBuf) {
 	const rowBuf = new Uint8Array(stride);
 	const prevRowBuf = new Uint8Array(stride);
 	for (let y = 0; y < height; y++) {
-		const filterType = uncompressed[srcPos++];
+		const filterType = checkedAt(uncompressed, srcPos++);
 		for (let x = 0; x < stride; x++) {
-			const b = uncompressed[srcPos++];
-			const a = x >= bytesPerPixel ? rowBuf[x - bytesPerPixel] : 0;
-			const c = x >= bytesPerPixel ? prevRowBuf[x - bytesPerPixel] : 0;
-			const p_b = prevRowBuf[x];
+			const b = checkedAt(uncompressed, srcPos++);
+			const a = x >= bytesPerPixel ? checkedAt(rowBuf, x - bytesPerPixel) : 0;
+			const c = x >= bytesPerPixel ? checkedAt(prevRowBuf, x - bytesPerPixel) : 0;
+			const p_b = checkedAt(prevRowBuf, x);
 			let val = b;
 			if (filterType === 1) val = b + a & 255;
 			else if (filterType === 2) val = b + p_b & 255;
@@ -2439,19 +2535,19 @@ function decodePngToRgba(pngBuf) {
 		for (let x = 0; x < width; x++) {
 			const di = (y * width + x) * 4;
 			if (colorType === 6) {
-				raw[di] = rowBuf[x * 4];
-				raw[di + 1] = rowBuf[x * 4 + 1];
-				raw[di + 2] = rowBuf[x * 4 + 2];
-				raw[di + 3] = rowBuf[x * 4 + 3];
+				raw[di] = checkedAt(rowBuf, x * 4);
+				raw[di + 1] = checkedAt(rowBuf, x * 4 + 1);
+				raw[di + 2] = checkedAt(rowBuf, x * 4 + 2);
+				raw[di + 3] = checkedAt(rowBuf, x * 4 + 3);
 			} else if (colorType === 2) {
-				raw[di] = rowBuf[x * 3];
-				raw[di + 1] = rowBuf[x * 3 + 1];
-				raw[di + 2] = rowBuf[x * 3 + 2];
+				raw[di] = checkedAt(rowBuf, x * 3);
+				raw[di + 1] = checkedAt(rowBuf, x * 3 + 1);
+				raw[di + 2] = checkedAt(rowBuf, x * 3 + 2);
 				raw[di + 3] = 255;
 			} else {
-				raw[di] = rowBuf[x];
-				raw[di + 1] = rowBuf[x];
-				raw[di + 2] = rowBuf[x];
+				raw[di] = checkedAt(rowBuf, x);
+				raw[di + 1] = checkedAt(rowBuf, x);
+				raw[di + 2] = checkedAt(rowBuf, x);
 				raw[di + 3] = 255;
 			}
 		}
@@ -2481,7 +2577,7 @@ var Reader = class {
 		return this.view.byteLength - this.pos;
 	}
 	need(n) {
-		if (n < 0 || this.pos + n > this.view.byteLength) throw new Error(this.label + ": unexpected end of data");
+		if (n < 0 || this.pos + n > this.view.byteLength) throw new Error(`${this.label}: unexpected end of data`);
 	}
 	u8() {
 		this.need(1);
@@ -2519,7 +2615,7 @@ var Reader = class {
 	/** int32-length-prefixed UTF-8 string (PKG magic and entry paths). */
 	sizedString(maxLength) {
 		const length = this.i32();
-		if (length < 0 || length > maxLength) throw new Error(this.label + ": invalid string length " + length);
+		if (length < 0 || length > maxLength) throw new Error(`${this.label}: invalid string length ${length}`);
 		return textDecoder.decode(this.bytes(length));
 	}
 	/** NUL-terminated string (all TEX magics and the TEXB0004 json blob). */
@@ -2528,7 +2624,7 @@ var Reader = class {
 		let end = start;
 		const limit = Math.min(this.view.byteLength, start + maxLength);
 		while (end < limit && this.view.getUint8(end) !== 0) end++;
-		if (end >= limit) throw new Error(this.label + ": unterminated string");
+		if (end >= limit) throw new Error(`${this.label}: unterminated string`);
 		const out = textDecoder.decode(this.data.subarray(start, end));
 		this.pos = end + 1;
 		return out;
@@ -2542,18 +2638,18 @@ var Reader = class {
 * @param dstSize exact expected decompressed size
 */
 function lz4DecompressBlock(src, dstSize) {
-	if (dstSize < 0 || dstSize > MAX_DECOMPRESSED_BYTES) throw new Error("lz4: decompressed size out of bounds (" + String(dstSize) + ")");
+	if (dstSize < 0 || dstSize > MAX_DECOMPRESSED_BYTES) throw new Error(`lz4: decompressed size out of bounds (${String(dstSize)})`);
 	const dst = new Uint8Array(dstSize);
 	let ip = 0;
 	let op = 0;
 	while (ip < src.length) {
-		const token = src[ip++];
+		const token = checkedAt(src, ip++);
 		let literalLength = token >> 4;
 		if (literalLength === 15) {
 			let s = 0;
 			do {
 				if (ip >= src.length) throw new Error("lz4: truncated literal length");
-				s = src[ip++];
+				s = checkedAt(src, ip++);
 				literalLength += s;
 			} while (s === 255);
 		}
@@ -2563,26 +2659,26 @@ function lz4DecompressBlock(src, dstSize) {
 		op += literalLength;
 		if (ip >= src.length) break;
 		if (ip + 2 > src.length) throw new Error("lz4: truncated match offset");
-		const offset = src[ip] | src[ip + 1] << 8;
+		const offset = checkedAt(src, ip) | checkedAt(src, ip + 1) << 8;
 		ip += 2;
-		if (offset === 0 || offset > op) throw new Error("lz4: invalid match offset " + offset);
+		if (offset === 0 || offset > op) throw new Error(`lz4: invalid match offset ${offset}`);
 		let matchLength = token & 15;
 		if (matchLength === 15) {
 			let s = 0;
 			do {
 				if (ip >= src.length) throw new Error("lz4: truncated match length");
-				s = src[ip++];
+				s = checkedAt(src, ip++);
 				matchLength += s;
 			} while (s === 255);
 		}
 		matchLength += 4;
 		if (op + matchLength > dstSize) throw new Error("lz4: match run out of bounds");
 		for (let i = 0; i < matchLength; i++) {
-			dst[op] = dst[op - offset];
+			dst[op] = checkedAt(dst, op - offset);
 			op++;
 		}
 	}
-	if (op !== dstSize) throw new Error("lz4: decompressed size mismatch (got " + op + ", expected " + dstSize + ")");
+	if (op !== dstSize) throw new Error(`lz4: decompressed size mismatch (got ${op}, expected ${dstSize})`);
 	return dst;
 }
 /**
@@ -2615,19 +2711,19 @@ function probeCompressedEntry(data, abs, length) {
 function parsePkg(data) {
 	const r = new Reader(data, "pkg");
 	const magic = r.sizedString(32);
-	if (!/^PKGV\d{4}$/.test(magic)) throw new Error("pkg: bad magic '" + magic + "'");
+	if (!/^PKGV\d{4}$/.test(magic)) throw new Error(`pkg: bad magic '${magic}'`);
 	const count = r.i32();
-	if (count < 0 || count > 1048576) throw new Error("pkg: invalid entry count " + count);
+	if (count < 0 || count > 1048576) throw new Error(`pkg: invalid entry count ${count}`);
 	const index = [];
-	for (let i = 0; i < count; i++) index.push({
+	for (let i = 0; i < count; i++) index.push(definedFields({
 		path: r.sizedString(1024),
 		offset: r.u32(),
 		length: r.u32()
-	});
+	}));
 	const dataStart = r.pos;
 	return index.map(({ path, offset, length }) => {
 		const abs = dataStart + offset;
-		if (abs + length > data.byteLength) throw new Error("pkg: entry '" + path + "' out of bounds");
+		if (abs + length > data.byteLength) throw new Error(`pkg: entry '${path}' out of bounds`);
 		const originalSize = probeCompressedEntry(data, abs, length);
 		return originalSize === null ? {
 			path,
@@ -2650,21 +2746,21 @@ function parsePkg(data) {
 */
 function readPkgEntry(data, entry) {
 	const abs = entry.offset;
-	if (abs < 0 || abs + entry.compressedSize > data.byteLength) throw new Error("pkg: entry '" + entry.path + "' out of bounds");
+	if (abs < 0 || abs + entry.compressedSize > data.byteLength) throw new Error(`pkg: entry '${entry.path}' out of bounds`);
 	if ((entry.flags & 1) === 0) return data.slice(abs, abs + entry.compressedSize);
-	if (entry.size > MAX_PKG_ENTRY_BYTES) throw new Error("pkg: entry '" + entry.path + "' too large (" + entry.size + " bytes)");
+	if (entry.size > MAX_PKG_ENTRY_BYTES) throw new Error(`pkg: entry '${entry.path}' too large (${entry.size} bytes)`);
 	const r = new Reader(data.subarray(abs, abs + entry.compressedSize), "pkg");
-	if (r.u64() !== entry.size) throw new Error("pkg: entry '" + entry.path + "' size mismatch");
+	if (r.u64() !== entry.size) throw new Error(`pkg: entry '${entry.path}' size mismatch`);
 	const out = new Uint8Array(entry.size);
 	let written = 0;
 	while (written < entry.size) {
 		const uncomp = r.i32();
 		const comp = r.i32();
-		if (uncomp <= 0 || comp <= 0 || written + uncomp > entry.size) throw new Error("pkg: corrupt compressed entry '" + entry.path + "'");
+		if (uncomp <= 0 || comp <= 0 || written + uncomp > entry.size) throw new Error(`pkg: corrupt compressed entry '${entry.path}'`);
 		out.set(lz4DecompressBlock(r.bytes(comp), uncomp), written);
 		written += uncomp;
 	}
-	if (r.remaining !== 0) throw new Error("pkg: corrupt compressed entry '" + entry.path + "'");
+	if (r.remaining !== 0) throw new Error(`pkg: corrupt compressed entry '${entry.path}'`);
 	return out;
 }
 function readMipmap(r, containerVersion) {
@@ -2677,7 +2773,7 @@ function readMipmap(r, containerVersion) {
 	}
 	const width = r.i32();
 	const height = r.i32();
-	if (width <= 0 || height <= 0 || width > 16384 || height > 16384) throw new Error("tex: invalid mipmap dimensions " + width + "x" + height);
+	if (width <= 0 || height <= 0 || width > 16384 || height > 16384) throw new Error(`tex: invalid mipmap dimensions ${width}x${height}`);
 	if (containerVersion === 1) return {
 		width,
 		height,
@@ -2701,9 +2797,9 @@ function readMipmap(r, containerVersion) {
 function parseTexInternal(data) {
 	const r = new Reader(data, "tex");
 	const magic1 = r.nstring(16);
-	if (magic1 !== "TEXV0005") throw new Error("tex: bad magic '" + magic1 + "'");
+	if (magic1 !== "TEXV0005") throw new Error(`tex: bad magic '${magic1}'`);
 	const magic2 = r.nstring(16);
-	if (magic2 !== "TEXI0001") throw new Error("tex: bad image-info magic '" + magic2 + "'");
+	if (magic2 !== "TEXI0001") throw new Error(`tex: bad image-info magic '${magic2}'`);
 	const format = r.i32();
 	const flags = r.i32();
 	const textureWidth = r.i32();
@@ -2711,13 +2807,13 @@ function parseTexInternal(data) {
 	const imageWidth = r.i32();
 	const imageHeight = r.i32();
 	r.u32();
-	if (TEX_FORMAT_NAMES[format] === void 0) throw new Error("tex: unsupported format " + format);
+	if (TEX_FORMAT_NAMES[format] === void 0) throw new Error(`tex: unsupported format ${format}`);
 	const containerMagic = r.nstring(16);
 	const containerMatch = /^TEXB000([1-4])$/.exec(containerMagic);
-	if (!containerMatch) throw new Error("tex: bad mipmap container magic '" + containerMagic + "'");
+	if (!containerMatch) throw new Error(`tex: bad mipmap container magic '${containerMagic}'`);
 	let containerVersion = Number(containerMatch[1]);
 	const imageCount = r.i32();
-	if (imageCount <= 0 || imageCount > 256) throw new Error("tex: invalid image count " + imageCount);
+	if (imageCount <= 0 || imageCount > 256) throw new Error(`tex: invalid image count ${imageCount}`);
 	let isVideoMp4 = false;
 	if (containerVersion === 3) r.i32();
 	else if (containerVersion === 4) {
@@ -2728,7 +2824,7 @@ function parseTexInternal(data) {
 	let firstImage = null;
 	for (let i = 0; i < imageCount; i++) {
 		const mipmapCount = r.i32();
-		if (mipmapCount <= 0 || mipmapCount > 32) throw new Error("tex: invalid mipmap count " + mipmapCount);
+		if (mipmapCount <= 0 || mipmapCount > 32) throw new Error(`tex: invalid mipmap count ${mipmapCount}`);
 		const mipmaps = [];
 		for (let j = 0; j < mipmapCount; j++) mipmaps.push(readMipmap(r, containerVersion));
 		if (firstImage === null) firstImage = mipmaps;
@@ -2738,10 +2834,10 @@ function parseTexInternal(data) {
 	if (isAnimatedGif) {
 		const frameMagic = r.nstring(16);
 		const frameMatch = /^TEXS000([1-3])$/.exec(frameMagic);
-		if (!frameMatch) throw new Error("tex: bad frame container magic '" + frameMagic + "'");
+		if (!frameMatch) throw new Error(`tex: bad frame container magic '${frameMagic}'`);
 		const frameVersion = Number(frameMatch[1]);
 		const frameCount = r.i32();
-		if (frameCount < 0 || frameCount > 4096) throw new Error("tex: invalid frame count " + frameCount);
+		if (frameCount < 0 || frameCount > 4096) throw new Error(`tex: invalid frame count ${frameCount}`);
 		if (frameVersion === 3) {
 			r.i32();
 			r.i32();
@@ -2756,7 +2852,7 @@ function parseTexInternal(data) {
 				r.i32();
 				r.i32();
 				const height = r.i32();
-				frames.push({
+				frames.push(definedFields({
 					framenumber: i,
 					imageId,
 					frametime,
@@ -2764,7 +2860,7 @@ function parseTexInternal(data) {
 					y,
 					width,
 					height
-				});
+				}));
 			} else {
 				const x = r.f32();
 				const y = r.f32();
@@ -2772,7 +2868,7 @@ function parseTexInternal(data) {
 				r.f32();
 				r.f32();
 				const height = r.f32();
-				frames.push({
+				frames.push(definedFields({
 					framenumber: i,
 					imageId,
 					frametime,
@@ -2780,14 +2876,15 @@ function parseTexInternal(data) {
 					y,
 					width,
 					height
-				});
+				}));
 			}
 		}
 	}
-	const mip0 = firstImage[0];
-	if (!isVideoMp4 && mip0 && mip0.bytes && mip0.bytes.length >= 8) {
+	if (firstImage == null) throw new Error("texture contains no image");
+	const mip0 = checkedAt(firstImage, 0);
+	if (!isVideoMp4 && mip0.bytes.length >= 8) {
 		const b = mip0.bytes;
-		if (b[4] === 102 && b[5] === 116 && b[6] === 121 && b[7] === 112 || b[0] === 0 && b[1] === 0 && b[2] === 0 && b[3] === 24 && b[4] === 102 && b[5] === 116 && b[6] === 121 && b[7] === 112) isVideoMp4 = true;
+		if (checkedAt(b, 4) === 102 && checkedAt(b, 5) === 116 && checkedAt(b, 6) === 121 && checkedAt(b, 7) === 112 || checkedAt(b, 0) === 0 && checkedAt(b, 1) === 0 && checkedAt(b, 2) === 0 && checkedAt(b, 3) === 24 && checkedAt(b, 4) === 102 && checkedAt(b, 5) === 116 && checkedAt(b, 6) === 121 && checkedAt(b, 7) === 112) isVideoMp4 = true;
 	}
 	return {
 		format,
@@ -2810,7 +2907,7 @@ function parseTex(data) {
 		width: parsed.width,
 		height: parsed.height,
 		format: parsed.format,
-		formatName: TEX_FORMAT_NAMES[parsed.format] ?? "unknown(" + parsed.format + ")",
+		formatName: TEX_FORMAT_NAMES[parsed.format] ?? `unknown(${parsed.format})`,
 		isAnimatedGif: parsed.isAnimatedGif,
 		isVideoMp4: parsed.isVideoMp4,
 		mipLevels: parsed.mipmaps.length
@@ -2830,7 +2927,7 @@ function rgb565(value) {
 }
 /** Build the 4-color BC palette; three-color + transparent when DXT1 c0 <= c1. */
 function buildColorPalette(c0, c1, fourColor) {
-	const palette = /* @__PURE__ */ new Uint8Array(16);
+	const palette = new Uint8Array(16);
 	const [r0, g0, b0] = rgb565(c0);
 	const [r1, g1, b1] = rgb565(c1);
 	palette.set([
@@ -2879,12 +2976,15 @@ function buildColorPalette(c0, c1, fourColor) {
 * colorOffset; blockStride is 8 (BC1) or 16 (BC2/BC3). dxt1Alpha enables the
 * three-color + transparent palette when c0 <= c1.
 */
-function decodeColorBlocks(src, out, width, height, blockStride, colorOffset, dxt1Alpha) {
-	const view = new DataView(src.buffer, src.byteOffset, src.byteLength);
+/** Visit 4x4 compressed blocks with their byte offsets and grid coordinates. */
+function forEachBlock(width, height, stride, visit) {
 	const blocksX = Math.ceil(width / 4);
 	const blocksY = Math.ceil(height / 4);
-	for (let by = 0; by < blocksY; by++) for (let bx = 0; bx < blocksX; bx++) {
-		const base = (by * blocksX + bx) * blockStride;
+	for (let by = 0; by < blocksY; by++) for (let bx = 0; bx < blocksX; bx++) visit((by * blocksX + bx) * stride, bx, by);
+}
+function decodeColorBlocks(src, out, width, height, blockStride, colorOffset, dxt1Alpha) {
+	const view = new DataView(src.buffer, src.byteOffset, src.byteLength);
+	forEachBlock(width, height, blockStride, (base, bx, by) => {
 		const c0 = view.getUint16(base + colorOffset, true);
 		const c1 = view.getUint16(base + colorOffset + 2, true);
 		const palette = buildColorPalette(c0, c1, dxt1Alpha ? c0 > c1 : true);
@@ -2895,14 +2995,28 @@ function decodeColorBlocks(src, out, width, height, blockStride, colorOffset, dx
 			if (x >= width || y >= height) continue;
 			const selector = indices >> 2 * (py * 4 + px) & 3;
 			const dst = (y * width + x) * 4;
-			out[dst] = palette[selector * 4];
-			out[dst + 1] = palette[selector * 4 + 1];
-			out[dst + 2] = palette[selector * 4 + 2];
-			out[dst + 3] = palette[selector * 4 + 3];
+			out[dst] = checkedAt(palette, selector * 4);
+			out[dst + 1] = checkedAt(palette, selector * 4 + 1);
+			out[dst + 2] = checkedAt(palette, selector * 4 + 2);
+			out[dst + 3] = checkedAt(palette, selector * 4 + 3);
 		}
-	}
+	});
 }
 /** BC1 (DXT1): 8-byte blocks, 4x4 pixels, optional 1-bit alpha. */
+function cropOffset(value) {
+	if (typeof value !== "string") return [0, 0];
+	const parts = value.trim().split(/\s+/);
+	return [parseFloat(parts[0] ?? "") || 0, parseFloat(parts[1] ?? "") || 0];
+}
+/** Match a texture reference without its optional extension or directory prefix. */
+function findTexture(paths, reference) {
+	const want = reference.toLowerCase().replace(/\.tex$/i, "");
+	return paths.find((path) => {
+		const lower = path.toLowerCase().replace(/\.tex$/i, "");
+		return lower === want || lower === `materials/${want}` || lower.endsWith(`/${want}`);
+	});
+}
+/** Parse scene crop translation; invalid components remain zero. */
 function decodeDxt1(src, width, height) {
 	const out = new Uint8Array(width * height * 4);
 	decodeColorBlocks(src, out, width, height, 8, 0, true);
@@ -2913,10 +3027,7 @@ function decodeDxt3(src, width, height) {
 	const out = new Uint8Array(width * height * 4);
 	decodeColorBlocks(src, out, width, height, 16, 8, false);
 	const view = new DataView(src.buffer, src.byteOffset, src.byteLength);
-	const blocksX = Math.ceil(width / 4);
-	const blocksY = Math.ceil(height / 4);
-	for (let by = 0; by < blocksY; by++) for (let bx = 0; bx < blocksX; bx++) {
-		const base = (by * blocksX + bx) * 16;
+	forEachBlock(width, height, 16, (base, bx, by) => {
 		const alphaLo = view.getUint32(base, true);
 		const alphaHi = view.getUint32(base + 4, true);
 		for (let i = 0; i < 16; i++) {
@@ -2926,20 +3037,17 @@ function decodeDxt3(src, width, height) {
 			const nibble = i < 8 ? alphaLo >> 4 * i & 15 : alphaHi >> 4 * (i - 8) & 15;
 			out[(y * width + x) * 4 + 3] = nibble * 17;
 		}
-	}
+	});
 	return out;
 }
 /** BC3 (DXT5): 16-byte blocks, interpolated 3-bit alpha + BC1-style color. */
 function decodeDxt5(src, width, height) {
 	const out = new Uint8Array(width * height * 4);
 	decodeColorBlocks(src, out, width, height, 16, 8, false);
-	const blocksX = Math.ceil(width / 4);
-	const blocksY = Math.ceil(height / 4);
-	for (let by = 0; by < blocksY; by++) for (let bx = 0; bx < blocksX; bx++) {
-		const base = (by * blocksX + bx) * 16;
-		const a0 = src[base];
-		const a1 = src[base + 1];
-		const alphas = /* @__PURE__ */ new Uint8Array(8);
+	forEachBlock(width, height, 16, (base, bx, by) => {
+		const a0 = checkedAt(src, base);
+		const a1 = checkedAt(src, base + 1);
+		const alphas = new Uint8Array(8);
 		alphas[0] = a0;
 		alphas[1] = a1;
 		if (a0 > a1) for (let k = 2; k < 8; k++) alphas[k] = ((8 - k) * a0 + (k - 1) * a1) / 7 | 0;
@@ -2948,16 +3056,16 @@ function decodeDxt5(src, width, height) {
 			alphas[6] = 0;
 			alphas[7] = 255;
 		}
-		let bits = src[base + 2] + src[base + 3] * 256 + src[base + 4] * 65536 + src[base + 5] * 16777216 + src[base + 6] * 4294967296 + src[base + 7] * 1099511627776;
+		let bits = checkedAt(src, base + 2) + checkedAt(src, base + 3) * 256 + checkedAt(src, base + 4) * 65536 + checkedAt(src, base + 5) * 16777216 + checkedAt(src, base + 6) * 4294967296 + checkedAt(src, base + 7) * 1099511627776;
 		for (let i = 0; i < 16; i++) {
 			const x = bx * 4 + i % 4;
 			const y = by * 4 + (i / 4 | 0);
 			const index = bits % 8;
 			bits = Math.floor(bits / 8);
 			if (x >= width || y >= height) continue;
-			out[(y * width + x) * 4 + 3] = alphas[index];
+			out[(y * width + x) * 4 + 3] = checkedAt(alphas, index);
 		}
-	}
+	});
 	return out;
 }
 /**
@@ -2987,9 +3095,9 @@ function cropToImageRect(decoded, imageWidth, imageHeight) {
 function decodeTex(data) {
 	const parsed = parseTexInternal(data);
 	if (parsed.isVideoMp4) throw new Error("tex: video mp4 textures cannot be decoded to a static frame");
-	const mip = parsed.mipmaps[0];
+	const mip = checkedAt(parsed.mipmaps, 0);
 	if (isPngBuffer(mip.bytes)) return decodePngToRgba(mip.bytes);
-	if (mip.bytes[0] === 255 && mip.bytes[1] === 216) {
+	if (checkedAt(mip.bytes, 0) === 255 && checkedAt(mip.bytes, 1) === 216) {
 		const jpeg = decode(Buffer$1.from(mip.bytes), { useTArray: true });
 		const rgba = jpeg.data;
 		return cropToImageRect({
@@ -3002,7 +3110,7 @@ function decodeTex(data) {
 	let decoded;
 	switch (parsed.format) {
 		case TexFormat.RGBA8888:
-			if (bytes.length < width * height * 4) throw new Error("tex: mipmap size mismatch for RGBA8888 (actual " + bytes.length + " < expected " + width * height * 4 + ")");
+			if (bytes.length < width * height * 4) throw new Error(`tex: mipmap size mismatch for RGBA8888 (actual ${bytes.length} < expected ${width * height * 4})`);
 			decoded = {
 				width,
 				height,
@@ -3013,9 +3121,9 @@ function decodeTex(data) {
 			if (bytes.length < width * height) throw new Error("tex: mipmap size mismatch for R8");
 			const rgba = new Uint8Array(width * height * 4);
 			for (let i = 0; i < width * height; i++) {
-				rgba[i * 4] = bytes[i];
-				rgba[i * 4 + 1] = bytes[i];
-				rgba[i * 4 + 2] = bytes[i];
+				rgba[i * 4] = checkedAt(bytes, i);
+				rgba[i * 4 + 1] = checkedAt(bytes, i);
+				rgba[i * 4 + 2] = checkedAt(bytes, i);
 				rgba[i * 4 + 3] = 255;
 			}
 			decoded = {
@@ -3029,8 +3137,8 @@ function decodeTex(data) {
 			if (bytes.length < width * height * 2) throw new Error("tex: mipmap size mismatch for RG88");
 			const rgba = new Uint8Array(width * height * 4);
 			for (let i = 0; i < width * height; i++) {
-				rgba[i * 4] = bytes[i * 2];
-				rgba[i * 4 + 1] = bytes[i * 2 + 1];
+				rgba[i * 4] = checkedAt(bytes, i * 2);
+				rgba[i * 4 + 1] = checkedAt(bytes, i * 2 + 1);
 				rgba[i * 4 + 2] = 0;
 				rgba[i * 4 + 3] = 255;
 			}
@@ -3071,12 +3179,12 @@ function decodeTex(data) {
 			};
 			break;
 		}
-		default: throw new Error("tex: unsupported format " + parsed.format);
+		default: throw new Error(`tex: unsupported format ${parsed.format}`);
 	}
 	return cropToImageRect(decoded, parsed.width, parsed.height);
 }
 const CRC_TABLE = (() => {
-	const table = /* @__PURE__ */ new Uint32Array(256);
+	const table = new Uint32Array(256);
 	for (let n = 0; n < 256; n++) {
 		let c = n;
 		for (let k = 0; k < 8; k++) c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
@@ -3086,7 +3194,7 @@ const CRC_TABLE = (() => {
 })();
 function crc32(bytes) {
 	let c = 4294967295;
-	for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 255] ^ c >>> 8;
+	for (let i = 0; i < bytes.length; i++) c = checkedAt(CRC_TABLE, (c ^ checkedAt(bytes, i)) & 255) ^ c >>> 8;
 	return (c ^ 4294967295) >>> 0;
 }
 function pngChunk(type, data) {
@@ -3102,7 +3210,7 @@ function pngChunk(type, data) {
 * node:zlib deflate and a hand-rolled CRC32. Zero dependencies.
 */
 function encodePng(width, height, rgba) {
-	if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) throw new Error("png: invalid dimensions " + width + "x" + height);
+	if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) throw new Error(`png: invalid dimensions ${width}x${height}`);
 	if (rgba.length !== width * height * 4) throw new Error("png: rgba buffer size mismatch");
 	const stride = width * 4 + 1;
 	const raw = Buffer$1.alloc(stride * height);
@@ -3142,7 +3250,7 @@ function collectImageObjectTextures(imageObject, readJson) {
 			if (rawName.toLowerCase().endsWith(".tex")) out.push(rawName);
 			else {
 				out.push(rawName + ".tex");
-				out.push("materials/" + rawName + ".tex");
+				out.push(`materials/${rawName}.tex`);
 			}
 		}
 	};
@@ -3152,9 +3260,9 @@ function collectImageObjectTextures(imageObject, readJson) {
 		let materialJson = readJson(ref);
 		if (materialJson && typeof materialJson.material === "string") {
 			const matRef = materialJson.material;
-			materialJson = readJson(matRef) ?? readJson("materials/" + matRef);
+			materialJson = readJson(matRef) ?? readJson(`materials/${matRef}`);
 		}
-		if (materialJson && Array.isArray(materialJson.passes)) for (const pass of materialJson.passes) pushTextureList(pass?.textures);
+		if (materialJson && Array.isArray(materialJson.passes)) for (const pass of materialJson.passes) pushTextureList(pass.textures);
 	}
 	const instance = imageObject.instance;
 	if (instance && typeof instance === "object") pushTextureList(instance.textures);
@@ -3260,7 +3368,7 @@ function dirSceneAccess(dir) {
 	};
 }
 function isPngBuffer(buf) {
-	return buf.length >= 8 && buf[0] === 137 && buf[1] === 80 && buf[2] === 78 && buf[3] === 71 && buf[4] === 13 && buf[5] === 10 && buf[6] === 26 && buf[7] === 10;
+	return buf.length >= 8 && checkedAt(buf, 0) === 137 && checkedAt(buf, 1) === 80 && checkedAt(buf, 2) === 78 && checkedAt(buf, 3) === 71 && checkedAt(buf, 4) === 13 && checkedAt(buf, 5) === 10 && checkedAt(buf, 6) === 26 && checkedAt(buf, 7) === 10;
 }
 function isLikelyMaskOrHelper(path) {
 	const lower = path.toLowerCase();
@@ -3274,10 +3382,10 @@ function hasContent(rgba, width, height) {
 	for (let i = 0; i < totalPixels; i += step) {
 		sampleCount++;
 		const idx = i * 4;
-		const r = rgba[idx];
-		const g = rgba[idx + 1];
-		const b = rgba[idx + 2];
-		if (rgba[idx + 3] > 10 && (r > 0 || g > 0 || b > 0)) visibleCount++;
+		const r = checkedAt(rgba, idx);
+		const g = checkedAt(rgba, idx + 1);
+		const b = checkedAt(rgba, idx + 2);
+		if (checkedAt(rgba, idx + 3) > 10 && (r > 0 || g > 0 || b > 0)) visibleCount++;
 	}
 	return sampleCount === 0 || visibleCount / sampleCount >= .01;
 }
@@ -3344,7 +3452,7 @@ function getTextureScore(path) {
 /** Composite layered 2D sprite scenes into a single full-resolution frame. */
 function tryCompositeMultiLayerScene(scene, access) {
 	const objects = Array.isArray(scene.objects) ? scene.objects : [];
-	const imageObjects = objects.filter((obj) => obj && typeof obj === "object" && typeof obj.image === "string" && !String(obj.image).startsWith("models/util/") && !isLikelyMaskOrHelper(String(obj.image)));
+	const imageObjects = objects.filter((obj) => typeof obj === "object" && typeof obj.image === "string" && !obj.image.startsWith("models/util/") && !isLikelyMaskOrHelper(obj.image));
 	if (imageObjects.length <= 1) return null;
 	let canvasWidth = 1920;
 	let canvasHeight = 1080;
@@ -3364,7 +3472,7 @@ function tryCompositeMultiLayerScene(scene, access) {
 		if (!matJson || !Array.isArray(matJson.passes)) continue;
 		const texName = matJson.passes[0]?.textures?.[0];
 		if (!texName || isLikelyMaskOrHelper(texName)) continue;
-		const texPath = access.listTexPaths().find((p) => p.toLowerCase() === texName.toLowerCase() || p.toLowerCase() === ("materials/" + texName + ".tex").toLowerCase() || p.toLowerCase() === (texName + ".tex").toLowerCase() || p.toLowerCase().endsWith("/" + texName.toLowerCase() + ".tex") || p.toLowerCase().endsWith("/" + texName.toLowerCase()));
+		const texPath = access.listTexPaths().find((p) => p.toLowerCase() === texName.toLowerCase() || p.toLowerCase() === `materials/${texName}.tex`.toLowerCase() || p.toLowerCase() === (texName + ".tex").toLowerCase() || p.toLowerCase().endsWith(`/${texName.toLowerCase()}.tex`) || p.toLowerCase().endsWith(`/${texName.toLowerCase()}`));
 		if (!texPath) continue;
 		const file = access.readFile(texPath);
 		if (!file) continue;
@@ -3374,30 +3482,24 @@ function tryCompositeMultiLayerScene(scene, access) {
 		} catch {
 			continue;
 		}
-		if (!decoded || decoded.width < 64 || decoded.height < 64) continue;
+		if (decoded.width < 64 || decoded.height < 64) continue;
 		if (decoded.width >= 1280 || decoded.height >= 720) hasLargeBase = true;
 		if (decoded.width > canvasWidth || decoded.height > canvasHeight) {
 			canvasWidth = Math.max(canvasWidth, decoded.width);
 			canvasHeight = Math.max(canvasHeight, decoded.height);
 		}
-		let ox = 0;
-		let oy = 0;
-		if (typeof modelJson.cropoffset === "string") {
-			const parts = modelJson.cropoffset.trim().split(/\s+/);
-			ox = parseFloat(parts[0]) || 0;
-			oy = parseFloat(parts[1]) || 0;
-		}
+		const [ox, oy] = cropOffset(modelJson.cropoffset);
 		const centerX = canvasWidth / 2 + ox;
 		const centerY = canvasHeight / 2 - oy;
 		const startX = Math.round(centerX - decoded.width / 2);
 		const startY = Math.round(centerY - decoded.height / 2);
-		layers.push({
+		layers.push(definedFields({
 			x: startX,
 			y: startY,
 			width: decoded.width,
 			height: decoded.height,
 			rgba: decoded.rgba
-		});
+		}));
 	}
 	if (imageObjects.length >= 3 && layers.length <= 1) throw new Error("pkg: multi-layer scene composition requires full preview render");
 	if (layers.length <= 1 || !hasLargeBase) return null;
@@ -3410,14 +3512,14 @@ function tryCompositeMultiLayerScene(scene, access) {
 			if (cx < 0 || cx >= canvasWidth) continue;
 			const si = (y * layer.width + x) * 4;
 			const di = (cy * canvasWidth + cx) * 4;
-			const sa = layer.rgba[si + 3] / 255;
+			const sa = checkedAt(layer.rgba, si + 3) / 255;
 			if (sa <= 0) continue;
-			const da = canvas[di + 3] / 255;
+			const da = checkedAt(canvas, di + 3) / 255;
 			const outA = sa + da * (1 - sa);
 			if (outA <= 0) continue;
-			canvas[di] = Math.round((layer.rgba[si] * sa + canvas[di] * da * (1 - sa)) / outA);
-			canvas[di + 1] = Math.round((layer.rgba[si + 1] * sa + canvas[di + 1] * da * (1 - sa)) / outA);
-			canvas[di + 2] = Math.round((layer.rgba[si + 2] * sa + canvas[di + 2] * da * (1 - sa)) / outA);
+			canvas[di] = Math.round((checkedAt(layer.rgba, si) * sa + checkedAt(canvas, di) * da * (1 - sa)) / outA);
+			canvas[di + 1] = Math.round((checkedAt(layer.rgba, si + 1) * sa + checkedAt(canvas, di + 1) * da * (1 - sa)) / outA);
+			canvas[di + 2] = Math.round((checkedAt(layer.rgba, si + 2) * sa + checkedAt(canvas, di + 2) * da * (1 - sa)) / outA);
 			canvas[di + 3] = Math.round(outA * 255);
 		}
 	}
@@ -3425,7 +3527,7 @@ function tryCompositeMultiLayerScene(scene, access) {
 		width: canvasWidth,
 		height: canvasHeight,
 		png: Buffer$1.from(encodePng(canvasWidth, canvasHeight, canvas)),
-		texturePath: "composite(" + String(layers.length) + " layers)"
+		texturePath: `composite(${String(layers.length)} layers)`
 	};
 }
 /** Shared scene pipeline over one access layer; label prefixes error text. */
@@ -3435,22 +3537,22 @@ function extractSceneMainImageVia(access, label) {
 		const project = access.readJson("project.json");
 		if (project && typeof project.file === "string" && project.file.endsWith(".json")) scene = access.readJson(project.file);
 	}
-	if (!scene || !Array.isArray(scene.objects)) throw new Error(label + ": scene.json not found or invalid");
+	if (!scene || !Array.isArray(scene.objects)) throw new Error(`${label}: scene.json not found or invalid`);
 	const projection = sceneProjectionSize(scene);
-	if (scene.objects.some((obj) => obj && typeof obj === "object" && typeof obj.model === "string" && obj.model.length > 0)) throw new Error(label + ": 3D scene cannot be extracted as 2D frame");
+	if (scene.objects.some((obj) => typeof obj === "object" && typeof obj.model === "string" && obj.model.length > 0)) throw new Error(`${label}: 3D scene cannot be extracted as 2D frame`);
 	const composite = tryCompositeMultiLayerScene(scene, access);
 	if (composite !== null) return composite;
 	const rawCandidates = [];
 	for (const obj of scene.objects) if (obj && typeof obj === "object" && typeof obj.image === "string") rawCandidates.push(...collectImageObjectTextures(obj, access.readJson));
 	const allCandidates = [];
-	for (const p of rawCandidates) if (!isLikelyMaskOrHelper(p) && !allCandidates.some((c) => c.path.toLowerCase() === p.toLowerCase())) allCandidates.push({
+	for (const p of rawCandidates) if (!isLikelyMaskOrHelper(p) && !allCandidates.some((c) => c.path.toLowerCase() === p.toLowerCase())) allCandidates.push(definedFields({
 		path: p,
 		fromObject: true
-	});
-	for (const p of access.listTexPaths()) if (!isLikelyMaskOrHelper(p) && !allCandidates.some((c) => c.path.toLowerCase() === p.toLowerCase())) allCandidates.push({
+	}));
+	for (const p of access.listTexPaths()) if (!isLikelyMaskOrHelper(p) && !allCandidates.some((c) => c.path.toLowerCase() === p.toLowerCase())) allCandidates.push(definedFields({
 		path: p,
 		fromObject: false
-	});
+	}));
 	const ranked = allCandidates.map(({ path, fromObject }) => {
 		let area = 0;
 		try {
@@ -3469,19 +3571,19 @@ function extractSceneMainImageVia(access, label) {
 		return b.area - a.area;
 	});
 	const candidates = ranked.map((r) => r.path);
-	if (candidates.length === 0) throw new Error(label + ": no texture candidates found");
+	if (candidates.length === 0) throw new Error(`${label}: no texture candidates found`);
 	let lastError = null;
 	for (const path of candidates) {
 		if (isLikelyMaskOrHelper(path)) continue;
 		const file = access.readFile(path);
 		if (!file) {
-			if (lastError === null) lastError = /* @__PURE__ */ new Error(label + ": texture '" + path + "' not found in " + (label === "pkg" ? "package" : "directory"));
+			if (lastError === null) lastError = /* @__PURE__ */ new Error(`${label}: texture '${path}' not found in ${label === "pkg" ? "package" : "directory"}`);
 			continue;
 		}
 		try {
 			const parsed = parseTexInternal(file.bytes);
 			if (parsed.isVideoMp4) throw new Error("tex: video mp4 textures cannot be decoded to a static frame");
-			const mip0 = parsed.mipmaps[0];
+			const mip0 = checkedAt(parsed.mipmaps, 0);
 			if (isPngBuffer(mip0.bytes)) {
 				const png = Buffer$1.from(mip0.bytes);
 				if (projection) {
@@ -3503,7 +3605,7 @@ function extractSceneMainImageVia(access, label) {
 			}
 			const { width, height, rgba } = decodeTex(file.bytes);
 			if (!hasContent(rgba, width, height)) {
-				lastError = /* @__PURE__ */ new Error(label + ": texture '" + path + "' is a shader mask or partial layer");
+				lastError = /* @__PURE__ */ new Error(`${label}: texture '${path}' is a shader mask or partial layer`);
 				continue;
 			}
 			const cropped = cropToProjection(rgba, width, height, projection);
@@ -3523,7 +3625,7 @@ function extractSceneMainImageVia(access, label) {
 			lastError = err;
 		}
 	}
-	throw lastError instanceof Error ? lastError : /* @__PURE__ */ new Error(label + ": no decodable texture found");
+	throw lastError instanceof Error ? lastError : /* @__PURE__ */ new Error(`${label}: no decodable texture found`);
 }
 function extractSceneMainImage(pkgData) {
 	return extractSceneMainImageVia(pkgSceneAccess(pkgData), "pkg");
@@ -3543,21 +3645,21 @@ function extractSceneVideoVia(access) {
 		const file = access.readFile(path);
 		if (!file) continue;
 		const raw = file.bytes;
-		for (let i = 0; i < 200 && i + 8 <= raw.length; i++) if (raw[i] === 102 && raw[i + 1] === 116 && raw[i + 2] === 121 && raw[i + 3] === 112) {
+		for (let i = 0; i < 200 && i + 8 <= raw.length; i++) if (checkedAt(raw, i) === 102 && checkedAt(raw, i + 1) === 116 && checkedAt(raw, i + 2) === 121 && checkedAt(raw, i + 3) === 112) {
 			const ftypOffset = i - 4;
 			if (ftypOffset >= 0 && ftypOffset < raw.length) {
-				candidates.push({
+				candidates.push(definedFields({
 					path,
 					score: getTextureScore(path),
 					bytes: raw.slice(ftypOffset)
-				});
+				}));
 				break;
 			}
 		}
 	}
 	if (candidates.length === 0) return null;
 	candidates.sort((a, b) => b.score - a.score);
-	return candidates[0].bytes;
+	return checkedAt(candidates, 0).bytes;
 }
 function extractSceneVideo(pkgData) {
 	return extractSceneVideoVia(pkgSceneAccess(pkgData));
@@ -3581,40 +3683,40 @@ function hasSceneVideoFromDir(dir) {
 }
 /** Decompress LZ4 block format (no frame header, raw block). */
 function decompressLz4Block(src, decompressedSize) {
-	if (decompressedSize < 0 || decompressedSize > MAX_DECOMPRESSED_BYTES) throw new Error("lz4: decompressed size out of bounds (" + String(decompressedSize) + ")");
+	if (decompressedSize < 0 || decompressedSize > MAX_DECOMPRESSED_BYTES) throw new Error(`lz4: decompressed size out of bounds (${String(decompressedSize)})`);
 	const dst = new Uint8Array(decompressedSize);
 	let sp = 0, dp = 0;
 	while (sp < src.length && dp < decompressedSize) {
-		const token = src[sp++];
+		const token = checkedAt(src, sp++);
 		let litLen = token >> 4;
 		if (litLen === 15) {
 			let b;
 			do {
-				b = src[sp++];
+				b = checkedAt(src, sp++);
 				litLen += b;
 			} while (b === 255);
 		}
-		for (let i = 0; i < litLen; i++) dst[dp++] = src[sp++];
+		for (let i = 0; i < litLen; i++) dst[dp++] = checkedAt(src, sp++);
 		if (sp >= src.length || dp >= decompressedSize) break;
-		const offset = src[sp] | src[sp + 1] << 8;
+		const offset = checkedAt(src, sp) | checkedAt(src, sp + 1) << 8;
 		sp += 2;
 		let matchLen = (token & 15) + 4;
 		if (matchLen === 19) {
 			let b;
 			do {
-				b = src[sp++];
+				b = checkedAt(src, sp++);
 				matchLen += b;
 			} while (b === 255);
 		}
 		const matchStart = dp - offset;
-		for (let i = 0; i < matchLen; i++) dst[dp++] = dst[matchStart + i];
+		for (let i = 0; i < matchLen; i++) dst[dp++] = checkedAt(dst, matchStart + i);
 	}
 	return dst;
 }
 /** Decode DXT1 (BC1) 4x4 block into RGBA pixels. */
 function decodeDXT1Block(block, offset, out, outOffset, outStride) {
-	const c0 = block[offset] | block[offset + 1] << 8;
-	const c1 = block[offset + 2] | block[offset + 3] << 8;
+	const c0 = checkedAt(block, offset) | checkedAt(block, offset + 1) << 8;
+	const c1 = checkedAt(block, offset + 2) | checkedAt(block, offset + 3) << 8;
 	const r0 = (c0 >> 11 & 31) * 255 / 31, g0 = (c0 >> 5 & 63) * 255 / 63, b0 = (c0 & 31) * 255 / 31;
 	const r1 = (c1 >> 11 & 31) * 255 / 31, g1 = (c1 >> 5 & 63) * 255 / 63, b1 = (c1 & 31) * 255 / 31;
 	const colors = [
@@ -3653,19 +3755,20 @@ function decodeDXT1Block(block, offset, out, outOffset, outStride) {
 			0
 		]
 	];
-	const bits = block[offset + 4] | block[offset + 5] << 8 | block[offset + 6] << 16 | block[offset + 7] << 24;
+	const bits = checkedAt(block, offset + 4) | checkedAt(block, offset + 5) << 8 | checkedAt(block, offset + 6) << 16 | checkedAt(block, offset + 7) << 24;
 	for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
 		const idx = bits >> (y * 4 + x) * 2 & 3;
 		const p = outOffset + y * outStride + x * 4;
-		out[p] = colors[idx][0];
-		out[p + 1] = colors[idx][1];
-		out[p + 2] = colors[idx][2];
-		out[p + 3] = colors[idx][3];
+		const color = checkedAt(colors, idx);
+		out[p] = checkedAt(color, 0);
+		out[p + 1] = checkedAt(color, 1);
+		out[p + 2] = checkedAt(color, 2);
+		out[p + 3] = checkedAt(color, 3);
 	}
 }
 /** Decode DXT5 (BC3) 4x4 block into RGBA pixels. */
 function decodeDXT5Block(block, offset, out, outOffset, outStride) {
-	const a0 = block[offset], a1 = block[offset + 1];
+	const a0 = checkedAt(block, offset), a1 = checkedAt(block, offset + 1);
 	const alphaLUT = [
 		a0,
 		a1,
@@ -3683,11 +3786,11 @@ function decodeDXT5Block(block, offset, out, outOffset, outStride) {
 		alphaLUT[7] = 255;
 	}
 	let alphaBits = 0n;
-	for (let i = 0; i < 6; i++) alphaBits |= BigInt(block[offset + 2 + i]) << BigInt(i * 8);
+	for (let i = 0; i < 6; i++) alphaBits |= BigInt(checkedAt(block, offset + 2 + i)) << BigInt(i * 8);
 	decodeDXT1Block(block, offset + 8, out, outOffset, outStride);
 	for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
 		const ai = Number(alphaBits >> BigInt((y * 4 + x) * 3) & 7n);
-		out[outOffset + y * outStride + x * 4 + 3] = alphaLUT[ai];
+		out[outOffset + y * outStride + x * 4 + 3] = checkedAt(alphaLUT, ai);
 	}
 }
 /**
@@ -3703,7 +3806,7 @@ function parseTexToRGBA(buf) {
 	dv.getUint32(26, true);
 	dv.getUint32(30, true);
 	let texbPos = -1;
-	for (let i = 34; i < Math.min(buf.length, 100); i++) if (buf[i] === 84 && buf[i + 1] === 69 && buf[i + 2] === 88 && buf[i + 3] === 66) {
+	for (let i = 34; i < Math.min(buf.length, 100); i++) if (checkedAt(buf, i) === 84 && checkedAt(buf, i + 1) === 69 && checkedAt(buf, i + 2) === 88 && checkedAt(buf, i + 3) === 66) {
 		texbPos = i;
 		break;
 	}
@@ -3720,7 +3823,7 @@ function parseTexToRGBA(buf) {
 	p += 4;
 	const mipH = dv.getUint32(p, true);
 	p += 4;
-	if (mipW <= 0 || mipH <= 0 || mipW > MAX_TEX_DIMENSION || mipH > MAX_TEX_DIMENSION || mipW * mipH > MAX_TEX_PIXELS) throw new Error("tex: invalid mipmap dimensions " + mipW + "x" + mipH);
+	if (mipW <= 0 || mipH <= 0 || mipW > MAX_TEX_DIMENSION || mipH > MAX_TEX_DIMENSION || mipW * mipH > MAX_TEX_PIXELS) throw new Error(`tex: invalid mipmap dimensions ${mipW}x${mipH}`);
 	const isLz4 = dv.getUint32(p, true);
 	p += 4;
 	const decompSize = dv.getUint32(p, true);
@@ -3745,10 +3848,10 @@ function parseTexToRGBA(buf) {
 			decodeDXT1Block(texData, blockIdx, rgba, by * 4 * stride + bx * 4 * 4, stride);
 		}
 	} else if (fmt === 0) for (let i = 0; i < mipW * mipH; i++) {
-		rgba[i * 4] = texData[i * 4 + 1];
-		rgba[i * 4 + 1] = texData[i * 4 + 2];
-		rgba[i * 4 + 2] = texData[i * 4 + 3];
-		rgba[i * 4 + 3] = texData[i * 4];
+		rgba[i * 4] = checkedAt(texData, i * 4 + 1);
+		rgba[i * 4 + 1] = checkedAt(texData, i * 4 + 2);
+		rgba[i * 4 + 2] = checkedAt(texData, i * 4 + 3);
+		rgba[i * 4 + 3] = checkedAt(texData, i * 4);
 	}
 	else return null;
 	return {
@@ -3777,10 +3880,10 @@ function mdlVertexStride(flag) {
 }
 function readMdlCString(buf, p) {
 	let end = p;
-	while (end < buf.length && buf[end] !== 0) end++;
+	while (end < buf.length && checkedAt(buf, end) !== 0) end++;
 	if (end >= buf.length) return null;
 	let str = "";
-	for (let i = p; i < end; i++) str += String.fromCharCode(buf[i]);
+	for (let i = p; i < end; i++) str += String.fromCharCode(checkedAt(buf, i));
 	return {
 		str,
 		next: end + 1
@@ -3882,7 +3985,7 @@ function parseMdl(buf) {
 			indices = arr;
 		}
 		p += iBytes;
-		meshes.push({
+		meshes.push(definedFields({
 			vCount,
 			iCount,
 			pos,
@@ -3890,7 +3993,7 @@ function parseMdl(buf) {
 			uv,
 			indices,
 			materialPath: materials[0]
-		});
+		}));
 	}
 	return meshes;
 }
@@ -3914,7 +4017,7 @@ function buildSceneManifestVia(access, token) {
 	const projH = general?.orthogonalprojection?.height;
 	const width = typeof projW === "number" && Number.isFinite(projW) && projW > 0 ? Math.floor(projW) : 3840;
 	const height = typeof projH === "number" && Number.isFinite(projH) && projH > 0 ? Math.floor(projH) : 2160;
-	const resourceBase = "/api/skin-center/we/scene-resource/" + token + "/";
+	const resourceBase = `/api/skin-center/we/scene-resource/${token}/`;
 	const manifest = {
 		width,
 		height,
@@ -3928,14 +4031,14 @@ function buildSceneManifestVia(access, token) {
 		if (typeof val === "string") {
 			const parts = val.trim().split(/\s+/).map(parseFloat);
 			if (parts.length >= 3 && !parts.some(isNaN)) return [
-				parts[0],
-				parts[1],
-				parts[2]
+				checkedAt(parts, 0),
+				checkedAt(parts, 1),
+				checkedAt(parts, 2)
 			];
 		}
 		return def;
 	};
-	const props = (project?.general)?.properties;
+	const props = project?.general?.properties;
 	if (props?.schemecolor?.value && typeof props.schemecolor.value === "string") manifest.clearColor = parseVec3(props.schemecolor.value, [
 		.57,
 		.71,
@@ -3982,9 +4085,9 @@ function buildSceneManifestVia(access, token) {
 				for (const seg of pathJson.paths) {
 					if (!seg.transforms || seg.transforms.length < 2) continue;
 					if (typeof seg.duration !== "number" || !Number.isFinite(seg.duration) || seg.duration <= 0) continue;
-					const t0 = seg.transforms[0];
-					const t1 = seg.transforms[seg.transforms.length - 1];
-					manifest.cameraPaths.push({
+					const t0 = checkedAt(seg.transforms, 0);
+					const t1 = checkedAt(seg.transforms, seg.transforms.length - 1);
+					manifest.cameraPaths.push(definedFields({
 						d: seg.duration,
 						e0: parseVec3(t0.eye, eye),
 						c0: parseVec3(t0.center, center),
@@ -3992,7 +4095,7 @@ function buildSceneManifestVia(access, token) {
 						e1: parseVec3(t1.eye, eye),
 						c1: parseVec3(t1.center, center),
 						u1: parseVec3(t1.up, up)
-					});
+					}));
 				}
 				if (manifest.cameraPaths.length === 0) delete manifest.cameraPaths;
 			}
@@ -4012,12 +4115,11 @@ function buildSceneManifestVia(access, token) {
 			const decodedMeshes = parseMdl(mdlFile.bytes);
 			if (decodedMeshes.length === 0) continue;
 			const baseName = obj.model.split("/").pop()?.replace(/\.mdl$/i, "");
-			if (baseName) allTex.find((p) => p.toLowerCase().includes(baseName.toLowerCase()) && !p.toLowerCase().includes("normal") && !p.toLowerCase().includes("mask"));
 			const resolveTexRef = (ref) => {
 				const want = ref.toLowerCase().replace(/\.tex$/i, "");
 				return allTex.find((p) => {
 					const lower = p.toLowerCase().replace(/\.tex$/i, "");
-					return lower === want || lower === "materials/" + want || lower.endsWith("/" + want);
+					return lower === want || lower === `materials/${want}` || lower.endsWith(`/${want}`);
 				});
 			};
 			const meshes = decodedMeshes.map((m) => {
@@ -4088,7 +4190,7 @@ function buildSceneManifestVia(access, token) {
 					}
 				}
 				if (!subTex && baseName) subTex = allTex.find((p) => p.toLowerCase().includes(baseName.toLowerCase()) && !p.toLowerCase().includes("normal") && !p.toLowerCase().includes("mask"));
-				return {
+				return definedFields({
 					vCount: m.vCount,
 					iCount: m.iCount,
 					posB64: Buffer$1.from(m.pos.buffer, m.pos.byteOffset, m.pos.byteLength).toString("base64"),
@@ -4109,9 +4211,9 @@ function buildSceneManifestVia(access, token) {
 					gradFade,
 					userColors,
 					userNums
-				};
+				});
 			});
-			manifest.models.push({
+			manifest.models.push(definedFields({
 				name: typeof obj.name === "string" ? obj.name : "model",
 				origin: parseVec3(obj.origin, [
 					0,
@@ -4129,7 +4231,7 @@ function buildSceneManifestVia(access, token) {
 					1
 				]),
 				meshes
-			});
+			}));
 		}
 		for (const obj of scene.objects) {
 			if (typeof obj.image === "string" && !obj.image.startsWith("models/util/")) {
@@ -4145,7 +4247,7 @@ function buildSceneManifestVia(access, token) {
 							const want = ref.toLowerCase().replace(/\.tex$/i, "");
 							texPath = allTex.find((p) => {
 								const lower = p.toLowerCase().replace(/\.tex$/i, "");
-								return lower === want || lower === "materials/" + want || lower.endsWith("/" + want);
+								return lower === want || lower === `materials/${want}` || lower.endsWith(`/${want}`);
 							});
 							if (texPath) break;
 						}
@@ -4163,13 +4265,13 @@ function buildSceneManifestVia(access, token) {
 							else if (typeof pv === "number" && Number.isFinite(pv)) userNums[uniformName] = pv;
 						}
 						manifest.bgLayers = manifest.bgLayers ?? [];
-						manifest.bgLayers.push({
+						manifest.bgLayers.push(definedFields({
 							name: typeof obj.name === "string" ? obj.name : "fullscreen",
 							shader: typeof pass0.shader === "string" ? pass0.shader : void 0,
 							texUrl: texPath ? resourceBase + texPath : void 0,
 							userColors: Object.keys(userColors).length > 0 ? userColors : void 0,
 							userNums: Object.keys(userNums).length > 0 ? userNums : void 0
-						});
+						}));
 					}
 					continue;
 				}
@@ -4179,15 +4281,9 @@ function buildSceneManifestVia(access, token) {
 				const pass0 = Array.isArray(spriteJson?.passes) ? spriteJson.passes[0] : void 0;
 				let texPath;
 				const texRef = Array.isArray(pass0?.textures) ? String(pass0.textures[0] ?? "") : "";
-				if (texRef) {
-					const want = texRef.toLowerCase().replace(/\.tex$/i, "");
-					texPath = allTex.find((p) => {
-						const lower = p.toLowerCase().replace(/\.tex$/i, "");
-						return lower === want || lower === "materials/" + want || lower.endsWith("/" + want);
-					});
-				}
+				if (texRef) texPath = findTexture(allTex, texRef);
 				manifest.sprites = manifest.sprites ?? [];
-				manifest.sprites.push({
+				manifest.sprites.push(definedFields({
 					name: typeof obj.name === "string" ? obj.name : "sprite",
 					texUrl: texPath ? resourceBase + texPath : void 0,
 					origin: parseVec3(obj.origin, [
@@ -4200,7 +4296,7 @@ function buildSceneManifestVia(access, token) {
 						1,
 						1
 					])
-				});
+				}));
 			}
 			if (typeof obj.particle === "string") {
 				const pj = access.readJson(obj.particle);
@@ -4217,13 +4313,7 @@ function buildSceneManifestVia(access, token) {
 					const matJson = access.readJson(pj.material);
 					const pass0 = Array.isArray(matJson?.passes) ? matJson.passes[0] : void 0;
 					const texRef = Array.isArray(pass0?.textures) ? String(pass0.textures[0] ?? "") : "";
-					if (texRef) {
-						const want = texRef.toLowerCase().replace(/\.tex$/i, "");
-						texPath = allTex.find((p) => {
-							const lower = p.toLowerCase().replace(/\.tex$/i, "");
-							return lower === want || lower === "materials/" + want || lower.endsWith("/" + want);
-						});
-					}
+					if (texRef) texPath = findTexture(allTex, texRef);
 				}
 				const num = (v, d) => typeof v === "number" && Number.isFinite(v) ? v : d;
 				const objOrigin = parseVec3(obj.origin, [
@@ -4236,15 +4326,16 @@ function buildSceneManifestVia(access, token) {
 					0,
 					0
 				]);
+				const origin = [
+					objOrigin[0] + emitterOrigin[0],
+					objOrigin[1] + emitterOrigin[1],
+					objOrigin[2] + emitterOrigin[2]
+				];
 				manifest.particles3d = manifest.particles3d ?? [];
-				manifest.particles3d.push({
+				manifest.particles3d.push(definedFields({
 					name: typeof obj.name === "string" ? obj.name : "particles",
 					texUrl: texPath ? resourceBase + texPath : void 0,
-					origin: [
-						objOrigin[0] + emitterOrigin[0],
-						objOrigin[1] + emitterOrigin[1],
-						objOrigin[2] + emitterOrigin[2]
-					],
+					origin,
 					rate: num(emitter?.rate, 30),
 					maxCount: num(pj.maxcount, 128),
 					lifeMin: num(life?.min, 2),
@@ -4273,7 +4364,7 @@ function buildSceneManifestVia(access, token) {
 						255,
 						255
 					]).map((c) => c / 255)
-				});
+				}));
 			}
 		}
 		if (manifest.models.length > 0) return manifest;
@@ -4297,7 +4388,7 @@ function buildSceneManifestVia(access, token) {
 			chain.push(parent);
 			cur = parent;
 		}
-		const root = chain[chain.length - 1];
+		const root = checkedAt(chain, chain.length - 1);
 		let origin = parseVec3(root.origin, [
 			width / 2,
 			height / 2,
@@ -4314,17 +4405,18 @@ function buildSceneManifestVia(access, token) {
 			0
 		])[2];
 		for (let i = chain.length - 2; i >= 0; i--) {
-			const localOrigin = parseVec3(chain[i].origin, [
+			const link = checkedAt(chain, i);
+			const localOrigin = parseVec3(link.origin, [
 				0,
 				0,
 				0
 			]);
-			const localScale = parseVec3(chain[i].scale, [
+			const localScale = parseVec3(link.scale, [
 				1,
 				1,
 				1
 			]);
-			const localAngle = parseVec3(chain[i].angles, [
+			const localAngle = parseVec3(link.angles, [
 				0,
 				0,
 				0
@@ -4354,7 +4446,7 @@ function buildSceneManifestVia(access, token) {
 		if (!obj.image || typeof obj.image !== "string" || obj.image.startsWith("models/util/")) {
 			if (typeof obj.name === "string" && obj.name.toLowerCase() === "reflection" || hasReflectionEffect(obj)) {
 				const reflTex = allTex.find((p) => p.toLowerCase().includes("reflection_mask"));
-				if (reflTex) manifest.layers.push({
+				if (reflTex) manifest.layers.push(definedFields({
 					name: "Reflection",
 					isReflection: true,
 					texUrl: resourceBase + reflTex,
@@ -4362,7 +4454,7 @@ function buildSceneManifestVia(access, token) {
 					y: height / 2,
 					w: width,
 					h: height
-				});
+				}));
 			}
 			continue;
 		}
@@ -4378,9 +4470,9 @@ function buildSceneManifestVia(access, token) {
 		const layerShader = typeof pass0?.shader === "string" ? pass0.shader : void 0;
 		const texRefs = (Array.isArray(pass0?.textures) ? pass0.textures : []).map((t) => String(t)).filter((t) => !t.startsWith("_rt_"));
 		if (texRefs.length === 0) continue;
-		const texName = texRefs[0];
+		const texName = checkedAt(texRefs, 0);
 		if (layerShader !== "flowimage" && isLikelyMaskOrHelper(texName)) continue;
-		const resolveLayerTex = (ref) => allTex.find((p) => p.toLowerCase() === ref.toLowerCase() || p.toLowerCase() === ("materials/" + ref + ".tex").toLowerCase() || p.toLowerCase() === (ref + ".tex").toLowerCase() || p.toLowerCase().endsWith("/" + ref.toLowerCase() + ".tex") || p.toLowerCase().endsWith("/" + ref.toLowerCase()));
+		const resolveLayerTex = (ref) => allTex.find((p) => p.toLowerCase() === ref.toLowerCase() || p.toLowerCase() === `materials/${ref}.tex`.toLowerCase() || p.toLowerCase() === (ref + ".tex").toLowerCase() || p.toLowerCase().endsWith(`/${ref.toLowerCase()}.tex`) || p.toLowerCase().endsWith(`/${ref.toLowerCase()}`));
 		const texPath = resolveLayerTex(texName);
 		if (!texPath) continue;
 		const file = access.readFile(texPath);
@@ -4427,8 +4519,8 @@ function buildSceneManifestVia(access, token) {
 		} else if (typeof obj.size === "string") {
 			const parts = obj.size.trim().split(/\s+/).map(parseFloat);
 			if (parts.length >= 2 && !parts.some(isNaN)) {
-				lw = parts[0];
-				lh = parts[1];
+				lw = checkedAt(parts, 0);
+				lh = checkedAt(parts, 1);
 			}
 		}
 		if ((!lw || !lh) && decoded) {
@@ -4454,13 +4546,7 @@ function buildSceneManifestVia(access, token) {
 		else if (alignment.includes("right")) alignDx = -lw / 2;
 		if (alignment.includes("top")) alignDy = -lh / 2;
 		else if (alignment.includes("bottom")) alignDy = lh / 2;
-		let ox = 0;
-		let oy = 0;
-		if (typeof modelJson.cropoffset === "string") {
-			const parts = modelJson.cropoffset.trim().split(/\s+/);
-			ox = parseFloat(parts[0]) || 0;
-			oy = parseFloat(parts[1]) || 0;
-		}
+		const [ox, oy] = cropOffset(modelJson.cropoffset);
 		const alpha = typeof obj.alpha === "number" && Number.isFinite(obj.alpha) ? Math.min(1, Math.max(0, obj.alpha)) : 1;
 		let uvCrop;
 		if (decoded && typeof modelJson.width === "number" && typeof modelJson.height === "number") {
@@ -4480,7 +4566,7 @@ function buildSceneManifestVia(access, token) {
 		const layerY = objOrigin[1] + alignDy;
 		if (hasReflectionEffect(obj) || nameLower === "reflection") {
 			const reflTex = allTex.find((p) => p.toLowerCase().includes("reflection_mask"));
-			if (reflTex) manifest.layers.push({
+			if (reflTex) manifest.layers.push(definedFields({
 				name: "Reflection",
 				isReflection: true,
 				texUrl: resourceBase + reflTex,
@@ -4489,9 +4575,9 @@ function buildSceneManifestVia(access, token) {
 				w: lw,
 				h: lh,
 				waterLine: Math.min(1, Math.max(0, 1 - (layerY + lh / 2) / height))
-			});
+			}));
 		}
-		manifest.layers.push({
+		manifest.layers.push(definedFields({
 			name: typeof obj.name === "string" ? obj.name : "layer",
 			texUrl: resourceBase + texPath,
 			x: layerX,
@@ -4508,17 +4594,17 @@ function buildSceneManifestVia(access, token) {
 			isGround,
 			sway: 0,
 			swaySpeed: 1.5
-		});
+		}));
 	}
 	if (manifest.layers.length === 0) return null;
 	return manifest;
 }
 function extractSceneResourceVia(access, subpath) {
 	const norm = subpath.replace(/\\/g, "/");
-	const file = access.readFile(norm) || access.readFile("materials/" + norm) || access.readFile(norm + ".tex");
+	const file = access.readFile(norm) || access.readFile(`materials/${norm}`) || access.readFile(norm + ".tex");
 	if (!file) return null;
 	try {
-		const mip0 = parseTexInternal(file.bytes).mipmaps[0];
+		const mip0 = checkedAt(parseTexInternal(file.bytes).mipmaps, 0);
 		if (isPngBuffer(mip0.bytes)) return Buffer$1.from(mip0.bytes);
 		const dec = decodeTex(file.bytes);
 		return Buffer$1.from(encodePng(dec.width, dec.height, dec.rgba));
@@ -4539,7 +4625,7 @@ function extractSceneResourceFromDir(dir, subpath) {
 	return extractSceneResourceVia(dirSceneAccess(dir), subpath);
 }
 //#endregion
-//#region src/we-shim-source.ts
+//#region lib/types/we-shim-source.js
 /**
 * The Wallpaper Engine Web API shim, served to web-type wallpaper iframes.
 *
@@ -4553,7 +4639,7 @@ function extractSceneResourceFromDir(dir, subpath) {
 * silence, and hardware APIs become no-ops. Wallpapers that never touch these
 * APIs are unaffected; wallpapers that do degrade to their non-reactive
 * visuals instead of crashing on undefined globals.
-* @module @dsh-selfuse/skin-center/we-shim-source
+* @module @linxin666/dsh-client-ui-skin-center/we-shim-source
 */
 /** The shim source, injected ahead of every web wallpaper HTML document. */
 const WE_SHIM_JS = [
@@ -4610,7 +4696,7 @@ const WE_SHIM_JS = [
 	""
 ].join("\n");
 //#endregion
-//#region src/we-player-source.ts
+//#region lib/types/we-player-source.js
 /**
 * @license MIT
 * Self-contained WebGL Scene Player runtime page for Wallpaper Engine scenes.
@@ -6571,7 +6657,7 @@ function webPropertyDefaults(projectRoot) {
 		const raw = readFileSync(join(projectRoot, "project.json"), "utf8");
 		const props = JSON.parse(raw).general?.properties;
 		if (props) {
-			for (const [key, def] of Object.entries(props)) if (def && typeof def === "object" && "value" in def) out[key] = { value: def.value };
+			for (const [key, def] of Object.entries(props)) if (typeof def === "object" && "value" in def) out[key] = { value: def.value };
 		}
 	} catch {}
 	return out;
@@ -6593,7 +6679,7 @@ function encodeRGBAToPNG(width, height, rgba) {
 	}
 	const crc32 = (buf, start, len) => {
 		let c = 4294967295;
-		for (let i = start; i < start + len; i++) c = crcTable[(c ^ buf[i]) & 255] ^ c >>> 8;
+		for (let i = start; i < start + len; i++) c = checkedAt(crcTable, (c ^ checkedAt(buf, i)) & 255) ^ c >>> 8;
 		return (c ^ 4294967295) >>> 0;
 	};
 	const pngSize = 33 + (12 + compressed.length) + 12;
@@ -6684,11 +6770,6 @@ function pipeFile(absPath, res, openReadStream, options) {
 	const source = openReadStream(absPath, options);
 	const closeSource = () => source.destroy();
 	res.once("close", closeSource);
-	if (res.destroyed || res.writableEnded) {
-		res.off("close", closeSource);
-		source.destroy();
-		return;
-	}
 	try {
 		pipeline(source, res, () => {
 			res.off("close", closeSource);
@@ -6719,12 +6800,12 @@ function serveFile(absPath, req, res, openReadStream) {
 		if (Number.isNaN(end) || end >= size) end = size - 1;
 		if (start > end) {
 			res.statusCode = 416;
-			res.setHeader("Content-Range", "bytes */" + String(size));
+			res.setHeader("Content-Range", `bytes */${String(size)}`);
 			res.end();
 			return;
 		}
 		res.statusCode = 206;
-		res.setHeader("Content-Range", "bytes " + String(start) + "-" + String(end) + "/" + String(size));
+		res.setHeader("Content-Range", `bytes ${String(start)}-${String(end)}/${String(size)}`);
 		res.setHeader("Content-Length", String(end - start + 1));
 		pipeFile(absPath, res, openReadStream, {
 			start,
@@ -6741,14 +6822,20 @@ const SCENE_PROBE_VERSION = 2;
 function isSceneProbe(value) {
 	return value !== null && typeof value === "object" && value.v === SCENE_PROBE_VERSION && typeof value.hasVideo === "boolean" && typeof value.hasSceneWebGL === "boolean" && (value.compatibility === "full" || value.compatibility === "static-only") && Array.isArray(value.unsupportedFeatures);
 }
-/** Build the route family. */
+/**
+* Build the local Wallpaper Engine inventory, import, media and scene routes.
+* @param deps - live configuration reader, private store and optional filesystem/provider overrides.
+* @returns unregistered handlers; request-time operations may read, import or remove local wallpaper files.
+*/
 function makeWeRoutes(deps) {
 	const openReadStream = deps.openReadStream ?? createReadStream;
 	const tokenStorePath = join(deps.storeDir, ".cache", "we-tokens.json");
-	let mediaMap = /* @__PURE__ */ new Map();
+	const mediaMap = /* @__PURE__ */ new Map();
 	try {
 		const saved = JSON.parse(readFileSync(tokenStorePath, "utf8"));
-		if (saved !== null && typeof saved === "object") mediaMap = new Map(Object.entries(saved));
+		if (saved !== null && typeof saved === "object" && !Array.isArray(saved)) {
+			for (const [key, value] of Object.entries(saved)) if (typeof value === "string") mediaMap.set(key, value);
+		}
 	} catch {}
 	const persistTokens = () => {
 		try {
@@ -6764,13 +6851,13 @@ function makeWeRoutes(deps) {
 	const freshInventory = () => buildInventory({
 		manualDirs: deps.getConfig().weLibraryDirs ?? [],
 		storeDir: deps.storeDir,
-		autoDetect: deps.autoDetect
+		...deps.autoDetect === void 0 ? {} : { autoDetect: deps.autoDetect }
 	});
 	const probeCachePath = join(deps.storeDir, ".cache", "we-scene-probes.json");
-	let sceneProbeCache = /* @__PURE__ */ new Map();
+	const sceneProbeCache = /* @__PURE__ */ new Map();
 	try {
 		const saved = JSON.parse(readFileSync(probeCachePath, "utf8"));
-		if (saved !== null && typeof saved === "object") {
+		if (saved !== null && typeof saved === "object" && !Array.isArray(saved)) {
 			for (const [key, value] of Object.entries(saved)) if (isSceneProbe(value)) sceneProbeCache.set(key, value);
 		}
 	} catch {}
@@ -6888,7 +6975,7 @@ function makeWeRoutes(deps) {
 					size = st.size;
 				} catch {}
 				if (entry.fileAbs.toLowerCase().endsWith(".json")) mtimeMs = 0;
-				const key = entry.fileAbs + ":" + mtimeMs + ":" + size;
+				const key = `${entry.fileAbs}:${mtimeMs}:${size}`;
 				let probe = mtimeMs > 0 ? sceneProbeCache.get(key) : void 0;
 				if (!probe) {
 					let hasVideo = false;
@@ -6904,7 +6991,7 @@ function makeWeRoutes(deps) {
 								compatibility = "static-only";
 								unsupportedFeatures.push("embedded-script");
 							}
-							hasSceneWebGL = compatibility === "full" && Boolean(manifest && (manifest.layers && manifest.layers.length >= 1 || manifest.is3D && manifest.models && manifest.models.length > 0));
+							hasSceneWebGL = manifest !== null && compatibility === "full" && (manifest.layers.length > 0 || manifest.is3D === true && (manifest.models?.length ?? 0) > 0);
 						}
 					} catch {}
 					probe = {
@@ -7042,38 +7129,49 @@ function makeWeRoutes(deps) {
 			});
 		}
 	});
+	const readAssetRequest = (req, res, prefix) => {
+		if (req.method !== "GET") {
+			json(res, 405, {
+				ok: false,
+				error: "method-not-allowed"
+			});
+			return null;
+		}
+		if (!requireSameOrigin(req, res)) return null;
+		const pathname = new URL(req.url || "/", "http://localhost").pathname;
+		let rest;
+		try {
+			rest = decodeURIComponent(pathname.slice(prefix.length));
+		} catch (_error) {
+			json(res, 400, {
+				ok: false,
+				error: "bad-request"
+			});
+			return null;
+		}
+		const token = rest.split("/")[0] ?? "";
+		const entryAbs = mediaMap.get(token);
+		if (entryAbs === void 0) {
+			json(res, 404, {
+				ok: false,
+				error: "unknown-token"
+			});
+			return null;
+		}
+		return {
+			rest,
+			token,
+			entryAbs
+		};
+	};
+	const webPrefix = "/api/skin-center/we/web/";
 	routes.push({
 		kind: "prefix",
 		path: "/api/skin-center/we/web",
 		handler: (req, res) => {
-			if (req.method !== "GET") {
-				json(res, 405, {
-					ok: false,
-					error: "method-not-allowed"
-				});
-				return;
-			}
-			if (!requireSameOrigin(req, res)) return;
-			const pathname = new URL(req.url || "/", "http://localhost").pathname;
-			let rest = "";
-			try {
-				rest = decodeURIComponent(pathname.slice(24));
-			} catch {
-				json(res, 400, {
-					ok: false,
-					error: "bad-request"
-				});
-				return;
-			}
-			const token = rest.split("/")[0] ?? "";
-			const entryAbs = mediaMap.get(token);
-			if (!entryAbs) {
-				json(res, 404, {
-					ok: false,
-					error: "unknown-token"
-				});
-				return;
-			}
+			const asset = readAssetRequest(req, res, webPrefix);
+			if (asset === null) return;
+			const { rest, token, entryAbs } = asset;
 			const root = dirname(entryAbs);
 			const abs = resolve(root, rest.slice(token.length).replace(/^\/+/, "") || basename(entryAbs));
 			if (abs !== root && !abs.startsWith(root + sep)) {
@@ -7092,7 +7190,7 @@ function makeWeRoutes(deps) {
 			}
 			if (/\.html?$/i.test(abs)) {
 				const html = readFileSync(abs, "utf8");
-				const tag = "<script>window.__dshWeDefaultProps = " + JSON.stringify(webPropertyDefaults(root)).replace(/</g, "\\u003c") + ";<\/script><script src=\"/api/skin-center/we/shim.js\"><\/script>";
+				const tag = `<script>window.__dshWeDefaultProps = ${JSON.stringify(webPropertyDefaults(root)).replace(/</g, "\\u003c")};<\/script><script src="/api/skin-center/we/shim.js"><\/script>`;
 				const injected = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + tag) : tag + html;
 				res.writeHead(200, {
 					"content-type": "text/html; charset=utf-8",
@@ -7202,38 +7300,14 @@ function makeWeRoutes(deps) {
 			}
 		}
 	});
+	const sceneResourcePrefix = "/api/skin-center/we/scene-resource/";
 	routes.push({
 		kind: "prefix",
 		path: "/api/skin-center/we/scene-resource",
 		handler: (req, res) => {
-			if (req.method !== "GET") {
-				json(res, 405, {
-					ok: false,
-					error: "method-not-allowed"
-				});
-				return;
-			}
-			if (!requireSameOrigin(req, res)) return;
-			const pathname = new URL(req.url || "/", "http://localhost").pathname;
-			let rest = "";
-			try {
-				rest = decodeURIComponent(pathname.slice(35));
-			} catch {
-				json(res, 400, {
-					ok: false,
-					error: "bad-request"
-				});
-				return;
-			}
-			const token = rest.split("/")[0] ?? "";
-			const entryAbs = mediaMap.get(token);
-			if (!entryAbs) {
-				json(res, 404, {
-					ok: false,
-					error: "unknown-token"
-				});
-				return;
-			}
+			const asset = readAssetRequest(req, res, sceneResourcePrefix);
+			if (asset === null) return;
+			const { rest, token, entryAbs } = asset;
 			const subpath = rest.slice(token.length).replace(/^\/+/, "");
 			if (!subpath) {
 				json(res, 400, {
@@ -7301,7 +7375,9 @@ function makeWeRoutes(deps) {
 					return;
 				}
 				if (!requireSameOrigin(req, res)) return;
-				readJsonBody(req).then((body) => run(readId(body), res)).catch((error) => {
+				readJsonBody(req).then((body) => {
+					run(readId(body), res);
+				}).catch((error) => {
 					json(res, 500, {
 						ok: false,
 						error: error instanceof Error ? error.message : String(error)
@@ -7337,7 +7413,7 @@ function makeWeRoutes(deps) {
 		copyIntoStore(entry, dest);
 		json(res, 200, {
 			ok: true,
-			id: "imported/" + entry.id
+			id: `imported/${entry.id}`
 		});
 	});
 	postJson("/api/skin-center/we/reimport", (id, res) => {
@@ -7400,48 +7476,16 @@ function makeWeRoutes(deps) {
 	return routes;
 }
 //#endregion
-//#region src/mount-once.ts
+//#region lib/types/index.js
 /**
-* Host single-instance guard shared by the plugin family. The family bundle
-* (dsh-web-ui-all / dsh-skins) namespaces every child row id (web-ui-*), so
-* the loader accepts a standalone install of the same package side by side;
-* without this guard the second instance would still re-register the same
-* webserver routes, tools, settings namespaces, and system-prompt sections
-* and fail the boot. mountOnce makes the second host apply a no-op for the
-* lifetime of the first instance (the browser half is already deduped by
-* package name in the client module host).
-*
-* The registry rides a global symbol so two module instances of the same
-* package (npm copy vs repository link) still share one verdict. cordis
-* `ctx.effect` runs its callback immediately and treats the callback's
-* return value as the fiber disposer, so the unmarker is returned, not run.
+* Host half of the in-GUI skin center: mounts the `/api/skin-center/*` routes
+* the browser half uses for the skin catalog, the active selection and
+* one-click apply / restore-official (v2, issue #506). Skins are pure asset
+* directories served through the safety pipeline; switching is a client-side
+* atomic swap and never touches `cordis.patch.yml`. Try-on stays pure
+* browser work (see src/client/runtime/skin-controller.ts).
+* @module @linxin666/dsh-client-ui-skin-center
 */
-const MOUNTED = Symbol.for("dsh-web-ui.mounted-plugins");
-function mountedSet() {
-	const registry = globalThis;
-	return registry[MOUNTED] ??= /* @__PURE__ */ new Set();
-}
-/**
-* Wrap a cordis plugin apply so the package runs at most once per process.
-* The first mount registers normally and unmarks when its fiber disposes;
-* any later mount of the same package name is a no-op.
-* @param packageName - npm package identity shared by every install source.
-* @param fn - the original plugin apply.
-* @returns an apply of the same shape.
-*/
-function mountOnce(packageName, fn) {
-	return ((...args) => {
-		const mounted = mountedSet();
-		if (mounted.has(packageName)) return;
-		mounted.add(packageName);
-		args[0]?.effect?.(() => () => {
-			mounted.delete(packageName);
-		});
-		return fn(...args);
-	});
-}
-//#endregion
-//#region src/index.ts
 /** Stable cordis plugin name (matches cordis.patch.yml insert id). */
 const name = "ui-skin-center";
 /** Services required before the skin-center can mount its routes. */
@@ -7451,7 +7495,7 @@ const inject = ["webServer"];
 * skin center. The browser half spells the same string so it can bind the
 * scope without depending on this Host package.
 */
-const SKIN_BACKGROUND_NAMESPACE = "skin-background";
+const SKIN_BACKGROUND_NAMESPACE = "ui-skin-center";
 /**
 * Runtime schema for SkinBackgroundConfig. Persists the master switch
 * (`enabled`) alongside the background strength fields.
@@ -7469,7 +7513,7 @@ const SkinBackgroundConfigSchema = z.object({
 * persists the selection here; the host half reads weLibraryDirs to extend
 * the library scan beyond the auto-detected Steam folders.
 */
-const SKIN_WALLPAPER_NAMESPACE = "skin-wallpaper";
+const SKIN_WALLPAPER_NAMESPACE = "ui-skin-center";
 /** Runtime schema for SkinWallpaperConfig. */
 const SkinWallpaperConfigSchema = z.object({
 	enabled: z.boolean().default(true),
@@ -7478,7 +7522,7 @@ const SkinWallpaperConfigSchema = z.object({
 	mode: z.union(["live", "frame"]).default("live"),
 	pauseOnHidden: z.boolean().default(true),
 	sound: z.boolean().default(false),
-	volume: z.number().min(0).max(100).step(5).default(100),
+	volume: z.number().min(0).max(100).step(1).default(100),
 	dim: z.number().min(0).max(90).step(5).default(25),
 	wallpaperBlur: z.number().min(0).max(60).step(1).default(0),
 	fit: z.union([
@@ -7487,11 +7531,11 @@ const SkinWallpaperConfigSchema = z.object({
 		"fill"
 	]).default("cover")
 });
-/** Official settings now expose one form per active Loader entry. */
+/** Both preference groups use the native profile configuration document. */
 const Config = z.object({
 	background: SkinBackgroundConfigSchema.default({}),
 	wallpaper: SkinWallpaperConfigSchema.default({})
-}).volatile();
+});
 /**
 * Register the skin-center API routes.
 *
@@ -7502,9 +7546,8 @@ const Config = z.object({
 */
 const apply = mountOnce("@dsh-selfuse/skin-center", applyImpl);
 function applyImpl(ctx, config) {
-	const current = () => typeof config?.get === "function" ? config.get() : config ?? {};
 	const routes = [...makeSkinCenterV2Routes(), ...makeWeRoutes({
-		getConfig: () => current().wallpaper ?? {},
+		getConfig: () => config.wallpaper,
 		storeDir: defaultWallpapersStoreDir(resolveHarnessHome())
 	})];
 	try {

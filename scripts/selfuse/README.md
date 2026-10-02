@@ -49,7 +49,17 @@ Restart dsh after installing to load the new profile.
 
 ## `build:selfuse`
 
-`pnpm run build` compiles the active private selfuse packages after the official libraries and before Web assets. Run `pnpm run build:selfuse` after a local private-plugin edit when a complete rebuild is unnecessary. The selected packages come from `config/selfuse/profiles.build.yml`; third-party packages with committed `lib/` artifacts are synchronized separately. A build failure stops `update.mjs` before it refreshes the live profile; `--no-build` explicitly reuses existing artifacts.
+The candidate composition loads Git graph and Skin Center directly. Skin Center owns the small `skin-layout-compat` leaf. Settings/community/skins/all, SSH/task-board/MinerU and their unused ClientRuntime/ApiProxy SDKs are archived outside the workspace. The manifest's `retiredPackages` prevents regeneration from restoring these nine dependencies from an old profile, while unrelated CLI-installed plugins remain intact. SSH and scheduled work use native capabilities. Do not run this development generator against the official Desktop home.
+
+`pnpm run build` compiles the active private selfuse packages after the official libraries and before Web assets. Run `pnpm run build:selfuse` after a local private-plugin edit when a complete rebuild is unnecessary. Selection comes from `config/selfuse/profiles.build.yml`; a private selected package without a real build script is rejected, not silently accepted as a frozen artifact. A build failure stops `update.mjs` before it refreshes the live profile; `--no-build` explicitly reuses existing artifacts and does not establish compatibility.
+
+## `archive-conditional.mjs`
+
+The user-approved SSH/task-board/MinerU directories and their unused SDKs are preserved outside the checkout. `--move` refuses existing destinations, checks literal source and archive roots, and records file hashes and symlink targets before and after renaming. `--verify` checks that the originals remain absent and the archived inventory is unchanged. It never reads or moves plugin data or sessions.
+
+```sh
+node scripts/selfuse/archive-conditional.mjs --verify
+```
 
 ## `update.mjs`
 
@@ -69,36 +79,6 @@ Safety:
 - does not restart dsh unless `--restart` is passed;
 - backs up generated profile files before refreshing.
 
-## 远程桌面版
+## Legacy Windows/Web management scripts
 
-详细方案与排障见：
-
-```text
-config/selfuse/remote-desktop.md
-```
-
-## Windows 控制台 / 管理脚本（已收录于仓库根）
-
-本地运行的 Windows 侧管理脚本已随 selfuse 分支收录：
-
-- `dsh-control.ps1`：start/restart/stop/status/ui/logs/check-update/update
-- `packages/selfuse/control-gui/dsh-control-gui.exe`：WinForms 独立图形控制台程序
-- `dsh-watchdog.ps1` / `dsh-watchdog.vbs`：看门狗
-- `ensure-dsh-watchdog.ps1` / `ensure-dsh-watchdog.vbs`：兜底任务
-- `run-dsh-web.ps1`：在 WSL 内启动 dsh web
-- `scripts/update-dsh.ps1`：检查/更新上游 dsh
-- `dsh.ico` / `dsh-icon.png` / `dsh-icon.svg`：控制台/图标资源
-
-用法：
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control.ps1 status
-powershell -NoProfile -ExecutionPolicy Bypass -File F:\tools\deepseek-harness\dsh-control.ps1 restart
-Start-Process F:\tools\deepseek-harness\packages\selfuse\control-gui\dsh-control-gui.exe
-```
-
-完整管理脚本副本（含 repair/patch/sync/prune 等）收录于：
-
-```text
-scripts/selfuse/management/
-```
+These scripts implement the retired WSL Web launcher and watchdog; they do not start or update the official Desktop. On 2026-09-30 the user abandoned the remote plugin, the Web profile, Serve mapping, and watchdog tasks were retired, and the WinForms console package was removed from this checkout. The scripts remain only to inspect the old deployment behavior. See `xsoc1/dsh-selfuse/docs/current-deployment.md` for the current installation.

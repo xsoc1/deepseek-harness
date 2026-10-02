@@ -662,7 +662,8 @@ export class Session {
    * Preserved for compatibility with presets, plugins, and inspection tools.
    */
   get events(): readonly SessionEvent[] {
-    return this.snapshotEvents()
+    this.eventsSnapshot ??= Object.freeze([...this.log])
+    return this.eventsSnapshot
   }
 
   /**

@@ -136,6 +136,9 @@ describe('resolveOpenInAppApps', () => {
       platform: 'linux', home, env: linuxEnv(home), resolveExecutable,
     }))).resolves.toBeNull()
     await expect(resolveLaunch(byId('filemanager'), TIMEOUT_MS, bare({
+      platform: 'linux', home, env: { ...linuxEnv(home), WSL_DISTRO_NAME: 'Ubuntu' }, resolveExecutable,
+    }))).resolves.toBeNull()
+    await expect(resolveLaunch(byId('filemanager'), TIMEOUT_MS, bare({
       platform: 'linux', home, env: { ...linuxEnv(home), WAYLAND_DISPLAY: 'wayland-0' }, resolveExecutable,
     }))).resolves.toEqual({ launch: { kind: 'argv', command: '/usr/bin/xdg-open', args: [] }, icon: undefined })
   })

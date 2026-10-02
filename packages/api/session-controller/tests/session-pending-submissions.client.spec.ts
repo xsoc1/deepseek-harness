@@ -11,8 +11,6 @@ import { SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session/types'
 import type { SessionId } from '@deepseek-ai/dsh-api-remotes/client'
 import { RemoteError } from '@deepseek-ai/dsh-typert-protocol'
 import { createClientTest, webApp } from '@deepseek-ai/dsh-client-test-runtime/src/assembly/index.ts'
-import { ok } from '@deepseek-ai/dsh-remote-mock'
-import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { PendingSubmissionRetirement } from '../src/client/contract/session.ts'
 import type { SessionRequestId } from '../src/types.ts'
 import { ev, historyValue } from './event-script.client.ts'
@@ -161,139 +159,19 @@ describe('prompt-coupled retirement', () => {
     expect(mock.log.requests('session/prompt')).toMatchObject([{ requestId: handle.requestId, sessionId: SID }])
   })
 
-  it('accepts an identified prompt whose durable echo arrives before a carrier failure', async ({ mock, start }) => {
+  it('returns a carrier failure without an implicit prompt retry', async ({ mock, start }) => {
     const session = await sessionBench(mock, start, SID)
-    await session.open()
-    const response = Promise.withResolvers<RemoteResult<{ accepted: true }>>()
-    mock.remote.session.prompt.mockReturnValue(response.promise)
-    const handle = session.beginSubmission({ mode: 'queue', text: '回程丢失', attachments: [] })
-    const inFlight = session.prompt(
-      [{ type: 'text', text: '回程丢失' }], 'queue', undefined, handle.requestId,
-    )
-
-    await pushEvent(mock, promptEvent(SessionSeq(0), handle.requestId))
-    await settleFrames()
-    response.resolve(err(new RemoteError(
+    const failure = err<{ accepted: true }>(new RemoteError(
       'gateway/internal', 'client api: session/prompt failed: Load failed', {},
-    )))
-
-    await expect(inFlight).resolves.toEqual(ok({ accepted: true }))
-    expect(session.getSnapshot().promptError).toBeNull()
+    ))
+    mock.remote.session.prompt.mockResolvedValue(failure)
+    const handle = session.beginSubmission({ mode: 'queue', text: 'native admission', attachments: [] })
+    await expect(session.prompt(
+      [{ type: 'text', text: 'native admission' }], 'queue', undefined, handle.requestId,
+    )).resolves.toEqual(failure)
+    expect(mock.log.requests('session/prompt')).toMatchObject([{ requestId: handle.requestId }])
     expect(mock.log.requests('session/prompt')).toHaveLength(1)
-  })
-
-  it('retries an ambiguous prompt failure with the same id', async ({ mock, start }) => {
-    vi.useFakeTimers()
-    try {
-      const session = await sessionBench(mock, start, SID)
-      mock.remote.session.prompt
-        .mockResolvedValueOnce(err(new RemoteError(
-          'gateway/internal', 'client api: session/prompt failed: Load failed', {},
-        )))
-        .mockResolvedValueOnce(ok({ accepted: true }))
-      const handle = session.beginSubmission({ mode: 'queue', text: '安全重试', attachments: [] })
-      const inFlight = session.prompt(
-        [{ type: 'text', text: '安全重试' }], 'queue', undefined, handle.requestId,
-      )
-
-      await vi.advanceTimersByTimeAsync(0)
-      expect(mock.log.requests('session/prompt')).toHaveLength(1)
-      await vi.advanceTimersByTimeAsync(500)
-
-      await expect(inFlight).resolves.toEqual(ok({ accepted: true }))
-      expect(mock.log.requests('session/prompt')).toMatchObject([
-        { requestId: handle.requestId },
-        { requestId: handle.requestId },
-      ])
-      expect(session.getSnapshot().promptError).toBeNull()
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('stops prompt acknowledgement retries when the caller cancels the backoff', async ({ mock, start }) => {
-    vi.useFakeTimers()
-    try {
-      const session = await sessionBench(mock, start, SID)
-      mock.remote.session.prompt.mockResolvedValue(err(new RemoteError(
-        'gateway/internal', 'client api: session/prompt failed: Load failed', {},
-      )))
-      const controller = new AbortController()
-      const handle = session.beginSubmission({ mode: 'queue', text: '取消重试', attachments: [] })
-      const inFlight = session.prompt(
-        [{ type: 'text', text: '取消重试' }], 'queue', controller.signal, handle.requestId,
-      )
-
-      await vi.advanceTimersByTimeAsync(0)
-      controller.abort()
-
-      await expect(inFlight).resolves.toMatchObject({
-        ok: false,
-        error: { code: 'gateway/cancelled' },
-      })
-      expect(mock.log.requests('session/prompt')).toHaveLength(1)
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('does not confuse an unrelated echo retirement with Host acceptance', async ({ mock, start }) => {
-    vi.useFakeTimers()
-    try {
-      const session = await sessionBench(mock, start, SID)
-      mock.remote.session.prompt
-        .mockResolvedValueOnce(err(new RemoteError(
-          'gateway/internal', 'client api: session/prompt failed: Load failed', {},
-        )))
-        .mockResolvedValueOnce(err(new RemoteError(
-          'session/agent-busy', 'busy after retry', { reason: 'busy' },
-        )))
-      const handle = session.beginSubmission({ mode: 'queue', text: '放弃回显', attachments: [] })
-      const inFlight = session.prompt(
-        [{ type: 'text', text: '放弃回显' }], 'queue', undefined, handle.requestId,
-      )
-
-      await vi.advanceTimersByTimeAsync(0)
-      handle.abandon()
-      await vi.advanceTimersByTimeAsync(500)
-
-      await expect(inFlight).resolves.toMatchObject({
-        ok: false,
-        error: { code: 'session/agent-busy' },
-      })
-      expect(mock.log.requests('session/prompt')).toHaveLength(2)
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('bounds persistent ambiguous prompt failures', async ({ mock, start }) => {
-    vi.useFakeTimers()
-    try {
-      const session = await sessionBench(mock, start, SID)
-      mock.remote.session.prompt.mockResolvedValue(err(new RemoteError(
-        'gateway/internal', 'client api: session/prompt failed: Load failed', {},
-      )))
-      const handle = session.beginSubmission({ mode: 'queue', text: '持续失败', attachments: [] })
-      const inFlight = session.prompt(
-        [{ type: 'text', text: '持续失败' }], 'queue', undefined, handle.requestId,
-      )
-
-      await vi.advanceTimersByTimeAsync(30_500)
-
-      await expect(inFlight).resolves.toMatchObject({
-        ok: false,
-        error: { code: 'gateway/internal' },
-      })
-      expect(mock.log.requests('session/prompt')).toHaveLength(7)
-      const requestIds = mock.log.requests('session/prompt').map(request => (
-        String((request as { readonly requestId?: unknown }).requestId)
-      ))
-      expect(new Set(requestIds))
-        .toEqual(new Set([handle.requestId]))
-    } finally {
-      vi.useRealTimers()
-    }
+    expect(session.getSnapshot().promptError).toMatchObject({ op: 'send', error: { code: 'gateway/internal' } })
   })
 
   it('an unidentified prompt failure leaves registered echoes alone', async ({ mock, start }) => {

@@ -301,10 +301,11 @@ export function parseRemoteStreamServerMessage(text: string): RemoteStreamServer
   return parseMessage(text, (value) => {
     if (value.type === 'heartbeat'
       && exactKeys(value, ['type', 'timeoutMs'])
+      && typeof value.timeoutMs === 'number'
       && Number.isInteger(value.timeoutMs)
-      && (value.timeoutMs as number) > 0
-      && (value.timeoutMs as number) <= MAX_REMOTE_STREAM_HEARTBEAT_TIMEOUT_MS) {
-      return value as unknown as RemoteStreamServerMessage
+      && value.timeoutMs > 0
+      && value.timeoutMs <= MAX_REMOTE_STREAM_HEARTBEAT_TIMEOUT_MS) {
+      return { type: 'heartbeat', timeoutMs: value.timeoutMs }
     }
     if (value.type === 'item'
       && (exactKeys(value, ['type', 'streamId']) || exactKeys(value, ['type', 'streamId', 'value']))

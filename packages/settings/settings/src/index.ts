@@ -246,11 +246,14 @@ export class SettingsForms extends Service {
     if (!existsSync(path)) return
     const imported = `${path}.imported`
     await rename(path, imported)
-    const sections = parse(await readFile(imported, 'utf8')) as Record<string, object> | null
+    const sections = parse(await readFile(imported, 'utf8')) as Record<string, unknown> | null
     for (const [section, values] of Object.entries(sections ?? {})) {
       const ns = LEGACY_SECTION_ENTRIES[section] ?? section
       try {
-        const migrated = section === 'agent-presets' && values !== null && typeof values === 'object'
+        if (values === null || typeof values !== 'object' || Array.isArray(values)) {
+          throw new Error('legacy settings section must be an object')
+        }
+        const migrated = section === 'agent-presets'
           ? { selectedDefault: (values as { default?: unknown }).default }
           : values
         await this.update(ns, migrated)

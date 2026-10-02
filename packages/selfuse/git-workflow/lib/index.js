@@ -1,369 +1,454 @@
-/**
- * @deepseek-ai/@dsh-selfuse/git-workflow — a DeepSeek Harness host plugin that
- * adds first-class Git workflow tools for the model.
- *
- * The harness ships no git tooling, so a model can only drive `git` through
- * bare `bash`/`pwsh` calls. This plugin registers structured, safe tools:
- *
- *  - `git_status` — branch, ahead/behind, staged / unstaged / untracked / conflicts
- *  - `git_diff`   — unstaged or staged diff (with optional --stat summary)
- *  - `git_log`    — recent commits (optionally with touched files)
- *  - `git_commit` — stage paths and create a commit from a validated message
- *  - `git_branch` — list local branches
- *
- * Every `git` invocation goes through the harness shell executor, including
- * the active session's sandbox policy. Paths and commit messages are validated.
- *
- * Mount it in a profile patch or agent preset:
- *   - id: git-workflow
- *     name: @dsh-selfuse/git-workflow
- *
- * @module @dsh-selfuse/git-workflow
- */
+import { clampLogCount, clampMaxLines, parseBranches, parseDiffStat, parseLog, parsePorcelainStatus, renderFailure, renderStatus, truncateLines, validateCommitMessage, validatePaths } from "./git.js";
 import { isAbsolute, resolve } from "node:path";
-import {
-	clampLogCount,
-	clampMaxLines,
-	parseBranches,
-	parseDiffStat,
-	parseLog,
-	parsePorcelainStatus,
-	renderFailure,
-	renderStatus,
-	truncateLines,
-	validateCommitMessage,
-	validatePaths
-} from "./git.js";
-
-/** Stable Cordis plugin name. */
+import z from "@deepseek-ai/schemastery";
+import { defineTool } from "@deepseek-ai/dsh-tools";
+//#region lib/types/index.js
+/** Structured Git tools using native argument validation and the session shell policy. */
+/** Stable profile row name. */
 const name = "git-workflow";
-/** Hard dependency: the tool registry. */
+/** The tools registry is required; missing shell confinement fails individual calls closed. */
 const inject = ["tools"];
-
-const MAX_BUFFER = 8 * 1024 * 1024;
-
-/** Resolve the tool workdir: explicit arg (relative to session cwd) or the session cwd. */
+/** Positive numeric limits applied by the native shell resolver. */
+const Config = z.object({
+	timeoutMs: z.number().min(1).default(3e4),
+	commitTimeoutMs: z.number().min(1).default(6e4),
+	stdoutMaxBytes: z.number().min(1).default(8 * 1024 * 1024)
+});
 function resolveWorkdir(workdir, exec) {
-	const headerCwd = exec?.agent?.session?.header?.cwd;
-	const fallback = headerCwd ?? process.cwd();
-	if (workdir === undefined) return fallback;
-	return isAbsolute(workdir) ? workdir : resolve(fallback, workdir);
+	const cwd = exec.agent?.session.header.cwd ?? process.cwd();
+	return workdir === void 0 ? cwd : isAbsolute(workdir) ? workdir : resolve(cwd, workdir);
 }
-
-/** Quote one argument for the host shell. No command string comes from the user. */
-function shellQuote(arg) {
-	const value = String(arg);
-	if (process.platform === "win32") return `'${value.replaceAll("'", "''")}'`;
-	return `'${value.replaceAll("'", "'\\''")}'`;
+function shellQuote(value) {
+	return process.platform === "win32" ? `'${value.replaceAll("'", "''")}'` : `'${value.replaceAll("'", "'\\''")}'`;
 }
-
-/** Execute through the current DSH shell and fail closed if its sandbox seam is absent. */
+/**
+* Execute Git through the current native shell and resolved session policy.
+* @param ctx - tool owner containing the shell and sandbox policy services.
+* @param exec - owning agent and caller cancellation.
+* @param args - argument words; each is quoted independently for the host shell.
+* @param workdir - absolute repository directory in the execution world.
+* @param options - optional execution limits; omitted values use the plugin defaults.
+* @returns Captured stdout or a failure, including sandbox denial on exit zero.
+*/
 async function runGitTool(ctx, exec, args, workdir, options = {}) {
-	const { timeoutMs = 30000 } = options;
 	try {
+		const limits = Config(options);
 		const shell = ctx.get("shell");
 		const policy = ctx.get("sandboxPolicy");
-		if (shell === undefined || shell.sandboxMode === undefined || policy === undefined) {
-			return { ok: false, exitCode: null, message: "Git tool requires the DSH shell and sandbox policy" };
-		}
-		const sandboxPolicy = policy?.resolve(exec?.agent === undefined ? {} : { session: exec.agent.session });
+		if (shell?.sandboxMode === void 0 || policy === void 0) return {
+			ok: false,
+			exitCode: null,
+			stdout: "",
+			stderr: "",
+			message: "Git tool requires the DSH shell and sandbox policy"
+		};
+		const sandboxPolicy = policy.resolve(exec.agent === void 0 ? {} : { session: exec.agent.session });
 		const request = shell.resolve({
 			command: `git ${args.map(shellQuote).join(" ")}`,
 			workdir,
-			timeoutMs,
-			stdoutMaxBytes: MAX_BUFFER,
-			signal: exec?.signal,
-			...(sandboxPolicy === undefined ? {} : { sandboxPolicy })
+			signal: exec.signal,
+			sandboxPolicy,
+			timeoutMs: limits.timeoutMs,
+			stdoutMaxBytes: limits.stdoutMaxBytes
 		});
 		const result = await (await shell.execute(request)).result();
 		const denied = result.sandbox?.denied === true || result.sandbox?.runnerFailed === true;
+		const ok = result.exitCode === 0 && !result.timedOut && !result.aborted && !denied;
 		return {
-			ok: result.exitCode === 0 && !result.timedOut && !result.aborted && !denied,
+			ok,
 			exitCode: result.exitCode,
-			stdout: result.stdout?.text ?? "",
-			stderr: result.stderr?.text ?? "",
-			timedOut: result.timedOut,
-			...(result.exitCode === 0 && !denied ? {} : { message: denied
-				? `Git command denied by ${result.sandbox?.mode ?? "sandbox"} policy`
-				: result.stderr?.text?.trim() || `git exited ${result.exitCode}` })
+			stdout: result.stdout.text,
+			stderr: result.stderr.text,
+			message: ok ? "" : denied ? `Git command denied by ${result.sandbox?.mode ?? "sandbox"} policy` : result.aborted ? "Git command cancelled" : result.timedOut ? "Git command timed out" : result.stderr.text.trim() || result.stdout.text.trim() || `git exited ${String(result.exitCode)}`
 		};
 	} catch (error) {
-		return { ok: false, exitCode: null, message: String(error?.message || "git failed").trim() };
+		return {
+			ok: false,
+			exitCode: null,
+			stdout: "",
+			stderr: "",
+			message: error instanceof Error ? error.message : String(error)
+		};
 	}
 }
-
-/** Shared schema helper: a string parameter. */
-const strParam = (description) => ({ type: "string", description });
-
-/** Shared schema helper: an array of repository-relative paths. */
-const pathsParam = (description) => ({
+const workdir = {
+	type: "string",
+	description: "Repository directory; relative paths resolve against the session cwd."
+};
+const paths = {
 	type: "array",
 	items: { type: "string" },
-	description
-});
-
+	description: "Repository-relative paths; traversal and absolute paths are rejected."
+};
+const nullableNumber = { oneOf: [{ type: "number" }, { type: "null" }] };
+const nullableString = { oneOf: [{ type: "string" }, { type: "null" }] };
+const failureFields = {
+	ok: {
+		type: "boolean",
+		required: true
+	},
+	exitCode: nullableNumber,
+	message: { type: "string" }
+};
+const entry = {
+	type: "object",
+	additionalProperties: false,
+	properties: {
+		path: {
+			type: "string",
+			required: true
+		},
+		from: { type: "string" }
+	}
+};
+const changeEntry = {
+	...entry,
+	properties: {
+		...entry.properties,
+		status: {
+			type: "string",
+			required: true
+		}
+	}
+};
+function failure(result) {
+	return {
+		ok: false,
+		exitCode: result.exitCode,
+		message: result.message
+	};
+}
 /**
- * Register the five git tools. Pure parsing lives in lib/git.js.
- */
-function apply(ctx) {
+* Register five native validated tools; Cordis disposes each registration with this row.
+* @param ctx - context carrying the native tool registry.
+* @param config - execution limits validated by the row schema.
+*/
+function apply(ctx, config) {
+	const run = (exec, args, cwd, commit = false) => runGitTool(ctx, exec, args, cwd, {
+		stdoutMaxBytes: config.stdoutMaxBytes,
+		timeoutMs: commit ? config.commitTimeoutMs : config.timeoutMs
+	});
 	const definitions = [
-		{
+		defineTool({
 			name: "git_status",
-			description: "Inspect the git repository state in a working directory: current branch, upstream and ahead/behind counts, and the staged / unstaged / untracked / conflicted file lists. Returns structured, readable output instead of raw porcelain.",
-			parameters: {
-				type: "object",
-				properties: {
-					workdir: strParam("Repository directory. Defaults to the session working directory; relative paths resolve against it.")
-				}
-			},
+			description: "Inspect branch, upstream and staged, unstaged, untracked and conflicted paths.",
+			parameters: { workdir },
+			timeoutMs: config.timeoutMs,
 			output: {
 				schema: {
 					type: "object",
 					additionalProperties: false,
 					properties: {
-						ok: { type: "boolean" },
+						...failureFields,
 						state: {
 							type: "object",
 							additionalProperties: false,
 							properties: {
-								branch: { type: "string" },
-								upstream: { type: "string" },
-								ahead: { type: "number" },
-								behind: { type: "number" },
-								staged: { type: "array", items: { type: "object" } },
-								unstaged: { type: "array", items: { type: "object" } },
-								untracked: { type: "array", items: { type: "object" } },
-								conflicts: { type: "array", items: { type: "object" } }
+								branch: {
+									...nullableString,
+									required: true
+								},
+								upstream: {
+									...nullableString,
+									required: true
+								},
+								ahead: {
+									type: "number",
+									required: true
+								},
+								behind: {
+									type: "number",
+									required: true
+								},
+								staged: {
+									type: "array",
+									items: changeEntry,
+									required: true
+								},
+								unstaged: {
+									type: "array",
+									items: changeEntry,
+									required: true
+								},
+								untracked: {
+									type: "array",
+									items: entry,
+									required: true
+								},
+								conflicts: {
+									type: "array",
+									items: entry,
+									required: true
+								}
 							}
-						},
-						exitCode: { type: "number" },
-						message: { type: "string" }
+						}
 					}
 				},
-				render: (args, value) => [{ type: "text", text: value.ok ? renderStatus(value.state) : renderFailure(value, "git_status") }]
+				render: (_args, value) => [{
+					type: "text",
+					text: value.state === void 0 ? renderFailure(value, "git_status") : renderStatus(value.state)
+				}]
 			},
-			timeoutMs: 30000,
 			async execute(args, exec) {
-                const result = await runGitTool(ctx, exec, ["status", "--porcelain", "-b"], resolveWorkdir(args?.workdir, exec));
-				if (!result.ok) return { ok: false, exitCode: result.exitCode, message: result.message };
-				return { ok: true, state: parsePorcelainStatus(result.stdout) };
+				const result = await run(exec, [
+					"status",
+					"--porcelain",
+					"-b"
+				], resolveWorkdir(args.workdir, exec));
+				return result.ok ? {
+					ok: true,
+					state: parsePorcelainStatus(result.stdout)
+				} : failure(result);
 			}
-		},
-		{
+		}),
+		defineTool({
 			name: "git_diff",
-			description: "Show the working-tree diff (unstaged by default) or the staged diff (--cached) of a git repository, with an optional --stat summary. Use paths to narrow the diff to specific files.",
+			description: "Show unstaged or staged Git diff; supports stat, path and line limits.",
 			parameters: {
-				type: "object",
-				properties: {
-					workdir: strParam("Repository directory. Defaults to the session working directory."),
-					staged: { type: "boolean", description: "Show the staged (index) diff instead of the unstaged working-tree diff. Default false." },
-					stat: { type: "boolean", description: "Only show a --stat summary (files changed, insertions, deletions). Default false." },
-					paths: pathsParam("Optional repository-relative paths to narrow the diff."),
-					maxLines: { type: "number", description: "Maximum diff lines to return (default 500, clamped to 10..2000)." }
-				}
+				workdir,
+				paths,
+				staged: { type: "boolean" },
+				stat: { type: "boolean" },
+				maxLines: { type: "number" }
 			},
+			timeoutMs: config.timeoutMs,
 			output: {
 				schema: {
 					type: "object",
 					additionalProperties: false,
 					properties: {
-						ok: { type: "boolean" },
+						...failureFields,
 						output: { type: "string" },
 						truncated: { type: "boolean" },
 						stat: {
 							type: "object",
 							additionalProperties: false,
 							properties: {
-								files: { type: "number" },
-								insertions: { type: "number" },
-								deletions: { type: "number" }
+								files: {
+									...nullableNumber,
+									required: true
+								},
+								insertions: {
+									...nullableNumber,
+									required: true
+								},
+								deletions: {
+									...nullableNumber,
+									required: true
+								}
 							}
-						},
-						exitCode: { type: "number" },
-						message: { type: "string" }
+						}
 					}
 				},
-				render: (args, value) => [{ type: "text", text: value.ok ? value.output : renderFailure(value, "git_diff") }]
+				render: (_args, value) => [{
+					type: "text",
+					text: value.output ?? renderFailure(value, "git_diff")
+				}]
 			},
-			timeoutMs: 30000,
 			async execute(args, exec) {
-				const pathsError = validatePaths(args?.paths);
-				if (pathsError) return { ok: false, exitCode: null, message: pathsError };
-				const gitArgs = ["diff", "--no-color"];
-				if (args?.staged === true) gitArgs.push("--cached");
-				if (args?.stat === true) gitArgs.push("--stat");
-				if (args?.paths !== undefined && args?.paths !== null) gitArgs.push("--", ...args.paths);
-                const result = await runGitTool(ctx, exec, gitArgs, resolveWorkdir(args?.workdir, exec));
-				if (!result.ok) return { ok: false, exitCode: result.exitCode, message: result.message };
-				const { text, truncated } = truncateLines(result.stdout, clampMaxLines(args?.maxLines));
+				const error = validatePaths(args.paths);
+				if (error !== null) return {
+					ok: false,
+					exitCode: null,
+					message: error
+				};
+				const argv = ["diff", "--no-color"];
+				if (args.staged === true) argv.push("--cached");
+				if (args.stat === true) argv.push("--stat");
+				if (args.paths !== void 0) argv.push("--", ...args.paths);
+				const result = await run(exec, argv, resolveWorkdir(args.workdir, exec));
+				if (!result.ok) return failure(result);
+				const truncated = truncateLines(result.stdout, clampMaxLines(args.maxLines));
 				return {
 					ok: true,
-					output: text,
-					truncated,
-					stat: args?.stat === true ? parseDiffStat(result.stdout) : undefined
+					output: truncated.text,
+					truncated: truncated.truncated,
+					...args.stat === true ? { stat: parseDiffStat(result.stdout) } : {}
 				};
 			}
-		},
-		{
+		}),
+		defineTool({
 			name: "git_log",
-			description: "Show recent commit history of a git repository: hash, short date, and subject per commit, optionally with the files each commit touched. Useful for understanding what changed recently.",
+			description: "List recent abbreviated commits with optional changed-file names.",
 			parameters: {
-				type: "object",
-				properties: {
-					workdir: strParam("Repository directory. Defaults to the session working directory."),
-					count: { type: "number", description: "Number of commits to show (default 10, clamped to 1..50)." },
-					files: { type: "boolean", description: "Also list the files each commit touched (--name-status). Default false." },
-					paths: pathsParam("Optional repository-relative paths to narrow the history.")
-				}
+				workdir,
+				paths,
+				count: { type: "number" },
+				files: { type: "boolean" }
 			},
+			timeoutMs: config.timeoutMs,
 			output: {
 				schema: {
 					type: "object",
 					additionalProperties: false,
 					properties: {
-						ok: { type: "boolean" },
+						...failureFields,
 						commits: {
 							type: "array",
 							items: {
 								type: "object",
 								additionalProperties: false,
 								properties: {
-									hash: { type: "string" },
-									date: { type: "string" },
-									subject: { type: "string" },
-									files: { type: "array", items: { type: "string" } }
+									hash: {
+										type: "string",
+										required: true
+									},
+									date: {
+										type: "string",
+										required: true
+									},
+									subject: {
+										type: "string",
+										required: true
+									},
+									files: {
+										type: "array",
+										items: { type: "string" }
+									}
 								}
 							}
-						},
-						exitCode: { type: "number" },
-						message: { type: "string" }
+						}
 					}
 				},
-				render: (args, value) => {
-					if (!value.ok) return [{ type: "text", text: renderFailure(value, "git_log") }];
-					const lines = value.commits.map((c) => {
-						const head = `${c.hash}  ${c.date}  ${c.subject}`;
-						return c.files && c.files.length > 0 ? `${head}\n${c.files.map((f) => `      ${f}`).join("\n")}` : head;
-					});
-					return [{ type: "text", text: lines.join("\n") }];
-				}
+				render: (_args, value) => [{
+					type: "text",
+					text: value.commits === void 0 ? renderFailure(value, "git_log") : value.commits.map((c) => `${c.hash}  ${c.date}  ${c.subject}${c.files === void 0 ? "" : c.files.map((f) => `\n      ${f}`).join("")}`).join("\n")
+				}]
 			},
-			timeoutMs: 30000,
 			async execute(args, exec) {
-				const pathsError = validatePaths(args?.paths);
-				if (pathsError) return { ok: false, exitCode: null, message: pathsError };
-				const count = clampLogCount(args?.count);
-				const gitArgs = ["log", `-n ${count}`, "--date=short", "--pretty=tformat:%h%x09%ad%x09%s"];
-				if (args?.files === true) gitArgs.push("--name-status");
-				if (args?.paths !== undefined && args?.paths !== null) gitArgs.push("--", ...args.paths);
-                const result = await runGitTool(ctx, exec, gitArgs, resolveWorkdir(args?.workdir, exec));
-				if (!result.ok) return { ok: false, exitCode: result.exitCode, message: result.message };
-				return { ok: true, commits: parseLog(result.stdout, args?.files === true) };
+				const error = validatePaths(args.paths);
+				if (error !== null) return {
+					ok: false,
+					exitCode: null,
+					message: error
+				};
+				const argv = [
+					"log",
+					"-n",
+					String(clampLogCount(args.count)),
+					"--date=short",
+					"--pretty=tformat:%h%x09%ad%x09%s"
+				];
+				if (args.files === true) argv.push("--name-status");
+				if (args.paths !== void 0) argv.push("--", ...args.paths);
+				const result = await run(exec, argv, resolveWorkdir(args.workdir, exec));
+				return result.ok ? {
+					ok: true,
+					commits: parseLog(result.stdout, args.files === true)
+				} : failure(result);
 			}
-		},
-		{
+		}),
+		defineTool({
 			name: "git_commit",
-			description: "Create a git commit: optionally stage the given repository-relative paths first, then commit with the given message. The message is validated (non-empty, max 2000 chars, no NUL) and passed to git with -m so it can never be interpreted as shell syntax. Fails clearly when there is nothing to commit.",
+			description: "Validate a message, optionally stage selected paths, then commit. No push or pull.",
 			parameters: {
-				type: "object",
-				properties: {
-					workdir: strParam("Repository directory. Defaults to the session working directory."),
-					message: { type: "string", description: "Commit message (required, max 2000 characters, may contain newlines for a subject + body)." },
-					paths: pathsParam("Optional repository-relative paths to stage before committing. Omit to commit whatever is already staged."),
-					allowEmpty: { type: "boolean", description: "Allow an empty commit (--allow-empty). Default false." }
+				workdir,
+				paths,
+				message: {
+					type: "string",
+					required: true
 				},
-				required: ["message"]
+				allowEmpty: { type: "boolean" }
 			},
+			timeoutMs: config.commitTimeoutMs,
 			output: {
 				schema: {
 					type: "object",
 					additionalProperties: false,
 					properties: {
-						ok: { type: "boolean" },
-						shortHash: { type: "string" },
-						message: { type: "string" },
-						exitCode: { type: "number" }
+						...failureFields,
+						shortHash: { type: "string" }
 					}
 				},
-				render: (args, value) => {
-					if (!value.ok) return [{ type: "text", text: renderFailure(value, "git_commit") }];
-					return [{ type: "text", text: `committed ${value.shortHash}: ${value.message}` }];
-				}
+				render: (_args, value) => [{
+					type: "text",
+					text: value.shortHash === void 0 ? renderFailure(value, "git_commit") : `committed ${value.shortHash}: ${value.message ?? ""}`
+				}]
 			},
-			timeoutMs: 60000,
 			async execute(args, exec) {
-				const messageError = validateCommitMessage(args?.message);
-				if (messageError) return { ok: false, exitCode: null, message: messageError };
-				const pathsError = validatePaths(args?.paths);
-				if (pathsError) return { ok: false, exitCode: null, message: pathsError };
-				const workdir = resolveWorkdir(args?.workdir, exec);
-				if (args?.paths !== undefined && args?.paths !== null && args.paths.length > 0) {
-                    const addResult = await runGitTool(ctx, exec, ["add", "--", ...args.paths], workdir);
-					if (!addResult.ok) return { ok: false, exitCode: addResult.exitCode, message: `git add failed: ${addResult.message}` };
+				const error = validateCommitMessage(args.message) ?? validatePaths(args.paths);
+				if (error !== null) return {
+					ok: false,
+					exitCode: null,
+					message: error
+				};
+				const cwd = resolveWorkdir(args.workdir, exec);
+				if (args.paths !== void 0) {
+					const add = await run(exec, [
+						"add",
+						"--",
+						...args.paths
+					], cwd, true);
+					if (!add.ok) return {
+						...failure(add),
+						message: `git add failed: ${add.message}`
+					};
 				}
-				const commitArgs = ["commit", "-m", args.message];
-				if (args?.allowEmpty === true) commitArgs.push("--allow-empty");
-                const commitResult = await runGitTool(ctx, exec, commitArgs, workdir);
-				if (!commitResult.ok) {
-					const hint = /nothing to commit|no changes added|nothing added to commit/.test(commitResult.message)
-						? " — stage paths with the `paths` argument (or pass allowEmpty: true for an empty commit)"
-						: "";
-					return { ok: false, exitCode: commitResult.exitCode, message: commitResult.message + hint };
-				}
-                const hashResult = await runGitTool(ctx, exec, ["rev-parse", "--short", "HEAD"], workdir);
+				const argv = [
+					"commit",
+					"-m",
+					args.message
+				];
+				if (args.allowEmpty === true) argv.push("--allow-empty");
+				const result = await run(exec, argv, cwd, true);
+				if (!result.ok) return failure(result);
+				const hash = await run(exec, [
+					"rev-parse",
+					"--short",
+					"HEAD"
+				], cwd);
 				return {
 					ok: true,
-					shortHash: hashResult.ok ? hashResult.stdout.trim() : "?",
+					shortHash: hash.ok ? hash.stdout.trim() : "?",
 					message: args.message
 				};
 			}
-		},
-		{
+		}),
+		defineTool({
 			name: "git_branch",
-			description: "List local git branches with a marker on the current branch. Useful before switching work or opening a pull request.",
-			parameters: {
-				type: "object",
-				properties: {
-					workdir: strParam("Repository directory. Defaults to the session working directory.")
-				}
-			},
+			description: "List local branches and mark the current branch.",
+			parameters: { workdir },
+			timeoutMs: config.timeoutMs,
 			output: {
 				schema: {
 					type: "object",
 					additionalProperties: false,
 					properties: {
-						ok: { type: "boolean" },
+						...failureFields,
 						branches: {
 							type: "array",
 							items: {
 								type: "object",
 								additionalProperties: false,
 								properties: {
-									current: { type: "boolean" },
-									name: { type: "string" }
+									current: {
+										type: "boolean",
+										required: true
+									},
+									name: {
+										type: "string",
+										required: true
+									}
 								}
 							}
-						},
-						exitCode: { type: "number" },
-						message: { type: "string" }
+						}
 					}
 				},
-				render: (args, value) => {
-					if (!value.ok) return [{ type: "text", text: renderFailure(value, "git_branch") }];
-					return [{ type: "text", text: value.branches.map((b) => `${b.current ? "*" : " "} ${b.name}`).join("\n") }];
-				}
+				render: (_args, value) => [{
+					type: "text",
+					text: value.branches === void 0 ? renderFailure(value, "git_branch") : value.branches.map((b) => `${b.current ? "*" : " "} ${b.name}`).join("\n")
+				}]
 			},
-			timeoutMs: 30000,
 			async execute(args, exec) {
-                const result = await runGitTool(ctx, exec, ["branch", "--format=%(HEAD)%(refname:short)"], resolveWorkdir(args?.workdir, exec));
-				if (!result.ok) return { ok: false, exitCode: result.exitCode, message: result.message };
-				return { ok: true, branches: parseBranches(result.stdout).branches };
+				const result = await run(exec, ["branch", "--format=%(HEAD) %(refname:short)"], resolveWorkdir(args.workdir, exec));
+				return result.ok ? {
+					ok: true,
+					branches: parseBranches(result.stdout).branches
+				} : failure(result);
 			}
-		}
+		})
 	];
-	for (const definition of definitions) {
-		ctx.effect(() => ctx.tools.register(definition), `git-workflow: ${definition.name}`);
-	}
+	for (const definition of definitions) ctx.effect(() => ctx.tools.register(definition), `git-workflow: ${definition.name}`);
 }
-
-export { apply, inject, name, runGitTool };
+//#endregion
+export { Config, apply, inject, name, runGitTool };

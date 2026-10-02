@@ -439,6 +439,7 @@ body[data-maid-sidebar-size="rail"] [class*="logoRow"] [class*="toggle"] {
   background: linear-gradient(145deg, #4d67a97a, #071234d1);
   border: 1px solid #e1bf7cc2;
   border-radius: 50%;
+  corner-shape: round;
   width: 38px;
   height: 38px;
   box-shadow: inset 0 0 0 2px #050f2dc2, 0 3px 10px #01071847;
@@ -566,6 +567,7 @@ body[data-maid-sidebar-size="rail"] button[class*="newSession"] {
   border-image: ;
   background: linear-gradient(145deg, #4d67a966, #071234c7);
   border-radius: 50%;
+  corner-shape: round;
   align-self: center;
   width: 38px;
   min-width: 38px;
@@ -586,6 +588,7 @@ body[data-maid-sidebar-size="rail"] :is([data-pane="sidebar"], [class*="sidebarC
   background: none;
   border: 1px solid #0000;
   border-radius: 50%;
+  corner-shape: round;
   width: 38px;
   min-width: 38px;
   height: 38px;
@@ -619,6 +622,7 @@ body[data-maid-sidebar-size="rail"] [data-maid-sidebar-footer] [data-slot="sideb
   border-image: ;
   background: linear-gradient(145deg, #4d67a97a, #071234d1);
   border-radius: 50%;
+  corner-shape: round;
   width: 38px;
   min-width: 38px;
   min-height: 38px;
@@ -665,6 +669,7 @@ body[data-maid-cordis-panel-open] :is([data-pane="sidebar"], [class*="sidebarCol
 body[data-maid-sidebar-size="rail"] [data-cordis-badge] {
   box-sizing: border-box;
   border-radius: 50%;
+  corner-shape: round;
   width: 36px;
   min-width: 36px;
   height: 36px;
@@ -907,6 +912,7 @@ body[data-maid-sidebar-size="rail"] :is([data-pane="sidebar"], [class*="sidebarC
   border-image: ;
   background: linear-gradient(145deg, #4d67a97a, #071234d1);
   border-radius: 50%;
+  corner-shape: round;
   margin-inline: 0;
   padding: 0;
   transition: color .15s, border-color .15s, background .15s, box-shadow .15s;
@@ -1076,6 +1082,7 @@ body[data-maid-sidebar-size="rail"] :is([data-pane="sidebar"], [class*="sidebarC
   shape-rendering: geometricprecision;
   background: radial-gradient(circle at 44% 40%, #fffffff5 0 .55px, #0000 .7px), radial-gradient(circle, #a9bce8 0 1.15px, #5e79b9 1.3px 2px, #1a356f 2.15px 3px, #0000 3.15px);
   border-radius: 50%;
+  corner-shape: round;
   width: 12px;
   height: 12px;
   overflow: visible;
@@ -1173,6 +1180,7 @@ body[data-maid-sidebar-size="rail"] :is([data-pane="sidebar"], [class*="sidebarC
   content: "";
   background: linear-gradient(#fff0c5, #d4a951);
   border-radius: 999px;
+  corner-shape: round;
   width: 3px;
   display: block;
   position: absolute;
@@ -1249,6 +1257,7 @@ body[data-maid-sidebar-size="rail"] :is([data-pane="sidebar"], [class*="sidebarC
   background: #fffdf8b8;
   border: 1px solid #c5a468eb;
   border-radius: 50%;
+  corner-shape: round;
   outline: 1px solid #e2cfaac2;
   grid-area: 1 / 1 / auto / -1;
   justify-self: center;
@@ -1363,6 +1372,7 @@ body[data-ds-dark-theme] [data-phase="hero"] [data-composer-card] {
   background: #fffdf89e;
   border: 1px solid #c5a468b8;
   border-radius: 50%;
+  corner-shape: round;
   width: 42px;
   height: 42px;
   box-shadow: 0 3px 10px #2536631f, inset 0 0 0 3px #ffffff75;
@@ -1374,6 +1384,7 @@ body[data-ds-dark-theme] [data-phase="hero"] [data-composer-card] {
   background: #fffdf885;
   border: 1px solid #c5a468ad;
   border-radius: 50%;
+  corner-shape: round;
   justify-content: center;
   gap: 0;
   width: 42px;
@@ -1426,6 +1437,7 @@ body[data-maid-settings-open] [data-composer-card] {
   background: linear-gradient(145deg, #6079b5, #294587);
   border: 1px solid #d8bd82;
   border-radius: 50%;
+  corner-shape: round;
   width: 44px;
   height: 44px;
   box-shadow: 0 4px 12px #1a326c47, inset 0 0 0 3px #ffffff1f;
@@ -1570,6 +1582,7 @@ body[data-ds-dark-theme] [data-slot="conversation.composer.dock"] > * [class*="s
   background: #fffdf8ad;
   border: 1px solid #c5a468ad;
   border-radius: 50%;
+  corner-shape: round;
   place-items: center;
   width: 38px;
   min-width: 38px;

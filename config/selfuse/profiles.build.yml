@@ -6,15 +6,28 @@
 # (apps/cli) first, then from the profile directory.
 # patchPlugins: ordinary Cordis plugins mounted through the profile patch layer.
 name: web
+# Explicitly retired dependencies must not be restored from an older profile.
+retiredPackages:
+  - "@dsh-selfuse/web-ui-settings"
+  - "@dsh-selfuse/web-ui-community-plugins"
+  - "@dsh-selfuse/skins"
+  - "@dsh-selfuse/web-ui-all"
+  - "@dsh-selfuse/ssh"
+  - "@dsh-selfuse/web-ui-task-board"
+  - "@dsh-selfuse/mineru"
+  - "@deepseek-ai/dsh-client-runtime"
+  - "@deepseek-ai/dsh-host-apiproxy"
+  - "@dsh-selfuse/undo"
 bundles:
   - "@deepseek-ai/dsh-base"
   - "@deepseek-ai/dsh-web-app"
-  - "@dsh-selfuse/web-ui-all"
+  - "@dsh-selfuse/web-ui-git-graph"
+  - "@dsh-selfuse/skin-center"
   - "@dsh-selfuse/backup"
   - "@dsh-selfuse/git-workflow"
   - "@dsh-selfuse/memory-panel"
 patchPlugins:
-  - "@deepseek-ai/dsh-task-notify"
+  - "@dsh-selfuse/task-notify"
   - "@dsh-selfuse/soul-md"
   - "@dsh-selfuse/content-risk-guard"
 # Browser-only rows inherited from the official Web bundle that this personal

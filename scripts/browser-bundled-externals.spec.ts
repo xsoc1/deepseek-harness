@@ -67,6 +67,15 @@ function dynamicPlugin(root: string, source: string): void {
   write(root, 'packages/client/dynamic/src/client/index.ts', source)
 }
 
+function prebuiltClient(root: string, source: string): void {
+  write(root, 'packages/client/prebuilt/package.json', JSON.stringify({
+    name: '@fixture/prebuilt',
+    dsh: { client: { platform: 'web' } },
+    exports: { './client': './lib/client.js' },
+  }))
+  write(root, 'packages/client/prebuilt/lib/client.js', source)
+}
+
 describe('browser dependency discovery', () => {
   it('records runtime imports through the client config without following upstream dependencies or erased types', async () => {
     const root = fixture()
@@ -98,13 +107,7 @@ describe('browser dependency discovery', () => {
   it('records imports from a shipped client that has no source build config', async () => {
     const root = fixture()
     library(root, 'browser-lib')
-    write(root, 'packages/client/prebuilt/package.json', JSON.stringify({
-      name: '@fixture/prebuilt',
-      dsh: { client: { platform: 'web' } },
-      exports: { './client': './lib/client.js' },
-    }))
-    write(root, 'packages/client/prebuilt/lib/client.js',
-      'window.__ModuleLoader__.load({ factory: (require) => require("browser-lib") })')
+    prebuiltClient(root, 'window.__ModuleLoader__.load({ factory: (require) => require("browser-lib") })')
 
     expect(await browserBundledExternals(root)).toEqual(new Set(['browser-lib']))
   })
@@ -116,26 +119,14 @@ describe('browser dependency discovery', () => {
       name: 'browser-lib', exports: './index.js',
     }))
     write(root, 'apps/web/node_modules/browser-lib/index.js', 'module.exports = 1')
-    write(root, 'packages/client/prebuilt/package.json', JSON.stringify({
-      name: '@fixture/prebuilt',
-      dsh: { client: { platform: 'web' } },
-      exports: { './client': './lib/client.js' },
-    }))
-    write(root, 'packages/client/prebuilt/lib/client.js',
-      'window.__ModuleLoader__.load({ factory: (require) => require("browser-lib") })')
+    prebuiltClient(root, 'window.__ModuleLoader__.load({ factory: (require) => require("browser-lib") })')
 
     expect(await browserBundledExternals(root)).toEqual(new Set(['browser-lib']))
   })
 
   it('rejects dynamic imports in a shipped client without a source build config', async () => {
     const root = fixture()
-    write(root, 'packages/client/prebuilt/package.json', JSON.stringify({
-      name: '@fixture/prebuilt',
-      dsh: { client: { platform: 'web' } },
-      exports: { './client': './lib/client.js' },
-    }))
-    write(root, 'packages/client/prebuilt/lib/client.js',
-      'window.__ModuleLoader__.load({ factory: (require) => require(window.packageName) })')
+    prebuiltClient(root, 'window.__ModuleLoader__.load({ factory: (require) => require(window.packageName) })')
 
     await expect(browserBundledExternals(root)).rejects.toThrow('static module specifier')
   })
@@ -143,13 +134,7 @@ describe('browser dependency discovery', () => {
   it('ignores runtime URL imports while retaining static package imports', async () => {
     const root = fixture()
     library(root, 'browser-lib')
-    write(root, 'packages/client/prebuilt/package.json', JSON.stringify({
-      name: '@fixture/prebuilt',
-      dsh: { client: { platform: 'web' } },
-      exports: { './client': './lib/client.js' },
-    }))
-    write(root, 'packages/client/prebuilt/lib/client.js',
-      'window.__ModuleLoader__.load({ factory: (require) => { require("browser-lib"); const importUrl = (url) => import(url); return importUrl("/skins/hook.mjs") } })')
+    prebuiltClient(root, 'window.__ModuleLoader__.load({ factory: (require) => { require("browser-lib"); const importUrl = (url) => import(url); return importUrl("/skins/hook.mjs") } })')
 
     expect(await browserBundledExternals(root)).toEqual(new Set(['browser-lib']))
   })

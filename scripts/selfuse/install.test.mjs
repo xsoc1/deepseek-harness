@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process'
 import { mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import test from 'node:test'
 
@@ -131,6 +131,17 @@ test('profile regeneration preserves plugins installed through the native CLI', 
     const profile = JSON.parse(await readFile(packagePath, 'utf8'))
     profile.dependencies['@example/local-plugin'] = '1.0.0'
     profile.dsh.profile.bundles.push('@example/local-plugin')
+    const retiredPackages = [
+      '@dsh-selfuse/web-ui-settings', '@dsh-selfuse/web-ui-community-plugins',
+      '@dsh-selfuse/skins', '@dsh-selfuse/web-ui-all',
+      '@dsh-selfuse/ssh', '@dsh-selfuse/web-ui-task-board', '@dsh-selfuse/mineru',
+      '@deepseek-ai/dsh-client-runtime', '@deepseek-ai/dsh-host-apiproxy',
+      '@dsh-selfuse/undo',
+    ]
+    for (const pkg of retiredPackages) {
+      profile.dependencies[pkg] = '0.2.7'
+      profile.dsh.profile.bundles.push(pkg)
+    }
     await writeFile(packagePath, JSON.stringify(profile, null, 2) + '\n')
 
     await execFileAsync(process.execPath, [generator, '--dsh-home', dshHome])
@@ -138,6 +149,39 @@ test('profile regeneration preserves plugins installed through the native CLI', 
     assert.equal(regenerated.dependencies['@example/local-plugin'], '1.0.0')
     assert.equal(regenerated.dsh.profile.bundles.at(-1), '@example/local-plugin')
     assert.equal(regenerated.dsh.profile.bundles.includes('@dsh-selfuse/market'), false)
+    for (const pkg of retiredPackages) {
+      assert.equal(Object.hasOwn(regenerated.dependencies, pkg), false)
+      assert.equal(regenerated.dsh.profile.bundles.includes(pkg), false)
+    }
+    assert.equal(regenerated.dsh.profile.bundles.includes('@dsh-selfuse/skin-center'), true)
+    assert.equal(regenerated.dsh.profile.bundles.includes('@dsh-selfuse/web-ui-git-graph'), true)
+    const skinPatch = await readFile(join(repoRoot, 'packages/selfuse/skin-center/cordis.patch.yml'), 'utf8')
+    assert.match(skinPatch, /name: '@dsh-selfuse\/skin-layout-compat'/u)
+    assert.match(skinPatch, /name: '@dsh-selfuse\/skin-center'/u)
+  } finally {
+    await rm(dshHome, { recursive: true, force: true })
+  }
+})
+
+for (const field of ['bundles', 'patchPlugins']) test(`a manifest cannot reactivate an explicitly retired package through ${field}`, async () => {
+  const dshHome = await mkdtemp(join(tmpdir(), 'dsh-selfuse-retired-denial-'))
+  try {
+    const manifest = join(dshHome, 'invalid.yml')
+    await writeFile(manifest, [
+      'name: web',
+      'retiredPackages:',
+      '  - "@dsh-selfuse/web-ui-all"',
+      field + ':',
+      '  - "@dsh-selfuse/web-ui-all"',
+      '',
+    ].join('\n'))
+    await assert.rejects(execFileAsync(process.execPath, [
+      generator, '--manifest', manifest, '--dsh-home', dshHome,
+    ]), error => {
+      assert.match(error.stderr, /activates an explicitly retired package/u)
+      return true
+    })
+    await assert.rejects(stat(join(dshHome, 'profiles')), { code: 'ENOENT' })
   } finally {
     await rm(dshHome, { recursive: true, force: true })
   }
@@ -185,22 +229,43 @@ test('the full installer copies vendored skills under their final path component
 test('the retired balance widget is absent from the selfuse deployment', async () => {
   const manifest = await readFile(join(repoRoot, 'config', 'selfuse', 'profiles.build.yml'), 'utf8')
   const cliPackage = await readFile(join(repoRoot, 'apps', 'cli', 'package.json'), 'utf8')
-  const bridgeClient = await readFile(
-    join(repoRoot, 'packages', 'selfuse', 'eac-web-shell-bridge', 'lib', 'client.js'),
-    'utf8',
-  )
-  const bridgeHost = await readFile(
-    join(repoRoot, 'packages', 'selfuse', 'eac-web-shell-bridge', 'lib', 'index.js'),
-    'utf8',
-  )
-
-  for (const content of [manifest, cliPackage, bridgeClient, bridgeHost]) {
+  for (const content of [manifest, cliPackage]) {
     assert.equal(content.includes('dsh-balance'), false)
   }
-  assert.equal(bridgeClient.includes('refreshBalance'), false)
-  assert.equal(bridgeHost.includes('/api/dsh-shell/balance'), false)
   await assert.rejects(
     stat(join(repoRoot, 'packages', 'selfuse', 'eac-balance')),
     { code: 'ENOENT' },
   )
+})
+
+test('archived packages have no workspace directory or candidate deployment reference', async () => {
+  const manifest = await readFile(join(repoRoot, 'config', 'selfuse', 'profiles.build.yml'), 'utf8')
+  const cliPackage = await readFile(join(repoRoot, 'apps', 'cli', 'package.json'), 'utf8')
+  for (const [directory, packageName] of [
+    ['eac-client-file-changes', '@deepseek-ai/dsh-client-file-changes'],
+    ['eac-easy-setup', '@deepseek-ai/dsh-easy-setup'],
+    ['eac-file-changes', '@deepseek-ai/dsh-file-changes'],
+    ['eac-shell-terminal', '@deepseek-ai/dsh-shell-terminal'],
+    ['eac-web-shell-bridge', '@deepseek-ai/dsh-web-shell-bridge'],
+    ['market', '@dsh-selfuse/market'],
+    ['skill-router', '@dsh-selfuse/skill-router'],
+    ['wsl-workspace', '@dsh-selfuse/wsl-workspace'],
+  ]) {
+    await assert.rejects(stat(join(repoRoot, 'packages', 'selfuse', directory)), { code: 'ENOENT' })
+    assert.equal(manifest.includes(packageName), false, packageName)
+    assert.equal(cliPackage.includes(packageName), false, packageName)
+  }
+  assert.equal(manifest.includes('@dsh-selfuse/task-notify'), true)
+  await stat(join(repoRoot, 'packages', 'selfuse', 'task-notify', 'package.json'))
+})
+
+test('the retained notification package includes its real entry in the declared payload', async () => {
+  const directory = join(repoRoot, 'packages', 'selfuse', 'task-notify')
+  const manifest = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8'))
+  assert.equal(manifest.files.includes('lib/index.js'), true)
+  assert.equal(manifest.files.includes('lib/types/**/*.d.ts'), true)
+  assert.equal(manifest.exports['.'].default, './lib/index.js')
+  const entry = await import(pathToFileURL(join(directory, manifest.main)).href)
+  assert.equal(typeof entry.apply, 'function')
+  assert.equal(typeof entry.name, 'string')
 })

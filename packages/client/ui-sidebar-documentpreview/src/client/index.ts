@@ -28,13 +28,15 @@ import { textFace } from './face.ts'
 import { createReadPage } from './rpc.ts'
 import { createTextStore } from './store.ts'
 import { en, zh } from './locales.ts'
-import { DocumentPreviewRegistry } from './document/registry.ts'
-import { documentTabInfoFactory } from './document/contract.ts'
+import { DocumentPreviewRegistry } from './document-registry.ts'
+import { documentTabInfoFactory } from './contract/document.ts'
 import { apply as registerText } from './text/index.ts'
 import { apply as registerMarkdown } from './markdown/index.ts'
 import { apply as registerHtml } from './html/index.ts'
 import { apply as registerImage } from './image/index.ts'
 import { apply as registerPdf } from './pdf/index.ts'
+import { pdfBodyRegistration } from './pdf/index.ts'
+import { LazyPdfBody } from './pdf/LazyPdfBody.tsx'
 import { apply as registerCode } from './code/index.ts'
 import { apply as registerOffice } from './office/index.ts'
 import { apply as registerExcel } from './excel/index.ts'
@@ -48,8 +50,8 @@ export type { TextPreviewProps } from './TextPreview.tsx'
 export type { TextInjected } from './face.ts'
 export type { ReadDocumentBytes, DocumentFileBytes, ReadWorkspaceFilePage, SessionFile, WorkspaceFilesReadRemote } from './rpc.ts'
 export type { TextPage, TextState, TextStore, TextTabState } from './store.ts'
-export type { DocumentContent, DocumentPreviewProps, DocumentTextPage } from './document/contract.ts'
-export type { DocumentLoadMode, DocumentPreviewDefinition } from './document/registry.ts'
+export type { DocumentContent, DocumentPreviewProps, DocumentTextPage } from './contract/document.ts'
+export type { DocumentLoadMode, DocumentPreviewDefinition } from './document-registry.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -124,7 +126,12 @@ export function apply(ctx: ClientContext): void {
   registerHtml(ctx)
   registerImage(ctx)
   registerPdf(ctx)
-  registerOffice(ctx, config.office)
+  registerOffice(ctx, config.office, (scope, id) => {
+    const presentation = pdfBodyRegistration(scope)
+    scope.effect(() => scope.slots.inject('sidebar.right.tab.document.office.pdf', () => scope.slots.register({
+      name: 'sidebar.right.tab.document.office.pdf', key: id, locale: 'sidebarPdf', ...presentation,
+    }, LazyPdfBody)))
+  })
   registerExcel(ctx, config.excel)
   registerCode(ctx)
 }

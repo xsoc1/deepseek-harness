@@ -13,7 +13,8 @@
  * locally below for type-checked registration.
  * @module dsh-git-graph/client
  */
-import type { ClientContext, SessionId } from '@deepseek-ai/dsh-client-runtime/client';
+import type { Context as ClientContext } from '@deepseek-ai/cordis';
+import type { SessionId } from '@deepseek-ai/dsh-session/types';
 import type { BranchesView, GraphView, RepoStatus, SwitchResult } from '../core/types.ts';
 import { type GitGraphKey } from './locales.ts';
 export type { GitGraphKey } from './locales.ts';

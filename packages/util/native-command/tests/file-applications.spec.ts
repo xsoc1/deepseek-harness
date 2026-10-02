@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { describe, expect, it, vi, onTestFinished } from 'vitest'
 import * as runner from '../src/runner.ts'
 import { nativeFileApplications, openNativeFileApplication } from '../src/file-applications.ts'
+import { nativeFileManager } from '../src/path-opener.ts'
 
 const application = { id: '/Applications/Music.app', name: 'Music', default: true, icon: null }
 const signal = new AbortController().signal
@@ -109,10 +110,10 @@ describe('native file associations', () => {
 
 it('uses the production command adapter and current platform when no override is supplied', async () => {
   const run = vi.spyOn(runner, 'runNativeCommand').mockImplementation(async command => ({
-    stdout: command === 'gio' ? 'standard::content-type: audio/mpeg' : command === 'env' ? 'No applications found' : JSON.stringify([application]), stderr: '',
+    stdout: command === 'wslpath' ? 'C:\\file.mp3\n' : command === 'gio' ? 'standard::content-type: audio/mpeg' : command === 'env' ? 'No applications found' : JSON.stringify([application]), stderr: '',
   }))
   onTestFinished(() => { run.mockRestore() })
-  expect(await nativeFileApplications('/file.mp3', signal)).toEqual(process.platform === 'linux' ? [] : [application])
+  expect(await nativeFileApplications('/file.mp3', signal)).toEqual(nativeFileManager() === 'directory' ? [] : [application])
   await openNativeFileApplication('/file.mp3', application.id, signal, { platform: 'darwin' })
   expect(run).toHaveBeenLastCalledWith('open', ['-a', application.id, '/file.mp3'], signal, 'hidden')
 })
@@ -180,6 +181,6 @@ it('uses production environment and runner defaults for Linux and WSL', async ()
         : command === 'wslpath' ? 'C:\\file.mp3\n' : JSON.stringify([application]), stderr: '',
   }))
   onTestFinished(() => { run.mockRestore() })
-  expect(await nativeFileApplications('/file.mp3', signal, { platform: 'linux', osRelease: 'linux' })).toEqual([])
+  expect(await nativeFileApplications('/file.mp3', signal, { platform: 'linux', osRelease: 'linux', env: { ...process.env, WSL_INTEROP: '', WSL_DISTRO_NAME: '' } })).toEqual([])
   expect(await nativeFileApplications('/file.mp3', signal, { platform: 'linux', osRelease: 'microsoft', env: {} })).toEqual([application])
 })

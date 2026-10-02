@@ -31,7 +31,7 @@ kind: "package-reference"
 <a id="configuration"></a>
 ## 配置
 
-通过普通 Cordis loader 挂载；自用 Web profile 已包含本插件：
+通过普通 Cordis loader 挂载。开发 selfuse profile 包含本插件；修改该候选配置不会更新已退役的 Web 服务或官方签名 Windows Desktop profile：
 
 ```yaml
 - name: '@dsh-selfuse/content-risk-guard'
@@ -77,4 +77,6 @@ kind: "package-reference"
 <a id="dev-note"></a>
 ### 开发备注
 
-这是本地隐私边界，不是绕过提供方策略的手段。每次改动模型请求或工具结果管线后，应重跑清理器、本地配置和含原文旧会话测试。
+没有发布不变量伴随包：私密句柄文件有意不向观察者公开，真实 Agent 管线测试核验拦截、拒绝分派与卸载。
+
+这是本地隐私边界，不是绕过提供方策略的手段。Host 工程继承严格的工作区源码解析，用 `tsc -b` 和 tsdown 构建，不再把 Cordis 编译声明作为编译器路径覆盖。测试在可丢弃上下文中组合真实 Agent、Session、工具及审批服务；Loader 测试只控制模块解析，并检查禁用和重新启用时的清理。审批测试观察真实审计事件，不伪造审批对象。管线变更后重跑 `pnpm exec vitest run packages/selfuse/content-risk-guard/tests`；源码组合通过不等于官方签名 Windows Desktop 已激活插件或真实提供方已接受请求。

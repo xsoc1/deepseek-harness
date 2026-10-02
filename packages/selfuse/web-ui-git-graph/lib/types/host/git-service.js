@@ -33,7 +33,7 @@ export function gitSpawnArgv(platform, argv) {
  * @returns the runner.
  */
 export function subprocessRunner(ctx) {
-    return sharedSubprocessRunner(ctx, { spawnArgv: (argv) => gitSpawnArgv(process.platform, argv) });
+    return sharedSubprocessRunner(ctx, { spawnArgv: argv => gitSpawnArgv(process.platform, argv) });
 }
 /** HEAD is the symbolic value `git rev-parse --abbrev-ref HEAD` prints when detached. */
 const DETACHED = 'HEAD';
@@ -69,20 +69,7 @@ export class GitService {
         const gated = await this.gate(path);
         if (!gated.ok)
             return null;
-        const root = await this.repoRoot(gated.canonical, signal);
-        if (root === null)
-            return null;
-        const [branchResult, porcelain] = await Promise.all([
-            this.runner.run(headBranchArgv(), root, signal),
-            this.runner.run(statusPorcelainArgv(), root, signal),
-        ]);
-        const branch = branchResult.stdout.trim();
-        return {
-            root,
-            branch: branch === DETACHED ? '' : branch,
-            counts: parsePorcelain(porcelain.stdout),
-            operationInProgress: await this.operationInProgress(root, signal),
-        };
+        return this.snapshotFromGatedPath(gated.canonical, signal);
     }
     /**
      * The repository snapshot the branch chip renders; null when not a repository.
@@ -265,9 +252,9 @@ export class GitService {
         if (resolved.exitCode === 0) {
             const markerPaths = resolved.stdout
                 .split('\n')
-                .map((line) => line.trim())
-                .filter((line) => line !== '');
-            return markerPaths.some((markerPath) => existsSync(resolve(root, markerPath)));
+                .map(line => line.trim())
+                .filter(line => line !== '');
+            return markerPaths.some(markerPath => existsSync(resolve(root, markerPath)));
         }
         // Non-zero combined exit: fall back to the per-marker sequential probe
         // (same as the pre-merge implementation) so a single failed rev-parse
@@ -309,3 +296,4 @@ export class GitService {
         return null;
     }
 }
+//# sourceMappingURL=git-service.js.map

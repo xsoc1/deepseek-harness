@@ -14,8 +14,9 @@
  *   pnpm exec tsx scripts/verify-client-domain-graph.ts
  */
 
-import { globSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, globSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, posix, resolve, sep } from 'node:path'
+import ts from 'typescript'
 
 const root = resolve(import.meta.dirname, '..')
 const CLIENT_DIR = join(root, 'packages/client')
@@ -41,6 +42,24 @@ function domainOf(rel: string): string {
   return ix === -1 ? '' : rel.slice(0, ix)
 }
 
+function moduleSpecifiers(file: string, text: string): string[] {
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
+  const imports: string[] = []
+  const visit = (node: ts.Node): void => {
+    let specifier: ts.Node | undefined
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) specifier = node.moduleSpecifier
+    else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument)) specifier = node.argument.literal
+    else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) specifier = node.arguments[0]
+    else if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
+      specifier = node.moduleReference.expression
+    }
+    if (specifier !== undefined && ts.isStringLiteralLike(specifier)) imports.push(specifier.text)
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return imports
+}
+
 /**
  * Resolve one relative import to a client-directory-relative path.
  * @param file - Importing file relative to `src/client`.
@@ -51,7 +70,13 @@ export function resolveClientImport(file: string, specifier: string): string {
   return posix.normalize(posix.join(posix.dirname(file), specifier))
 }
 
-function checkPackage(pkgName: string, clientDir: string): Violation[] {
+/**
+ * Inspect all Client source imports in one package.
+ * @param pkgName - Package directory used in diagnostics.
+ * @param clientDir - Absolute source directory, including owned assets.
+ * @returns All intra-package domain-layer violations.
+ */
+export function checkClientPackage(pkgName: string, clientDir: string): Violation[] {
   const violations: Violation[] = []
   const files = listSources(clientDir)
   for (const rel of files) {
@@ -59,11 +84,16 @@ function checkPackage(pkgName: string, clientDir: string): Violation[] {
     const isAssembly = fromDomain === '' && ASSEMBLY_FILES.has(rel)
     if (isAssembly) continue
     const source = readFileSync(join(clientDir, rel), 'utf8')
-    for (const match of source.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) {
-      const spec = match[1]
-      if (spec === undefined) continue
+    for (const spec of moduleSpecifiers(rel, source)) {
+      if (!spec.startsWith('.')) continue
       const target = resolveClientImport(rel, spec)
       if (target === '..' || target.startsWith('../')) continue // package-level rules govern
+      // The shared asset folder owns literal image resources, not implementations.
+      // Missing images, source files and CSS still receive the ordinary layering check.
+      if (target.startsWith('assets/') && /\.(?:png|svg)$/.test(target)) {
+        const asset = join(clientDir, target)
+        if (existsSync(asset) && statSync(asset).isFile()) continue
+      }
       const toDomain = domainOf(target)
       if (toDomain === '' || CONTRACT_DIRS.has(toDomain)) continue // top-level shared file or contract layer
       if (fromDomain === toDomain) continue // inside one domain
@@ -89,7 +119,7 @@ function main(): void {
       // No client half in this package — nothing to layer-check.
       continue
     }
-    violations.push(...checkPackage(pkg, clientDir))
+    violations.push(...checkClientPackage(pkg, clientDir))
   }
 
   if (violations.length > 0) {

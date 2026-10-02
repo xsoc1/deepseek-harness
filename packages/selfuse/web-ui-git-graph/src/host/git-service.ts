@@ -11,7 +11,7 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-subprocess'
-import { subprocessRunner as sharedSubprocessRunner, type GitRunResult, type GitRunner } from './git-runner.ts'
+import { subprocessRunner as sharedSubprocessRunner, type GitRunner } from './git-runner.ts'
 import {
   checkRefFormatArgv, classifySwitchFailure, createBranchArgv, forEachRefArgv,
   gitPathArgv, graphLogArgv, headBranchArgv, headShortArgv, operationMarkersArgv,
@@ -103,19 +103,7 @@ export class GitService {
   } | null> {
     const gated = await this.gate(path)
     if (!gated.ok) return null
-    const root = await this.repoRoot(gated.canonical, signal)
-    if (root === null) return null
-    const [branchResult, porcelain] = await Promise.all([
-      this.runner.run(headBranchArgv(), root, signal),
-      this.runner.run(statusPorcelainArgv(), root, signal),
-    ])
-    const branch = branchResult.stdout.trim()
-    return {
-      root,
-      branch: branch === DETACHED ? '' : branch,
-      counts: parsePorcelain(porcelain.stdout),
-      operationInProgress: await this.operationInProgress(root, signal),
-    }
+    return this.snapshotFromGatedPath(gated.canonical, signal)
   }
 
   /**

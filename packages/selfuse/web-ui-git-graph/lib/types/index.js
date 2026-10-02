@@ -44,3 +44,4 @@ function applyImpl(ctx) {
     const service = new GitService(subprocessRunner(ctx), createWorkspaceGate(ctx));
     ctx.effect(() => registerGitRoutes(ctx, service), 'dsh-git-graph: /git routes');
 }
+//# sourceMappingURL=index.js.map

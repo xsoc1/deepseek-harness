@@ -1,17 +1,5 @@
-# scripts
+# Legacy Windows/Web management scripts
 
 English | [中文](README.zh.md)
 
-管理脚本规范源（从 `F:\tools\deepseek-harness\` 复制而来）。
-
-| 文件 | 作用 |
-|---|---|
-| `dsh-control.ps1` | dsh 启停/状态/UI/日志 CLI |
-| `packages/selfuse/control-gui/` | WinForms 独立图形控制台程序（已入库为独立包，含 dsh-control-gui.exe 及源码） |
-| `run-dsh-web.ps1` | 启动 dsh web（WSL 网关、trusted-host、日志） |
-| `dsh-watchdog.ps1` | 看门狗：探活/重启/心跳 |
-| `ensure-dsh-watchdog.ps1` | 计划任务兜底 |
-| `make-dsh-icon.ps1` | 生成图标工具 |
-
-> 当前这些文件同时存在于运行目录 `deepseek-harness/`。
-> 迁移后本目录是规范源，`install.ps1` 负责同步/包装到运行目录。
+These files describe the retired WSL Web launcher and watchdog. The official Windows Desktop at `F:\Apps\DeepSeekHarness` does not use them. The DSH-specific scheduled tasks and Tailscale Serve mapping were removed on 2026-09-30; do not run the old scripts to restart remote access. The WinForms control console package has been removed from this checkout. See the current deployment record in `xsoc1/dsh-selfuse/docs/current-deployment.md`.

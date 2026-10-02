@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Skin Center lets the user preview and apply a Web UI skin without restarting DSH. Built-in and user skins appear in one settings page; wallpaper and background controls use the same local browser surface. Skins change presentation only and do not enter model requests. The checked-in package is currently a prebuilt snapshot: its `lib/` and assets are present, but the `src/` paths described below refer to upstream source and are not maintained in this checkout.
+Skin Center lets the user preview and apply a Web UI skin without restarting DSH. Built-in and user skins appear in one settings page; wallpaper and background controls use the same local browser surface. Skins change presentation only and do not enter model requests. Both Host and Client compile from the maintained source tree; actual Desktop visual behavior requires separate acceptance.
 
 ## Table of Contents
 
@@ -44,11 +44,13 @@ dsh plugin --profile web add link:$(pwd)/packages/selfuse/skin-center
 
 skin-center is a self-contained bundle meeting the official DSH plugin standard (`dsh.bundle.patch` points to `cordis.patch.yml`). This selfuse tree includes its compiled `lib/`; a local `link:` install uses this package directly.
 
+The bundle also mounts [skin-layout-compat](../skin-layout-compat/README.md), a small rebuildable adapter for the layout attributes used by retained assets. The old skins carrier and web-ui-all aggregate are not required. No invariant companion is published: visual assets and preferences have no independent model-log state to reconcile.
+
 ## Configuration
 
-- **Enable switch**: turns the whole card (try-on / apply / background controls) on or off; persisted in the `skin-background` settings namespace.
+- **Enable switch**: turns the whole card (try-on / apply / background controls) on or off; persisted in `ui-skin-center.background` through native ConfigForms.
 - **Background sliders**: occlusion (0–100%), two backdrop blur radii, and input-card blur (0–20 px); persisted in the same namespace.
-- **Wallpaper panel**: library folders, selection, render mode (live / static frame), dim, blur, pause-on-hidden, sound toggle and volume; persisted in the `skin-wallpaper` namespace.
+- **Wallpaper panel**: library folders, selection, render mode (live / static frame), dim, blur, pause-on-hidden, sound toggle and volume; persisted in `ui-skin-center.wallpaper` through native ConfigForms.
 - **User skin directory**: `$DSH_HOME/skins/<id>/`; `DSH_SKINS_HOME` overrides the root (development and tests).
 
 ## Security model
@@ -59,7 +61,8 @@ skin-center is a self-contained bundle meeting the official DSH plugin standard 
 
 ## Known Limitations and Deferred Work
 
-- This workspace copy has compiled `lib/` and assets but no `src/` tree. The source-path design notes below describe its upstream origin, not editable files in this checkout; source-level changes require importing and verifying that source first.
+- Official Desktop activation and visual placement remain unverified. Native configuration now uses the `ui-skin-center` Loader entry; old `skin-background` and `skin-wallpaper` user settings are not automatically rewritten.
+- CSS module declarations name the actual local classes, including the wallpaper directory controls; `tests/css-modules.spec.ts` compares them with Lightning CSS exports and rejects missing or invented names. Type and runtime checks remain separate from Desktop visual acceptance.
 
 - Inline styles written by plugins at runtime can only be overridden by L3 `!important` patches.
 - Plugins that do not output semantic attributes (and have no stable DOM anchors) receive L1 token coverage only.

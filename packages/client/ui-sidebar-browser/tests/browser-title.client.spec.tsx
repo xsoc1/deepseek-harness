@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { render } from '@testing-library/react'
 import type { TabId } from '@deepseek-ai/dsh-client-ui-dockkit'
-import { BrowserNavigation } from '../src/client/browser/BrowserNavigation.ts'
+import { BrowserNavigation } from '../src/client/BrowserNavigation.ts'
 import type { BrowserTitleProps } from '../src/client/view/BrowserTitle.tsx'
 import { BrowserTitle } from '../src/client/view/BrowserTitle.tsx'
 

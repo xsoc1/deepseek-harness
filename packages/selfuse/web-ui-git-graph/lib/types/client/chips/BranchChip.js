@@ -9,7 +9,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
  * @module dsh-git-graph/client/chips/BranchChip
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { IconBranchOutline16 } from '@deepseek-ai/dsh-client-ui-primitives';
+import { IconBranchOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives';
 import { Chip, cx } from "./Chip.js";
 import { BranchPopover } from "./BranchPopover.js";
 import { CreateBranchDialog } from "./CreateBranchDialog.js";
@@ -122,7 +122,8 @@ export function BranchChip(props) {
     // session baseline's blank flag instead.
     const dockSeat = 'session' in props && 'input' in props;
     const sessionSnapshot = dockSeat ? props.session : undefined;
-    const heroSeat = sessionSnapshot?.composerPhase === 'blank' && (sessionSnapshot.openState === 'open' || blankSession === true);
+    const heroSeat = sessionSnapshot?.blank === true && !sessionSnapshot.promptAttempted
+        && (sessionSnapshot.openState === 'open' || blankSession);
     const showBranchSelector = dockSeat ? heroSeat : blankSession;
     const stockLightTheme = useStockLightTheme();
     /** Repository state: undefined = loading, null = not a repository, else the snapshot. */
@@ -162,7 +163,7 @@ export function BranchChip(props) {
                 return;
             const left = Math.max(0, right - stackRect.left + HERO_CHIP_GAP);
             const top = Math.max(0, rowRect.top - stackRect.top + (rowRect.height - anchorRect.height) / 2);
-            setHeroPlacement(previous => {
+            setHeroPlacement((previous) => {
                 if (previous !== null && Math.abs(previous.left - left) < 0.5 && Math.abs(previous.top - top) < 0.5)
                     return previous;
                 return { left, top };
@@ -227,8 +228,11 @@ export function BranchChip(props) {
             return undefined;
         let live = true;
         setBranchesView(null);
-        props.branches(sessionId).then((view) => { if (live)
-            setBranchesView(view); });
+        void props.branches(sessionId).then((view) => { if (live)
+            setBranchesView(view); }).catch(() => {
+            if (live)
+                setBranchesView(null);
+        });
         return () => { live = false; };
     }, [showBranchSelector, branchOpen, props.branches, sessionId]);
     // Active sessions intentionally expose no branch-selection control. Loading
@@ -240,11 +244,12 @@ export function BranchChip(props) {
     };
     return (_jsxs("div", { ref: anchorRef, "data-gitgraph-chip-anchor": true, "data-dsh-plugin": "git-graph", "data-dsh-part": "chip", "data-gitgraph-stock-light": stockLightTheme || undefined, className: cx(css.anchor, heroSeat && css.anchorHero), style: heroSeat && heroPlacement !== null
             ? { left: `${heroPlacement.left}px`, top: `${heroPlacement.top}px`, paddingLeft: 0 }
-            : undefined, children: [_jsxs("div", { className: css.chipWrap, children: [_jsx(Chip, { hero: heroSeat, icon: _jsx(IconBranchOutline16, { size: 14 }), label: repo.branch === '' ? props.t('branch.detached') : repo.branch, ariaLabel: props.t('chip.aria.branch'), open: branchOpen, onClick: openBranchPopover }), branchOpen && branchesView !== null && (_jsx(BranchPopover, { hero: heroSeat, view: branchesView, onSwitch: (branch) => props.switchBranch(sessionId, branch), onSwitched: refetch, onCreate: () => {
+            : undefined, children: [_jsxs("div", { className: css.chipWrap, children: [_jsx(Chip, { hero: heroSeat, icon: _jsx(IconBranchOutlineRegular, { size: 14 }), label: repo.branch === '' ? props.t('branch.detached') : repo.branch, ariaLabel: props.t('chip.aria.branch'), open: branchOpen, onClick: openBranchPopover }), branchOpen && branchesView !== null && (_jsx(BranchPopover, { hero: heroSeat, view: branchesView, onSwitch: branch => props.switchBranch(sessionId, branch), onSwitched: refetch, onCreate: () => {
                             setBranchOpen(false);
                             setCreateOpen(true);
                         }, onGraph: () => {
                             setBranchOpen(false);
                             setGraphOpen(true);
-                        }, onClose: () => { setBranchOpen(false); }, t: props.t }))] }), createOpen && (_jsx(CreateBranchDialog, { onCreate: (name) => props.createBranch(sessionId, name), onClose: closeCreate, t: props.t })), graphOpen && (_jsx(GraphDialog, { graph: (limit) => props.graph(sessionId, limit), onClose: () => { setGraphOpen(false); }, t: props.t }))] }));
+                        }, onClose: () => { setBranchOpen(false); }, t: props.t }))] }), createOpen && (_jsx(CreateBranchDialog, { onCreate: name => props.createBranch(sessionId, name), onClose: closeCreate, t: props.t })), graphOpen && (_jsx(GraphDialog, { graph: limit => props.graph(sessionId, limit), onClose: () => { setGraphOpen(false); }, t: props.t }))] }));
 }
+//# sourceMappingURL=BranchChip.js.map

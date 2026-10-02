@@ -39,7 +39,7 @@ window.__ModuleLoader__.load({
 		* The marker is body/html level (managed outside the surface/part/plugin
 		* enum, see contracts/semantic-attrs-v1.md) and survives a neutralizer
 		* teardown; the style is inert whenever the marker is absent.
-		* @module @dsh-selfuse/skin-center/runtime/backdrop-scene
+		* @module @linxin666/dsh-client-ui-skin-center/runtime/backdrop-scene
 		*/
 		/** Shared marker: set on html + body while a source reports backdrop art. */
 		const BACKDROP_ACTIVE_ATTR = "data-dsh-backdrop-active";
@@ -67,24 +67,24 @@ window.__ModuleLoader__.load({
 		/** Reflect the source set onto html/body and ensure the neutralizer on use. */
 		function syncMarker(doc, sources) {
 			if (sources.size > 0) {
-				doc.body?.setAttribute(BACKDROP_ACTIVE_ATTR, "true");
-				doc.documentElement?.setAttribute(BACKDROP_ACTIVE_ATTR, "true");
+				doc.body.setAttribute(BACKDROP_ACTIVE_ATTR, "true");
+				doc.documentElement.setAttribute(BACKDROP_ACTIVE_ATTR, "true");
 				ensureSceneNeutralizer(doc);
 				startContentObserver(doc);
 			} else {
-				doc.body?.removeAttribute(BACKDROP_ACTIVE_ATTR);
-				doc.documentElement?.removeAttribute(BACKDROP_ACTIVE_ATTR);
+				doc.body.removeAttribute(BACKDROP_ACTIVE_ATTR);
+				doc.documentElement.removeAttribute(BACKDROP_ACTIVE_ATTR);
 				stopContentObserver(doc);
 			}
 		}
 		/** Track whether the active conversation has message rows for the frost gate. */
 		function updateConversationContent(doc) {
-			if (doc.body !== null && doc.body.querySelector("[data-chat-anchor-key]") !== null) {
-				doc.body?.setAttribute(CONVERSATION_CONTENT_ATTR, "true");
-				doc.documentElement?.setAttribute(CONVERSATION_CONTENT_ATTR, "true");
+			if (doc.body.querySelector("[data-chat-anchor-key]") !== null) {
+				doc.body.setAttribute(CONVERSATION_CONTENT_ATTR, "true");
+				doc.documentElement.setAttribute(CONVERSATION_CONTENT_ATTR, "true");
 			} else {
-				doc.body?.removeAttribute(CONVERSATION_CONTENT_ATTR);
-				doc.documentElement?.removeAttribute(CONVERSATION_CONTENT_ATTR);
+				doc.body.removeAttribute(CONVERSATION_CONTENT_ATTR);
+				doc.documentElement.removeAttribute(CONVERSATION_CONTENT_ATTR);
 			}
 		}
 		/** Observe the conversation tree while a backdrop is visible. */
@@ -93,8 +93,10 @@ window.__ModuleLoader__.load({
 			updateConversationContent(doc);
 			const win = doc.defaultView;
 			if (win === null || typeof win.MutationObserver !== "function") return;
-			const observer = new win.MutationObserver(() => updateConversationContent(doc));
-			observer.observe(doc.body ?? doc.documentElement, {
+			const observer = new win.MutationObserver(() => {
+				updateConversationContent(doc);
+			});
+			observer.observe(doc.documentElement, {
 				childList: true,
 				subtree: true
 			});
@@ -107,8 +109,8 @@ window.__ModuleLoader__.load({
 				observer.disconnect();
 				contentObservers.delete(doc);
 			}
-			doc.body?.removeAttribute(CONVERSATION_CONTENT_ATTR);
-			doc.documentElement?.removeAttribute(CONVERSATION_CONTENT_ATTR);
+			doc.body.removeAttribute(CONVERSATION_CONTENT_ATTR);
+			doc.documentElement.removeAttribute(CONVERSATION_CONTENT_ATTR);
 		}
 		/**
 		* Install the shared composer-seat neutralizer, keyed by head presence so a
@@ -117,7 +119,6 @@ window.__ModuleLoader__.load({
 		* any other look.
 		*/
 		function ensureSceneNeutralizer(doc) {
-			if (doc.head === null) return;
 			if (doc.head.querySelector(`style[data-dsh-scene-neutralizer]`) !== null) return;
 			const style = doc.createElement("style");
 			style.setAttribute(SCENE_NEUTRALIZER_ATTR, "");
@@ -136,7 +137,7 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region src/client/wallpaper.ts
 		/** The namespace string the Host registers (mirrors src/index.ts). */
-		const SKIN_WALLPAPER_NS = "skin-wallpaper";
+		const SKIN_WALLPAPER_NS = "ui-skin-center";
 		const clamp = (value, min, max) => Math.max(min, Math.min(max, Math.round(value)));
 		/** Style one fixed, non-interactive, under-everything layer. */
 		function styleLayer(element, zIndex) {
@@ -164,7 +165,7 @@ window.__ModuleLoader__.load({
 			const normalized = color.trim().toLowerCase();
 			if (normalized === "" || normalized === "transparent") return false;
 			const match = normalized.match(/^[a-z-]+\((.*)\)$/);
-			if (match === null) return true;
+			if (match?.[1] === void 0) return true;
 			const args = match[1];
 			const slash = args.lastIndexOf("/");
 			if (slash >= 0) return hasVisibleAlpha(args.slice(slash + 1));
@@ -278,11 +279,11 @@ window.__ModuleLoader__.load({
 				if (this.enabledValue && this.selectionValue) this.fetchAndSync();
 			}
 			fetchAndSync() {
-				if (!this.selectionValue || !this.doc) return;
+				if (!this.selectionValue) return;
 				const targetId = this.selectionValue;
 				const fetchFn = this.options.fetchImpl ?? (typeof fetch !== "undefined" ? fetch.bind(this.doc.defaultView ?? globalThis) : void 0);
 				if (!fetchFn) return;
-				fetchFn(`${this.options.apiBase ?? "/api/skin-center/we"}/inventory`).then(async (response) => {
+				fetchFn(`${this.options.apiBase ?? "api/skin-center/we"}/inventory`).then(async (response) => {
 					if (this.disposed || !response.ok) return;
 					const payload = await response.json().catch(() => null);
 					if (payload?.ok === true && Array.isArray(payload.wallpapers)) {
@@ -308,7 +309,7 @@ window.__ModuleLoader__.load({
 				if (this.probePending.has(targetId)) return;
 				const fetchFn = this.options.fetchImpl ?? (typeof fetch !== "undefined" ? fetch.bind(this.doc.defaultView ?? globalThis) : void 0);
 				if (!fetchFn) return;
-				const pending = fetchFn((this.options.apiBase ?? "/api/skin-center/we") + "/scene-probe?id=" + encodeURIComponent(targetId)).then(async (response) => {
+				const pending = fetchFn((this.options.apiBase ?? "api/skin-center/we") + "/scene-probe?id=" + encodeURIComponent(targetId)).then(async (response) => {
 					if (this.disposed || !response.ok) return;
 					const payload = await response.json().catch(() => null);
 					if (!payload || payload.ok !== true) return;
@@ -317,7 +318,7 @@ window.__ModuleLoader__.load({
 						const merged = {
 							...this.previewing,
 							videoUrl: payload.videoUrl ?? this.previewing.videoUrl,
-							sceneUrl: payload.sceneUrl ?? this.previewing.sceneUrl
+							sceneUrl: payload.sceneUrl ?? this.previewing.sceneUrl ?? null
 						};
 						if (merged.videoUrl !== this.previewing.videoUrl || merged.sceneUrl !== this.previewing.sceneUrl) {
 							this.previewing = merged;
@@ -328,7 +329,7 @@ window.__ModuleLoader__.load({
 						const merged = {
 							...this.applied,
 							videoUrl: payload.videoUrl ?? this.applied.videoUrl,
-							sceneUrl: payload.sceneUrl ?? this.applied.sceneUrl
+							sceneUrl: payload.sceneUrl ?? this.applied.sceneUrl ?? null
 						};
 						if (merged.videoUrl !== this.applied.videoUrl || merged.sceneUrl !== this.applied.sceneUrl) {
 							this.applied = merged;
@@ -491,19 +492,19 @@ window.__ModuleLoader__.load({
 			/** Resume a policy-blocked video on the first user gesture (#580). */
 			onFirstGesture = () => {
 				if (this.videoElement === null || !this.videoElement.paused) return;
-				this.videoElement.play()?.catch(() => {});
+				Promise.resolve(this.videoElement.play()).catch(() => {});
 			};
 			onSceneMessage = (event) => {
 				const scenePlayer = this.mediaLayer?.firstElementChild ?? null;
 				if (!(scenePlayer instanceof HTMLIFrameElement) || scenePlayer.dataset.dshScenePlayer !== "") return;
-				if (event.source !== scenePlayer.contentWindow || event.origin !== this.doc.location?.origin) return;
+				if (event.source !== scenePlayer.contentWindow || event.origin !== this.doc.location.origin) return;
 				if (event.data?.type !== "dsh-scene-needs-reload") return;
 				scenePlayer.src = scenePlayer.src;
 			};
 			onVisibility = () => {
 				if (!this.pauseOnHiddenValue) return;
 				if (this.videoElement !== null) if (this.doc.hidden) this.videoElement.pause();
-				else this.videoElement.play()?.catch(() => {});
+				else Promise.resolve(this.videoElement.play()).catch(() => {});
 				const scenePlayer = this.mediaLayer?.firstElementChild ?? null;
 				if (scenePlayer instanceof HTMLIFrameElement && scenePlayer.dataset.dshScenePlayer === "") try {
 					scenePlayer.contentWindow?.postMessage({
@@ -584,7 +585,7 @@ window.__ModuleLoader__.load({
 					const child = this.buildMedia(descriptor);
 					if (child !== null) {
 						this.mediaLayer.appendChild(child);
-						if (child instanceof HTMLVideoElement && child.paused) child.play()?.catch(() => {});
+						if (child instanceof HTMLVideoElement && child.paused) Promise.resolve(child.play()).catch(() => {});
 					}
 				}
 				this.applyFit();
@@ -670,7 +671,7 @@ window.__ModuleLoader__.load({
 					const img = this.buildImage(nextUrl, nextFallback);
 					if (img && video.parentElement) video.parentElement.replaceChild(img, video);
 				}, { once: true });
-				video.play()?.catch(() => {});
+				Promise.resolve(video.play()).catch(() => {});
 				return video;
 			}
 			/** Static-frame mode for video: capture the first frame into an image. */
@@ -815,7 +816,7 @@ window.__ModuleLoader__.load({
 				synced = true;
 				(async () => {
 					try {
-						const response = await fetch("/api/skin-center/we/inventory");
+						const response = await fetch("api/skin-center/we/inventory");
 						if (!response.ok) return;
 						const payload = await response.json().catch(() => null);
 						if (payload?.ok !== true || !Array.isArray(payload.wallpapers)) return;
@@ -828,8 +829,8 @@ window.__ModuleLoader__.load({
 			wallpaper.subscribe(restore);
 		}
 		//#endregion
-		//#region \0dsh-css:packages/skins/skin-center/src/client/skin-center.module.css.mjs
-		const css = "body[data-dsh-skin-center] .eDzMgW_sectionList{margin:0;padding:0;list-style:none}body[data-dsh-skin-center] .eDzMgW_pluginCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);border-radius:12px;list-style:none;transition:border-color .16s,background .16s}body[data-dsh-skin-center] .eDzMgW_pluginCard:hover{border-color:var(--dsw-alias-label-dimmed)}body[data-dsh-skin-center] .eDzMgW_cardHeaderStatic{align-items:center;gap:12px;width:100%;padding:14px 16px;display:flex}body[data-dsh-skin-center] .eDzMgW_headText{flex-direction:column;flex:1;gap:4px;min-width:0;display:flex}body[data-dsh-skin-center] .eDzMgW_pluginName{color:var(--dsw-alias-label-primary);align-items:baseline;gap:8px;font-size:15px;font-weight:600;line-height:1.4;display:flex}body[data-dsh-skin-center] .eDzMgW_cardDescription{color:var(--dsw-alias-label-tertiary);font-size:13px;line-height:1.5}body[data-dsh-skin-center] .eDzMgW_cardBody{border-top:1px solid var(--dsw-alias-border-l2);flex-direction:column;gap:12px;margin:0 16px;padding:12px 0 8px;display:flex}body[data-dsh-skin-center] .eDzMgW_head{flex-direction:column;gap:6px;display:flex}body[data-dsh-skin-center] .eDzMgW_titleBadge{color:var(--dsw-alias-label-secondary,#6b7280);font-size:11px;font-weight:500}body[data-dsh-skin-center] .eDzMgW_intro{color:var(--dsw-alias-label-secondary,#6b7280);font-size:12.5px;line-height:1.55}body[data-dsh-skin-center] .eDzMgW_themeRow{align-items:center;gap:8px;margin-top:2px;display:flex}body[data-dsh-skin-center] .eDzMgW_themeLabel{color:var(--dsw-alias-label-secondary,#6b7280);margin-right:2px;font-size:12px}body[data-dsh-skin-center] .eDzMgW_themeButton{border:1px solid var(--dsw-alias-border-l3,#cbd5e1);background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary,#172a45);cursor:pointer;border-radius:6px;padding:5px 10px;font-size:12px;line-height:1;transition:background .12s,border-color .12s,color .12s}body[data-dsh-skin-center] .eDzMgW_themeButton:hover{border-color:var(--dsw-alias-border-l4,#94a3b8)}body[data-dsh-skin-center] .eDzMgW_themeButton:active{border-color:var(--dsw-alias-brand-primary,#2b7cd9);background:var(--dsw-alias-button-primary-dimmed,#e8f1fc);color:var(--dsw-alias-brand-primary,#1e63b8)}body[data-dsh-skin-center] .eDzMgW_themeButton:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#2b7cd9);outline-offset:2px}body[data-dsh-skin-center] .eDzMgW_themeButtonActive{border-color:var(--dsw-alias-brand-primary,#2b7cd9);background:var(--dsw-alias-button-primary-dimmed,#e8f1fc);color:var(--dsw-alias-brand-primary,#1e63b8)}body[data-dsh-skin-center] .eDzMgW_list{flex-direction:column;gap:10px;display:flex}body[data-dsh-skin-center] .eDzMgW_card{border:1px solid var(--dsw-alias-border-l1,#e2e8f0);background:var(--dsw-alias-bg-layer-2,#fff);border-radius:10px;flex-direction:column;gap:8px;padding:12px 14px;display:flex}body[data-dsh-skin-center] .eDzMgW_cardHead{align-items:center;gap:10px;min-width:0;display:flex}body[data-dsh-skin-center] .eDzMgW_swatch{width:14px;height:14px;box-shadow:inset 0 0 0 1px var(--dsw-alias-border-l4,#0f172a1f);border-radius:50%;flex:none}body[data-dsh-skin-center] .eDzMgW_cardName{text-overflow:ellipsis;white-space:nowrap;min-width:0;font-size:13.5px;font-weight:600;overflow:hidden}body[data-dsh-skin-center] .eDzMgW_cardTagline{color:var(--dsw-alias-label-secondary,#6b7280);font-size:12px;line-height:1.45}body[data-dsh-skin-center] .eDzMgW_badge{letter-spacing:.02em;border-radius:999px;flex:none;min-width:0;margin-left:auto;padding:2px 8px;font-size:11px;font-weight:600}body[data-dsh-skin-center] .eDzMgW_badgeActive{color:var(--dsw-alias-state-success-primary,#0f6b3a);background:var(--dsw-alias-state-success-tertiary,#dcf3e5)}body[data-dsh-skin-center] .eDzMgW_badgeTrying{color:var(--dsw-alias-brand-primary,#1e63b8);background:var(--dsw-alias-button-primary-dimmed,#e2edfc)}body[data-dsh-skin-center] .eDzMgW_actions{flex-wrap:wrap;align-items:center;gap:8px;display:flex}body[data-dsh-skin-center] .eDzMgW_button{border:1px solid var(--dsw-alias-border-l3,#cbd5e1);background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary,#172a45);cursor:pointer;border-radius:7px;padding:6px 12px;font-size:12px;line-height:1;transition:background .12s,border-color .12s,color .12s}body[data-dsh-skin-center] .eDzMgW_button:hover:not(:disabled){border-color:var(--dsw-alias-brand-primary,#2b7cd9);color:var(--dsw-alias-brand-primary,#1e63b8)}body[data-dsh-skin-center] .eDzMgW_button:active:not(:disabled){border-color:var(--dsw-alias-button-primary-hover,#1e63b8);background:var(--dsw-alias-button-primary-dimmed,#e8f1fc);color:var(--dsw-alias-brand-primary,#1e63b8)}body[data-dsh-skin-center] .eDzMgW_button:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#2b7cd9);outline-offset:2px}body[data-dsh-skin-center] .eDzMgW_buttonPrimary{border-color:var(--dsw-alias-brand-primary,#2b7cd9);background:var(--dsw-alias-button-primary-fill,#2b7cd9);color:var(--dsw-alias-label-primary-foreground,#fff)}body[data-dsh-skin-center] .eDzMgW_buttonPrimary:hover:not(:disabled){border-color:var(--dsw-alias-button-primary-hover,#1e63b8);background:var(--dsw-alias-button-primary-hover,#1e63b8);color:var(--dsw-alias-label-primary-foreground,#fff)}body[data-dsh-skin-center] .eDzMgW_buttonPrimary:active:not(:disabled),body[data-dsh-skin-center] .eDzMgW_buttonPrimary:focus-visible:not(:disabled){border-color:var(--dsw-alias-button-primary-hover,#1e63b8);background:var(--dsw-alias-button-primary-hover,#1e63b8)}body[data-dsh-skin-center] .eDzMgW_buttonGhost{background:0 0;border-color:#0000}body[data-dsh-skin-center] .eDzMgW_button:disabled{opacity:.55;cursor:default}body[data-dsh-skin-center] .eDzMgW_error{color:var(--dsw-alias-state-error-primary,#b42318);font-size:12px}body[data-dsh-skin-center] .eDzMgW_enableRow{flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;display:flex}body[data-dsh-skin-center] .eDzMgW_enableLabel{color:var(--dsw-alias-label-primary,#172a45);font-size:12.5px;font-weight:600}body[data-dsh-skin-center] .eDzMgW_enableHint{min-width:100%;color:var(--dsw-alias-label-secondary,#6b7280);flex:1;margin:0;font-size:12px;line-height:1.5}body[data-dsh-skin-center] .eDzMgW_switch{border:1px solid var(--dsw-alias-border-l3,#cbd5e1);background:var(--dsw-alias-bg-layer-3,#e2e8f0);cursor:pointer;border-radius:999px;flex:none;align-items:center;width:40px;height:22px;padding:2px;transition:background .12s,border-color .12s;display:inline-flex;position:relative}body[data-dsh-skin-center] .eDzMgW_switchOn{border-color:var(--dsw-alias-brand-primary,#2b7cd9);background:var(--dsw-alias-brand-primary,#2b7cd9)}body[data-dsh-skin-center] .eDzMgW_switch:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#2b7cd9);outline-offset:2px}body[data-dsh-skin-center] .eDzMgW_switchThumb{background:var(--dsw-alias-label-primary-foreground,#fff);width:18px;height:18px;box-shadow:0 0 0 1px var(--dsw-alias-border-l4,#0f172a1f);border-radius:50%;transition:transform .12s;display:block;transform:translate(0)}body[data-dsh-skin-center] .eDzMgW_switchOn .eDzMgW_switchThumb{transform:translate(18px)}body[data-dsh-skin-center] .eDzMgW_offNote{color:var(--dsw-alias-label-secondary,#6b7280);margin:0;font-size:12.5px;line-height:1.5}body[data-dsh-skin-center] .eDzMgW_backgroundRow{flex-direction:column;gap:6px;padding:8px 0;display:flex}body[data-dsh-skin-center] .eDzMgW_backgroundHead{align-items:center;gap:8px;display:flex}body[data-dsh-skin-center] .eDzMgW_backgroundLabel{color:var(--dsw-alias-label-primary,#172a45);font-size:12.5px;font-weight:600}body[data-dsh-skin-center] .eDzMgW_backgroundValue{font-variant-numeric:tabular-nums;color:var(--dsw-alias-brand-primary,#2b7cd9);flex:none;margin-left:auto;font-size:12px}body[data-dsh-skin-center] .eDzMgW_backgroundRange{background:var(--dsw-alias-label-tertiary,#9aa4b5);background:color-mix(in srgb, var(--dsw-alias-label-tertiary,#9aa4b5) 45%, transparent);width:100%;height:4px;box-shadow:0 0 0 1px var(--dsw-alias-border-l3,#cbd5e1);-webkit-appearance:none;appearance:none;cursor:pointer;border-radius:999px;margin:0}body[data-dsh-skin-center] .eDzMgW_backgroundRange::-webkit-slider-runnable-track{background:var(--dsw-alias-bg-layer-3,#e2e8f0);border-radius:999px;height:4px}body[data-dsh-skin-center] .eDzMgW_backgroundRange::-moz-range-track{background:var(--dsw-alias-bg-layer-3,#e2e8f0);border-radius:999px;height:4px}body[data-dsh-skin-center] .eDzMgW_backgroundRange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;border:2px solid var(--dsw-alias-label-primary-foreground,#fff);background:var(--dsw-alias-brand-primary,#2b7cd9);width:14px;height:14px;box-shadow:0 0 0 1px var(--dsw-alias-border-l4,#0f172a1f);cursor:pointer;border-radius:50%}body[data-dsh-skin-center] .eDzMgW_backgroundRange::-moz-range-thumb{border:2px solid var(--dsw-alias-label-primary-foreground,#fff);background:var(--dsw-alias-brand-primary,#2b7cd9);width:12px;height:12px;box-shadow:0 0 0 1px var(--dsw-alias-border-l4,#0f172a1f);cursor:pointer;border-radius:50%}body[data-dsh-skin-center] .eDzMgW_backgroundRange:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#2b7cd9);outline-offset:2px}body[data-dsh-skin-center] .eDzMgW_backgroundHint{color:var(--dsw-alias-label-secondary,#6b7280);font-size:12px;line-height:1.5}body[data-dsh-skin-center] .eDzMgW_backgroundHintMuted{color:var(--dsw-alias-label-tertiary,#9aa4b5);font-size:12px;line-height:1.5}@media (prefers-reduced-motion:reduce){body[data-dsh-skin-center] .eDzMgW_pluginCard,body[data-dsh-skin-center] .eDzMgW_themeButton,body[data-dsh-skin-center] .eDzMgW_button,body[data-dsh-skin-center] .eDzMgW_switch,body[data-dsh-skin-center] .eDzMgW_switchThumb{transition:none}}body[data-dsh-skin-center] .eDzMgW_wallpaperSection{border-top:1px solid var(--dsw-alias-border-l2);flex-direction:column;gap:10px;padding-top:10px;display:flex}body[data-dsh-skin-center] .eDzMgW_wallpaperStatus{color:var(--dsw-alias-label-secondary,#6b7280);align-items:center;gap:8px;font-size:12px;display:flex}body[data-dsh-skin-center] .eDzMgW_wallpaperStatusError{color:var(--dsw-alias-state-danger,#c53030)}body[data-dsh-skin-center] .eDzMgW_wallpaperControls{flex-direction:column;gap:10px;display:flex}body[data-dsh-skin-center] .eDzMgW_wallpaperGrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;display:grid}body[data-dsh-skin-center] .eDzMgW_wallpaperCard{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2,#fff);border-radius:10px;flex-direction:column;gap:6px;padding:8px;transition:border-color .16s;display:flex}body[data-dsh-skin-center] .eDzMgW_wallpaperCard:hover{border-color:var(--dsw-alias-label-dimmed)}body[data-dsh-skin-center] .eDzMgW_wallpaperThumbWrap{aspect-ratio:16/9;background:var(--dsw-alias-bg-layer-1,#f1f5f9);border-radius:6px;position:relative;overflow:hidden}body[data-dsh-skin-center] .eDzMgW_wallpaperThumb{object-fit:cover;width:100%;height:100%;display:block}body[data-dsh-skin-center] .eDzMgW_wallpaperThumbEmpty{width:100%;height:100%}body[data-dsh-skin-center] .eDzMgW_wallpaperType{color:var(--dsw-alias-label-primary,#172a45);background:var(--dsw-alias-bg-layer-2,#ffffffd9);border-radius:4px;padding:3px 6px;font-size:10.5px;line-height:1;position:absolute;top:6px;left:6px}body[data-dsh-skin-center] .eDzMgW_wallpaperThumbWrap .eDzMgW_badge{position:absolute;top:6px;right:6px}body[data-dsh-skin-center] .eDzMgW_wallpaperName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:1.35;overflow:hidden}body[data-dsh-skin-center] .eDzMgW_wallpaperActions{flex-wrap:wrap;gap:6px;display:flex}";
+		//#region \0dsh-css:/home/huangzy/tools/deepseek-harness-upgrade-20260929/packages/selfuse/skin-center/src/client/skin-center.module.css.mjs
+		const css = "body[data-dsh-skin-center] .JQV9kq_sectionList{margin:0;padding:0;list-style:none}body[data-dsh-skin-center] .JQV9kq_pluginCard{border:.5px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);border-radius:12px;list-style:none;transition:border-color .16s,background .16s}body[data-dsh-skin-center] .JQV9kq_pluginCard:hover{border-color:var(--dsw-alias-label-dimmed)}body[data-dsh-skin-center] .JQV9kq_cardHeaderStatic{align-items:center;gap:12px;width:100%;padding:14px 16px;display:flex}body[data-dsh-skin-center] .JQV9kq_headText{flex-direction:column;flex:1;gap:4px;min-width:0;display:flex}body[data-dsh-skin-center] .JQV9kq_pluginName{color:var(--dsw-alias-label-primary);align-items:baseline;gap:8px;font-size:15px;font-weight:600;line-height:1.4;display:flex}body[data-dsh-skin-center] .JQV9kq_cardDescription{color:var(--dsw-alias-label-tertiary);font-size:13px;line-height:1.5}body[data-dsh-skin-center] .JQV9kq_cardBody{border-top:.5px solid var(--dsw-alias-border-l2);flex-direction:column;gap:12px;margin:0 16px;padding:12px 0 8px;display:flex}body[data-dsh-skin-center] .JQV9kq_head{flex-direction:column;gap:6px;display:flex}body[data-dsh-skin-center] .JQV9kq_titleBadge{color:var(--dsw-alias-label-secondary,#6b7280);font-size:11px;font-weight:500}body[data-dsh-skin-center] .JQV9kq_intro{color:var(--dsw-alias-label-secondary,#6b7280);font-size:12.5px;line-height:1.55}body[data-dsh-skin-center] .JQV9kq_themeRow{align-items:center;gap:8px;margin-top:2px;display:flex}body[data-dsh-skin-center] .JQV9kq_themeLabel{color:var(--dsw-alias-label-secondary,#6b7280);margin-right:2px;font-size:12px}body[data-dsh-skin-center] .JQV9kq_themeButton{border:.5px solid var(--dsw-alias-border-l3,#cbd5e1);background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary,#172a45);cursor:pointer;border-radius:6px;padding:5px 10px;font-size:12px;line-height:1;transition:background .12s,border-color .12s,color .12s}body[data-dsh-skin-center] .JQV9kq_themeButton:hover{border-color:var(--dsw-alias-border-l4,#94a3b8)}body[data-dsh-skin-center] .JQV9kq_themeButton:active{border-color:var(--dsw-alias-brand-primary,#2b7cd9);background:var(--dsw-alias-button-primary-dimmed,#e8f1fc);color:var(--dsw-alias-brand-primary,#1e63b8)}body[data-dsh-skin-center] .JQV9kq_themeButton:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#2b7cd9);outline-offset:2px}body[data-dsh-skin-center] .JQV9kq_themeButtonActive{border-color:var(--dsw-alias-brand-primary,#2b7cd9);background:var(--dsw-alias-button-primary-dimmed,#e8f1fc);color:var(--dsw-alias-brand-primary,#1e63b8)}body[data-dsh-skin-center] .JQV9kq_list{flex-direction:column;gap:10px;display:flex}body[data-dsh-skin-center] .JQV9kq_card{border:.5px solid var(--dsw-alias-border-l1,#e2e8f0);background:var(--dsw-alias-bg-layer-2,#fff);border-radius:10px;flex-direction:column;gap:8px;padding:12px 14px;display:flex}body[data-dsh-skin-center] .JQV9kq_cardHead{align-items:center;gap:10px;min-width:0;display:flex}body[data-dsh-skin-center] .JQV9kq_swatch{corner-shape:round;width:14px;height:14px;box-shadow:inset 0 0 0 1px var(--dsw-alias-border-l4,#0f172a1f);border-radius:50%;flex:none}body[data-dsh-skin-center] .JQV9kq_cardName{text-overflow:ellipsis;white-space:nowrap;min-width:0;font-size:13.5px;font-weight:600;overflow:hidden}body[data-dsh-skin-center] .JQV9kq_cardTagline{color:var(--dsw-alias-label-secondary,#6b7280);font-size:12px;line-height:1.45}body[data-dsh-skin-center] .JQV9kq_badge{letter-spacing:.02em;corner-shape:round;border-radius:999px;flex:none;min-width:0;margin-left:auto;padding:2px 8px;font-size:11px;font-weight:600}body[data-dsh-skin-center] .JQV9kq_badgeActive{color:var(--dsw-alias-state-success-primary,#0f6b3a);background:var(--dsw-alias-state-success-tertiary,#dcf3e5)}body[data-dsh-skin-center] .JQV9kq_badgeTrying{color:var(--dsw-alias-brand-primary,#1e63b8);background:var(--dsw-alias-button-primary-dimmed,#e2edfc)}body[data-dsh-skin-center] .JQV9kq_actions{flex-wrap:wrap;align-items:center;gap:8px;display:flex}body[data-dsh-skin-center] .JQV9kq_button{border:.5px solid var(--dsw-alias-border-l3,#cbd5e1);background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary,#172a45);cursor:pointer;border-radius:7px;padding:6px 12px;font-size:12px;line-height:1;transition:background .12s,border-color .12s,color .12s}body[data-dsh-skin-center] .JQV9kq_button:hover:not(:disabled){border-color:var(--dsw-alias-brand-primary,#2b7cd9);color:var(--dsw-alias-brand-primary,#1e63b8)}body[data-dsh-skin-center] .JQV9kq_button:active:not(:disabled){border-color:var(--dsw-alias-button-primary-hover,#1e63b8);background:var(--dsw-alias-button-primary-dimmed,#e8f1fc);color:var(--dsw-alias-brand-primary,#1e63b8)}body[data-dsh-skin-center] .JQV9kq_button:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#2b7cd9);outline-offset:2px}body[data-dsh-skin-center] .JQV9kq_buttonPrimary{border-color:var(--dsw-alias-brand-primary,#2b7cd9);background:var(--dsw-alias-button-primary-fill,#2b7cd9);color:var(--dsw-alias-label-primary-foreground,#fff)}body[data-dsh-skin-center] .JQV9kq_buttonPrimary:hover:not(:disabled){border-color:var(--dsw-alias-button-primary-hover,#1e63b8);background:var(--dsw-alias-button-primary-hover,#1e63b8);color:var(--dsw-alias-label-primary-foreground,#fff)}body[data-dsh-skin-center] .JQV9kq_buttonPrimary:active:not(:disabled),body[data-dsh-skin-center] .JQV9kq_buttonPrimary:focus-visible:not(:disabled){border-color:var(--dsw-alias-button-primary-hover,#1e63b8);background:var(--dsw-alias-button-primary-hover,#1e63b8)}body[data-dsh-skin-center] .JQV9kq_buttonGhost{background:0 0;border-color:#0000}body[data-dsh-skin-center] .JQV9kq_button:disabled{opacity:.55;cursor:default}body[data-dsh-skin-center] .JQV9kq_error{color:var(--dsw-alias-state-error-primary,#b42318);font-size:12px}body[data-dsh-skin-center] .JQV9kq_enableRow{flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;display:flex}body[data-dsh-skin-center] .JQV9kq_enableLabel{color:var(--dsw-alias-label-primary,#172a45);font-size:12.5px;font-weight:600}body[data-dsh-skin-center] .JQV9kq_enableHint{min-width:100%;color:var(--dsw-alias-label-secondary,#6b7280);flex:1;margin:0;font-size:12px;line-height:1.5}body[data-dsh-skin-center] .JQV9kq_switch{border:.5px solid var(--dsw-alias-border-l3,#cbd5e1);corner-shape:round;background:var(--dsw-alias-bg-layer-3,#e2e8f0);cursor:pointer;border-radius:999px;flex:none;align-items:center;width:40px;height:22px;padding:2px;transition:background .12s,border-color .12s;display:inline-flex;position:relative}body[data-dsh-skin-center] .JQV9kq_switchOn{border-color:var(--dsw-alias-brand-primary,#2b7cd9);background:var(--dsw-alias-brand-primary,#2b7cd9)}body[data-dsh-skin-center] .JQV9kq_switch:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#2b7cd9);outline-offset:2px}body[data-dsh-skin-center] .JQV9kq_switchThumb{corner-shape:round;background:var(--dsw-alias-label-primary-foreground,#fff);width:18px;height:18px;box-shadow:0 0 0 1px var(--dsw-alias-border-l4,#0f172a1f);border-radius:50%;transition:transform .12s;display:block;transform:translate(0)}body[data-dsh-skin-center] .JQV9kq_switchOn .JQV9kq_switchThumb{transform:translate(18px)}body[data-dsh-skin-center] .JQV9kq_offNote{color:var(--dsw-alias-label-secondary,#6b7280);margin:0;font-size:12.5px;line-height:1.5}body[data-dsh-skin-center] .JQV9kq_backgroundRow{flex-direction:column;gap:6px;padding:8px 0;display:flex}body[data-dsh-skin-center] .JQV9kq_backgroundHead{align-items:center;gap:8px;display:flex}body[data-dsh-skin-center] .JQV9kq_backgroundLabel{color:var(--dsw-alias-label-primary,#172a45);font-size:12.5px;font-weight:600}body[data-dsh-skin-center] .JQV9kq_backgroundValue{font-variant-numeric:tabular-nums;color:var(--dsw-alias-brand-primary,#2b7cd9);flex:none;margin-left:auto;font-size:12px}body[data-dsh-skin-center] .JQV9kq_backgroundRange{corner-shape:round;background:var(--dsw-alias-label-tertiary,#9aa4b5);background:color-mix(in srgb, var(--dsw-alias-label-tertiary,#9aa4b5) 45%, transparent);width:100%;height:4px;box-shadow:0 0 0 1px var(--dsw-alias-border-l3,#cbd5e1);-webkit-appearance:none;appearance:none;cursor:pointer;border-radius:999px;margin:0}body[data-dsh-skin-center] .JQV9kq_backgroundRange::-webkit-slider-runnable-track{corner-shape:round;background:var(--dsw-alias-bg-layer-3,#e2e8f0);border-radius:999px;height:4px}body[data-dsh-skin-center] .JQV9kq_backgroundRange::-moz-range-track{corner-shape:round;background:var(--dsw-alias-bg-layer-3,#e2e8f0);border-radius:999px;height:4px}body[data-dsh-skin-center] .JQV9kq_backgroundRange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;corner-shape:round;border:2px solid var(--dsw-alias-label-primary-foreground,#fff);background:var(--dsw-alias-brand-primary,#2b7cd9);width:14px;height:14px;box-shadow:0 0 0 1px var(--dsw-alias-border-l4,#0f172a1f);cursor:pointer;border-radius:50%}body[data-dsh-skin-center] .JQV9kq_backgroundRange::-moz-range-thumb{border:2px solid var(--dsw-alias-label-primary-foreground,#fff);corner-shape:round;background:var(--dsw-alias-brand-primary,#2b7cd9);width:12px;height:12px;box-shadow:0 0 0 1px var(--dsw-alias-border-l4,#0f172a1f);cursor:pointer;border-radius:50%}body[data-dsh-skin-center] .JQV9kq_backgroundRange:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#2b7cd9);outline-offset:2px}body[data-dsh-skin-center] .JQV9kq_backgroundHint{color:var(--dsw-alias-label-secondary,#6b7280);font-size:12px;line-height:1.5}body[data-dsh-skin-center] .JQV9kq_backgroundHintMuted{color:var(--dsw-alias-label-tertiary,#9aa4b5);font-size:12px;line-height:1.5}@media (prefers-reduced-motion:reduce){body[data-dsh-skin-center] .JQV9kq_pluginCard,body[data-dsh-skin-center] .JQV9kq_themeButton,body[data-dsh-skin-center] .JQV9kq_button,body[data-dsh-skin-center] .JQV9kq_switch,body[data-dsh-skin-center] .JQV9kq_switchThumb{transition:none}}body[data-dsh-skin-center] .JQV9kq_wallpaperSection{border-top:.5px solid var(--dsw-alias-border-l2);flex-direction:column;gap:10px;padding-top:10px;display:flex}body[data-dsh-skin-center] .JQV9kq_wallpaperStatus{color:var(--dsw-alias-label-secondary,#6b7280);align-items:center;gap:8px;font-size:12px;display:flex}body[data-dsh-skin-center] .JQV9kq_wallpaperStatusError{color:var(--dsw-alias-state-danger,#c53030)}body[data-dsh-skin-center] .JQV9kq_wallpaperControls{flex-direction:column;gap:10px;display:flex}body[data-dsh-skin-center] .JQV9kq_wallpaperGrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;display:grid}body[data-dsh-skin-center] .JQV9kq_wallpaperCard{border:.5px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2,#fff);border-radius:10px;flex-direction:column;gap:6px;padding:8px;transition:border-color .16s;display:flex}body[data-dsh-skin-center] .JQV9kq_wallpaperCard:hover{border-color:var(--dsw-alias-label-dimmed)}body[data-dsh-skin-center] .JQV9kq_wallpaperThumbWrap{aspect-ratio:16/9;background:var(--dsw-alias-bg-layer-1,#f1f5f9);border-radius:6px;position:relative;overflow:hidden}body[data-dsh-skin-center] .JQV9kq_wallpaperThumb{object-fit:cover;width:100%;height:100%;display:block}body[data-dsh-skin-center] .JQV9kq_wallpaperThumbEmpty{width:100%;height:100%}body[data-dsh-skin-center] .JQV9kq_wallpaperType{color:var(--dsw-alias-label-primary,#172a45);background:var(--dsw-alias-bg-layer-2,#ffffffd9);border-radius:4px;padding:3px 6px;font-size:10.5px;line-height:1;position:absolute;top:6px;left:6px}body[data-dsh-skin-center] .JQV9kq_wallpaperThumbWrap .JQV9kq_badge{position:absolute;top:6px;right:6px}body[data-dsh-skin-center] .JQV9kq_wallpaperName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:1.35;overflow:hidden}body[data-dsh-skin-center] .JQV9kq_wallpaperActions{flex-wrap:wrap;gap:6px;display:flex}body[data-dsh-skin-center] .JQV9kq_wallpaperDirs{flex-direction:column;gap:8px;display:flex}body[data-dsh-skin-center] .JQV9kq_wallpaperDir,body[data-dsh-skin-center] .JQV9kq_wallpaperDirAdd{align-items:center;gap:8px;display:flex}body[data-dsh-skin-center] .JQV9kq_wallpaperDirPath{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);flex:1;font-size:12px}body[data-dsh-skin-center] .JQV9kq_wallpaperDirRemove{border:.5px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:6px;padding:4px 8px}body[data-dsh-skin-center] .JQV9kq_wallpaperDirInput{border:.5px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);min-width:0;color:var(--dsw-alias-label-primary);font:inherit;border-radius:6px;flex:1;padding:6px 8px}";
 		const tagId = "@dsh-selfuse/skin-center/skin-center.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
 			const tag = document.createElement("style");
@@ -839,60 +840,66 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var skin_center_module_css_default = {
-			"actions": "eDzMgW_actions",
-			"backgroundHead": "eDzMgW_backgroundHead",
-			"backgroundHint": "eDzMgW_backgroundHint",
-			"backgroundHintMuted": "eDzMgW_backgroundHintMuted",
-			"backgroundLabel": "eDzMgW_backgroundLabel",
-			"backgroundRange": "eDzMgW_backgroundRange",
-			"backgroundRow": "eDzMgW_backgroundRow",
-			"backgroundValue": "eDzMgW_backgroundValue",
-			"badge": "eDzMgW_badge",
-			"badgeActive": "eDzMgW_badgeActive",
-			"badgeTrying": "eDzMgW_badgeTrying",
-			"button": "eDzMgW_button",
-			"buttonGhost": "eDzMgW_buttonGhost",
-			"buttonPrimary": "eDzMgW_buttonPrimary",
-			"card": "eDzMgW_card",
-			"cardBody": "eDzMgW_cardBody",
-			"cardDescription": "eDzMgW_cardDescription",
-			"cardHead": "eDzMgW_cardHead",
-			"cardHeaderStatic": "eDzMgW_cardHeaderStatic",
-			"cardName": "eDzMgW_cardName",
-			"cardTagline": "eDzMgW_cardTagline",
-			"enableHint": "eDzMgW_enableHint",
-			"enableLabel": "eDzMgW_enableLabel",
-			"enableRow": "eDzMgW_enableRow",
-			"error": "eDzMgW_error",
-			"head": "eDzMgW_head",
-			"headText": "eDzMgW_headText",
-			"intro": "eDzMgW_intro",
-			"list": "eDzMgW_list",
-			"offNote": "eDzMgW_offNote",
-			"pluginCard": "eDzMgW_pluginCard",
-			"pluginName": "eDzMgW_pluginName",
-			"sectionList": "eDzMgW_sectionList",
-			"swatch": "eDzMgW_swatch",
-			"switch": "eDzMgW_switch",
-			"switchOn": "eDzMgW_switchOn",
-			"switchThumb": "eDzMgW_switchThumb",
-			"themeButton": "eDzMgW_themeButton",
-			"themeButtonActive": "eDzMgW_themeButtonActive",
-			"themeLabel": "eDzMgW_themeLabel",
-			"themeRow": "eDzMgW_themeRow",
-			"titleBadge": "eDzMgW_titleBadge",
-			"wallpaperActions": "eDzMgW_wallpaperActions",
-			"wallpaperCard": "eDzMgW_wallpaperCard",
-			"wallpaperControls": "eDzMgW_wallpaperControls",
-			"wallpaperGrid": "eDzMgW_wallpaperGrid",
-			"wallpaperName": "eDzMgW_wallpaperName",
-			"wallpaperSection": "eDzMgW_wallpaperSection",
-			"wallpaperStatus": "eDzMgW_wallpaperStatus",
-			"wallpaperStatusError": "eDzMgW_wallpaperStatusError",
-			"wallpaperThumb": "eDzMgW_wallpaperThumb",
-			"wallpaperThumbEmpty": "eDzMgW_wallpaperThumbEmpty",
-			"wallpaperThumbWrap": "eDzMgW_wallpaperThumbWrap",
-			"wallpaperType": "eDzMgW_wallpaperType"
+			"actions": "JQV9kq_actions",
+			"backgroundHead": "JQV9kq_backgroundHead",
+			"backgroundHint": "JQV9kq_backgroundHint",
+			"backgroundHintMuted": "JQV9kq_backgroundHintMuted",
+			"backgroundLabel": "JQV9kq_backgroundLabel",
+			"backgroundRange": "JQV9kq_backgroundRange",
+			"backgroundRow": "JQV9kq_backgroundRow",
+			"backgroundValue": "JQV9kq_backgroundValue",
+			"badge": "JQV9kq_badge",
+			"badgeActive": "JQV9kq_badgeActive",
+			"badgeTrying": "JQV9kq_badgeTrying",
+			"button": "JQV9kq_button",
+			"buttonGhost": "JQV9kq_buttonGhost",
+			"buttonPrimary": "JQV9kq_buttonPrimary",
+			"card": "JQV9kq_card",
+			"cardBody": "JQV9kq_cardBody",
+			"cardDescription": "JQV9kq_cardDescription",
+			"cardHead": "JQV9kq_cardHead",
+			"cardHeaderStatic": "JQV9kq_cardHeaderStatic",
+			"cardName": "JQV9kq_cardName",
+			"cardTagline": "JQV9kq_cardTagline",
+			"enableHint": "JQV9kq_enableHint",
+			"enableLabel": "JQV9kq_enableLabel",
+			"enableRow": "JQV9kq_enableRow",
+			"error": "JQV9kq_error",
+			"head": "JQV9kq_head",
+			"headText": "JQV9kq_headText",
+			"intro": "JQV9kq_intro",
+			"list": "JQV9kq_list",
+			"offNote": "JQV9kq_offNote",
+			"pluginCard": "JQV9kq_pluginCard",
+			"pluginName": "JQV9kq_pluginName",
+			"sectionList": "JQV9kq_sectionList",
+			"swatch": "JQV9kq_swatch",
+			"switch": "JQV9kq_switch",
+			"switchOn": "JQV9kq_switchOn",
+			"switchThumb": "JQV9kq_switchThumb",
+			"themeButton": "JQV9kq_themeButton",
+			"themeButtonActive": "JQV9kq_themeButtonActive",
+			"themeLabel": "JQV9kq_themeLabel",
+			"themeRow": "JQV9kq_themeRow",
+			"titleBadge": "JQV9kq_titleBadge",
+			"wallpaperActions": "JQV9kq_wallpaperActions",
+			"wallpaperCard": "JQV9kq_wallpaperCard",
+			"wallpaperControls": "JQV9kq_wallpaperControls",
+			"wallpaperDir": "JQV9kq_wallpaperDir",
+			"wallpaperDirAdd": "JQV9kq_wallpaperDirAdd",
+			"wallpaperDirInput": "JQV9kq_wallpaperDirInput",
+			"wallpaperDirPath": "JQV9kq_wallpaperDirPath",
+			"wallpaperDirRemove": "JQV9kq_wallpaperDirRemove",
+			"wallpaperDirs": "JQV9kq_wallpaperDirs",
+			"wallpaperGrid": "JQV9kq_wallpaperGrid",
+			"wallpaperName": "JQV9kq_wallpaperName",
+			"wallpaperSection": "JQV9kq_wallpaperSection",
+			"wallpaperStatus": "JQV9kq_wallpaperStatus",
+			"wallpaperStatusError": "JQV9kq_wallpaperStatusError",
+			"wallpaperThumb": "JQV9kq_wallpaperThumb",
+			"wallpaperThumbEmpty": "JQV9kq_wallpaperThumbEmpty",
+			"wallpaperThumbWrap": "JQV9kq_wallpaperThumbWrap",
+			"wallpaperType": "JQV9kq_wallpaperType"
 		};
 		//#endregion
 		//#region src/client/WallpaperPanel.tsx
@@ -908,7 +915,7 @@ window.__ModuleLoader__.load({
 		* content; import only copies files within the user's machine.
 		*/
 		/** Host base path of the wallpaper API (mirrors src/we-routes.ts). */
-		const WE_API = "/api/skin-center/we";
+		const WE_API = "api/skin-center/we";
 		/** Post one wallpaper action and return whether it succeeded. */
 		async function postWe(path, id) {
 			try {
@@ -935,18 +942,18 @@ window.__ModuleLoader__.load({
 		}
 		/** Render the Wallpaper Engine section of the skin-center card. */
 		function WallpaperPanel({ t, wallpaper }) {
-			const enabled = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.enabled);
-			const selection = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.selection);
-			const mode = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.mode);
-			const fit = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.fit);
-			const dim = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.dim);
-			const blur = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.wallpaperBlur);
-			const pauseOnHidden = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.pauseOnHidden);
-			const sound = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.sound);
-			const volume = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.volume);
-			const activeId = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.activeId);
-			const trying = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.trying);
-			const dirs = (0, react.useSyncExternalStore)(wallpaper.subscribe, wallpaper.dirs);
+			const enabled = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.enabled());
+			const selection = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.selection());
+			const mode = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.mode());
+			const fit = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.fit());
+			const dim = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.dim());
+			const blur = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.wallpaperBlur());
+			const pauseOnHidden = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.pauseOnHidden());
+			const sound = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.sound());
+			const volume = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.volume());
+			const activeId = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.activeId());
+			const trying = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.trying());
+			const dirs = (0, react.useSyncExternalStore)((listener) => wallpaper.subscribe(listener), () => wallpaper.dirs());
 			const [dirInput, setDirInput] = (0, react.useState)("");
 			const [items, setItems] = (0, react.useState)(null);
 			const [installDir, setInstallDir] = (0, react.useState)(null);
@@ -962,7 +969,7 @@ window.__ModuleLoader__.load({
 			}, []);
 			/** Fetch the inventory and reconcile the mounted layer with the selection. */
 			const load = (0, react.useCallback)(() => {
-				fetch("/api/skin-center/we/inventory").then(async (response) => {
+				fetch("api/skin-center/we/inventory").then(async (response) => {
 					const payload = await response.json().catch(() => null);
 					if (!mounted.current) return;
 					if (!response.ok || payload?.ok !== true || !Array.isArray(payload.wallpapers)) {
@@ -1004,7 +1011,7 @@ window.__ModuleLoader__.load({
 				videoUrl: item.videoUrl,
 				webUrl: item.webUrl,
 				frameUrl: item.frameUrl,
-				sceneUrl: item.sceneUrl,
+				sceneUrl: item.sceneUrl ?? null,
 				previewUrl: item.previewUrl
 			});
 			/** Whether one entry can be mounted at all in the current mode. */
@@ -1161,10 +1168,10 @@ window.__ModuleLoader__.load({
 										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 											className: skin_center_module_css_default.backgroundLabel,
 											children: t("wallpaperBlur")
-										}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 											className: skin_center_module_css_default.backgroundValue,
 											"aria-hidden": "true",
-											children: [blur, "px"]
+											children: t("pixelValue", { value: blur })
 										})]
 									}),
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
@@ -1447,6 +1454,27 @@ window.__ModuleLoader__.load({
 		*/
 		/** The apply target of the official stock-look card. */
 		const OFFICIAL = "official";
+		function SkinCardHeading({ name, color, badge, active }) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: skin_center_module_css_default.cardHead,
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+						className: skin_center_module_css_default.swatch,
+						style: { background: color },
+						"aria-hidden": "true"
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+						className: skin_center_module_css_default.cardName,
+						title: name,
+						children: name
+					}),
+					badge !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+						className: `${skin_center_module_css_default.badge} ${active ? skin_center_module_css_default.badgeActive : skin_center_module_css_default.badgeTrying}`,
+						children: badge
+					})
+				]
+			});
+		}
 		/**
 		* Render the skin-center card: a static header naming the plugin, with the
 		* always-visible skin list (official default + every catalog skin; try-on /
@@ -1456,13 +1484,13 @@ window.__ModuleLoader__.load({
 		*/
 		function SkinCenter({ t, runtime, theme, background, wallpaper, preview }) {
 			const snapshot = (0, react.useSyncExternalStore)((listener) => theme.subscribe(listener), () => theme.getTheme());
-			const enabled = (0, react.useSyncExternalStore)(background.subscribe, background.enabled);
-			const opacity = (0, react.useSyncExternalStore)(background.subscribe, background.opacity);
-			const blurEmpty = (0, react.useSyncExternalStore)(background.subscribe, background.blurEmpty);
-			const blurContent = (0, react.useSyncExternalStore)(background.subscribe, background.blurContent);
-			const inputCardBlur = (0, react.useSyncExternalStore)(background.subscribe, background.inputCardBlur);
-			const catalog = (0, react.useSyncExternalStore)(runtime.subscribe, runtime.catalog);
-			const state = (0, react.useSyncExternalStore)(runtime.subscribe, runtime.controller.getState);
+			const enabled = (0, react.useSyncExternalStore)((listener) => background.subscribe(listener), () => background.enabled());
+			const opacity = (0, react.useSyncExternalStore)((listener) => background.subscribe(listener), () => background.opacity());
+			const blurEmpty = (0, react.useSyncExternalStore)((listener) => background.subscribe(listener), () => background.blurEmpty());
+			const blurContent = (0, react.useSyncExternalStore)((listener) => background.subscribe(listener), () => background.blurContent());
+			const inputCardBlur = (0, react.useSyncExternalStore)((listener) => background.subscribe(listener), () => background.inputCardBlur());
+			const catalog = (0, react.useSyncExternalStore)((listener) => runtime.subscribe(listener), () => runtime.catalog());
+			const state = (0, react.useSyncExternalStore)((listener) => runtime.subscribe(listener), () => runtime.controller.getState());
 			const activeId = state.active;
 			const previewing = state.previewing;
 			const tryingId = state.trying;
@@ -1665,10 +1693,10 @@ window.__ModuleLoader__.load({
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: skin_center_module_css_default.backgroundLabel,
 										children: t("backgroundBlurEmpty")
-									}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: skin_center_module_css_default.backgroundValue,
 										"aria-hidden": "true",
-										children: [blurEmpty, "px"]
+										children: t("pixelValue", { value: blurEmpty })
 									})]
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
@@ -1679,7 +1707,7 @@ window.__ModuleLoader__.load({
 									max: "20",
 									step: "1",
 									value: blurEmpty,
-									"aria-valuetext": `${blurEmpty}px`,
+									"aria-valuetext": t("pixelValue", { value: blurEmpty }),
 									"aria-label": t("backgroundBlurEmpty"),
 									onChange: (event) => {
 										background.setBlurEmpty(Number(event.target.value));
@@ -1690,10 +1718,10 @@ window.__ModuleLoader__.load({
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: skin_center_module_css_default.backgroundLabel,
 										children: t("backgroundBlurContent")
-									}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: skin_center_module_css_default.backgroundValue,
 										"aria-hidden": "true",
-										children: [blurContent, "px"]
+										children: t("pixelValue", { value: blurContent })
 									})]
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
@@ -1704,7 +1732,7 @@ window.__ModuleLoader__.load({
 									max: "20",
 									step: "1",
 									value: blurContent,
-									"aria-valuetext": `${blurContent}px`,
+									"aria-valuetext": t("pixelValue", { value: blurContent }),
 									"aria-label": t("backgroundBlurContent"),
 									onChange: (event) => {
 										background.setBlurContent(Number(event.target.value));
@@ -1724,10 +1752,10 @@ window.__ModuleLoader__.load({
 									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: skin_center_module_css_default.backgroundLabel,
 										children: t("inputCardBlur")
-									}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 										className: skin_center_module_css_default.backgroundValue,
 										"aria-hidden": "true",
-										children: [inputCardBlur, "px"]
+										children: t("pixelValue", { value: inputCardBlur })
 									})]
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
@@ -1738,7 +1766,7 @@ window.__ModuleLoader__.load({
 									max: "20",
 									step: "1",
 									value: inputCardBlur,
-									"aria-valuetext": `${inputCardBlur}px`,
+									"aria-valuetext": t("pixelValue", { value: inputCardBlur }),
 									"aria-label": t("inputCardBlur"),
 									onChange: (event) => {
 										background.setInputCardBlur(Number(event.target.value));
@@ -1767,24 +1795,11 @@ window.__ModuleLoader__.load({
 								return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: skin_center_module_css_default.card,
 									children: [
-										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-											className: skin_center_module_css_default.cardHead,
-											children: [
-												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: skin_center_module_css_default.swatch,
-													style: { background: "#98a1ab" },
-													"aria-hidden": "true"
-												}),
-												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: skin_center_module_css_default.cardName,
-													title: t("official"),
-													children: t("official")
-												}),
-												badge !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: `${skin_center_module_css_default.badge} ${isActive ? skin_center_module_css_default.badgeActive : skin_center_module_css_default.badgeTrying}`,
-													children: badge
-												})
-											]
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SkinCardHeading, {
+											name: t("official"),
+											color: "#98a1ab",
+											badge,
+											active: isActive
 										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 											className: skin_center_module_css_default.cardTagline,
@@ -1808,24 +1823,11 @@ window.__ModuleLoader__.load({
 								return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: skin_center_module_css_default.card,
 									children: [
-										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-											className: skin_center_module_css_default.cardHead,
-											children: [
-												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: skin_center_module_css_default.swatch,
-													style: { background: entry.manifest.accent ?? "#98a1ab" },
-													"aria-hidden": "true"
-												}),
-												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: skin_center_module_css_default.cardName,
-													title: entry.manifest.nameEn,
-													children: entry.manifest.nameEn
-												}),
-												badge !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: `${skin_center_module_css_default.badge} ${isActive ? skin_center_module_css_default.badgeActive : skin_center_module_css_default.badgeTrying}`,
-													children: badge
-												})
-											]
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SkinCardHeading, {
+											name: entry.manifest.nameEn,
+											color: entry.manifest.accent ?? "#98a1ab",
+											badge,
+											active: isActive
 										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 											className: skin_center_module_css_default.cardTagline,
@@ -1871,13 +1873,14 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region src/client/background.ts
 		/** The namespace string the Host registers (mirrors src/index.ts). */
-		const SKIN_BACKGROUND_NS = "skin-background";
+		const SKIN_BACKGROUND_NS = "ui-skin-center";
 		/** Field of the background value inside the namespace section. */
 		const OPACITY_FIELD = "backgroundOpacity";
-		/** Field of the empty-conversation backdrop blur inside the namespace section. */
-		const BLUR_EMPTY_FIELD = "backgroundBlurEmpty";
-		/** Field of the with-content backdrop blur inside the namespace section. */
-		const BLUR_CONTENT_FIELD = "backgroundBlurContent";
+		/** Persisted configuration keys for the two conversation states, not UI copy. */
+		const CONVERSATION_BLUR_FIELDS = {
+			empty: "backgroundBlurEmpty",
+			content: "backgroundBlurContent"
+		};
 		/** Field of the composer card backdrop blur inside the namespace section. */
 		const INPUT_CARD_BLUR_FIELD = "inputCardBlur";
 		/** CSS custom property written to document.body and read by backdrop skins. */
@@ -1925,25 +1928,21 @@ window.__ModuleLoader__.load({
 			*/
 			constructor(scope) {
 				this.scope = scope;
+				this.refreshFromScope();
+				scope.subscribe(() => {
+					this.refreshFromScope();
+					this.publish();
+				});
+			}
+			refreshFromScope() {
 				this.enabledValue = this.readEnabled();
 				this.opacityValue = this.readOpacity();
-				this.blurEmptyValue = this.readBlur(BLUR_EMPTY_FIELD);
-				this.blurContentValue = this.readBlur(BLUR_CONTENT_FIELD);
+				this.blurEmptyValue = this.readBlur(CONVERSATION_BLUR_FIELDS.empty);
+				this.blurContentValue = this.readBlur(CONVERSATION_BLUR_FIELDS.content);
 				this.inputCardBlurValue = this.readInputCardBlur();
 				this.applyOcclusion();
 				this.applyInputCardBlur();
 				this.syncBlur();
-				scope.subscribe(() => {
-					this.enabledValue = this.readEnabled();
-					this.opacityValue = this.readOpacity();
-					this.blurEmptyValue = this.readBlur(BLUR_EMPTY_FIELD);
-					this.blurContentValue = this.readBlur(BLUR_CONTENT_FIELD);
-					this.inputCardBlurValue = this.readInputCardBlur();
-					this.applyOcclusion();
-					this.applyInputCardBlur();
-					this.syncBlur();
-					this.publish();
-				});
 			}
 			enabled = () => this.enabledValue;
 			setEnabled(value) {
@@ -1977,7 +1976,7 @@ window.__ModuleLoader__.load({
 				this.ensureObserver();
 				this.syncBlur();
 				this.publish();
-				this.scope.set(BLUR_EMPTY_FIELD, clamped);
+				this.scope.set(CONVERSATION_BLUR_FIELDS.empty, clamped);
 			}
 			setBlurContent(value) {
 				const clamped = this.clampBlur(value);
@@ -1985,7 +1984,7 @@ window.__ModuleLoader__.load({
 				this.ensureObserver();
 				this.syncBlur();
 				this.publish();
-				this.scope.set(BLUR_CONTENT_FIELD, clamped);
+				this.scope.set(CONVERSATION_BLUR_FIELDS.content, clamped);
 			}
 			setInputCardBlur(value) {
 				const clamped = this.clampBlur(value);
@@ -2037,7 +2036,7 @@ window.__ModuleLoader__.load({
 					document.body.style.removeProperty(INPUT_CARD_BLUR_VAR);
 					return;
 				}
-				document.body.style.setProperty(INPUT_CARD_BLUR_VAR, this.inputCardBlurValue + "px");
+				document.body.style.setProperty(INPUT_CARD_BLUR_VAR, `${this.inputCardBlurValue}px`);
 			}
 			/** Write the current occlusion onto the body CSS variable (0..1 alpha). */
 			applyOcclusion() {
@@ -2087,7 +2086,7 @@ window.__ModuleLoader__.load({
 					this.blurElement = element;
 					document.body.appendChild(element);
 				}
-				const blur = "blur(" + active + "px)";
+				const blur = `blur(${active}px)`;
 				this.blurElement.style.backdropFilter = blur;
 				this.blurElement.style.setProperty("-webkit-backdrop-filter", blur);
 			}
@@ -2105,7 +2104,9 @@ window.__ModuleLoader__.load({
 			ensureObserver() {
 				if (this.disposed || this.observer !== null) return;
 				if (this.blurEmptyValue <= 0 && this.blurContentValue <= 0) return;
-				this.observer = new MutationObserver(() => this.scheduleRecheck());
+				this.observer = new MutationObserver(() => {
+					this.scheduleRecheck();
+				});
 				this.observer.observe(document.body, {
 					childList: true,
 					subtree: true,
@@ -2157,6 +2158,7 @@ window.__ModuleLoader__.load({
 			themeDark: "Dark",
 			tryOnError: "Try-on failed — see console",
 			backgroundOpacity: "Background occlusion",
+			pixelValue: "{value} px",
 			backgroundBlurEmpty: "Blur when empty",
 			backgroundBlurContent: "Blur with content",
 			inputCardBlur: "Input card blur",
@@ -2228,6 +2230,7 @@ window.__ModuleLoader__.load({
 			themeDark: "暗色",
 			tryOnError: "试穿失败，详见控制台",
 			backgroundOpacity: "背景遮挡",
+			pixelValue: "{value} 像素",
 			backgroundBlurEmpty: "空对话背景模糊",
 			backgroundBlurContent: "有对话背景模糊",
 			inputCardBlur: "输入卡模糊",
@@ -2289,7 +2292,7 @@ window.__ModuleLoader__.load({
 					activationId,
 					kind,
 					label,
-					replacesSeq,
+					...replacesSeq === void 0 ? {} : { replacesSeq },
 					at: now()
 				});
 				return seq;
@@ -2512,7 +2515,7 @@ window.__ModuleLoader__.load({
 			};
 			const fullPass = () => {
 				for (const live of rules) live.matchedInPass = 0;
-				if (doc.documentElement) applyToTree(doc.documentElement);
+				applyToTree(doc.documentElement);
 			};
 			return {
 				get running() {
@@ -2520,14 +2523,16 @@ window.__ModuleLoader__.load({
 				},
 				start() {
 					if (running) return;
+					const view = doc.defaultView;
+					if (!view) throw new Error("skin semantic observation requires a document window");
 					running = true;
 					fullPass();
-					observer = new doc.defaultView.MutationObserver((records) => {
+					observer = new view.MutationObserver((records) => {
 						try {
 							for (const record of records) for (const node of Array.from(record.addedNodes)) if (node.nodeType === 1) applyToTree(node);
 						} catch {}
 					});
-					observer.observe(doc.body ?? doc.documentElement, {
+					observer.observe(doc.documentElement, {
 						childList: true,
 						subtree: true
 					});
@@ -2637,31 +2642,37 @@ window.__ModuleLoader__.load({
 		function createSkinController(deps) {
 			const doc = deps.doc;
 			const ledger = deps.ledger;
-			const apiBase = deps.apiBase ?? "/api/skin-center/v2";
+			const apiBase = deps.apiBase ?? "api/skin-center/v2";
 			const fetchImpl = deps.fetchImpl ?? fetch.bind(doc.defaultView);
 			const layers = ensureDecorationLayers(doc);
 			const onError = deps.onError ?? (() => {});
-			const themeGet = deps.themeGet ?? (() => doc.body?.hasAttribute("data-ds-dark-theme") ? "dark" : "light");
+			const themeGet = deps.themeGet ?? (() => doc.body.hasAttribute("data-ds-dark-theme") ? "dark" : "light");
 			const themeSubscribe = deps.themeSubscribe ?? ((listener) => {
+				const view = doc.defaultView;
+				if (!view) throw new Error("skin theme observation requires a document window");
 				let last = themeGet();
-				const observer = new doc.defaultView.MutationObserver(() => {
+				const observer = new view.MutationObserver(() => {
 					const next = themeGet();
 					if (next !== last) {
 						last = next;
 						listener(next);
 					}
 				});
-				if (doc.body) observer.observe(doc.body, {
+				observer.observe(doc.body, {
 					attributes: true,
 					attributeFilter: ["data-ds-dark-theme"]
 				});
-				return () => observer.disconnect();
+				return () => {
+					observer.disconnect();
+				};
 			});
 			const loadStylesheet = deps.loadStylesheet ?? ((href) => new Promise((resolveLink, rejectLink) => {
 				const link = doc.createElement("link");
 				link.rel = "stylesheet";
 				link.href = href;
-				const timer = setTimeout(() => rejectLink(/* @__PURE__ */ new Error(`stylesheet load timeout: ${href}`)), 15e3);
+				const timer = setTimeout(() => {
+					rejectLink(/* @__PURE__ */ new Error(`stylesheet load timeout: ${href}`));
+				}, 15e3);
 				link.onload = () => {
 					clearTimeout(timer);
 					resolveLink();
@@ -2674,7 +2685,7 @@ window.__ModuleLoader__.load({
 			}));
 			let latestRequest = 0;
 			let currentActivation = null;
-			const initialSkinId = doc.documentElement?.getAttribute("data-dsh-skin") || null;
+			const initialSkinId = doc.documentElement.getAttribute("data-dsh-skin") || null;
 			let active = initialSkinId;
 			/** The committed selection try-on restores (component scope). */
 			let committed = {
@@ -2772,8 +2783,7 @@ window.__ModuleLoader__.load({
 					setBackgroundLayer(activation, []);
 					return;
 				}
-				const assetBase = `${apiBase}/skins/${entry.manifest.id}`;
-				setBackgroundLayer(activation, buildBackgroundMedia(doc, variant, assetBase));
+				setBackgroundLayer(activation, buildBackgroundMedia(doc, variant, `${apiBase}/skins/${entry.manifest.id}`));
 			}
 			async function installHooks(activation, entry) {
 				if (!entry.manifest.facets?.client) return;
@@ -2865,7 +2875,9 @@ window.__ModuleLoader__.load({
 					}
 					emit();
 					if (previous !== null) ledger.disposeActivation(previous);
-					if (shouldPersist) await persist(id).catch((error) => onError("failed to persist the skin selection", error));
+					if (shouldPersist) await persist(id).catch((error) => {
+						onError("failed to persist the skin selection", error);
+					});
 					return active;
 				} catch (error) {
 					ledger.disposeActivation(activation);
@@ -2950,18 +2962,18 @@ window.__ModuleLoader__.load({
 		* selection, and activate it (the tapIndex adapter already stamped the
 		* attribute and preloaded the stylesheet for first paint; the controller
 		* re-installs under ledger ownership so later switches stay atomic).
-		* @module @dsh-selfuse/skin-center/runtime/boot
+		* @module @linxin666/dsh-client-ui-skin-center/runtime/boot
 		*/
 		function bootSkinRuntime(options = {}) {
 			const doc = options.doc ?? document;
-			const apiBase = options.apiBase ?? "/api/skin-center/v2";
+			const apiBase = options.apiBase ?? "api/skin-center/v2";
 			const fetchImpl = options.fetchImpl ?? fetch.bind(doc.defaultView);
 			const controller = createSkinController({
 				doc,
 				ledger: createEffectLedger(),
 				apiBase,
 				fetchImpl,
-				suppressBackgroundMedia: options.suppressBackgroundMedia,
+				...options.suppressBackgroundMedia === void 0 ? {} : { suppressBackgroundMedia: options.suppressBackgroundMedia },
 				onError: (message, error) => {
 					console.error(`[skin-center] ${message}`, error);
 				}
@@ -3011,7 +3023,7 @@ window.__ModuleLoader__.load({
 			(async () => {
 				try {
 					await refreshCatalog();
-					let active = doc.documentElement?.getAttribute("data-dsh-skin") || null;
+					let active = doc.documentElement.getAttribute("data-dsh-skin") || null;
 					if (!active) {
 						const payload = await (await fetchImpl(`${apiBase}/active`)).json();
 						active = payload.ok && typeof payload.active === "string" ? payload.active : null;
@@ -3058,10 +3070,54 @@ window.__ModuleLoader__.load({
 			}
 		};
 		//#endregion
+		//#region src/client/section-form.ts
+		function section(value, key) {
+			return typeof value === "object" && value !== null && !Array.isArray(value) ? value[key] : void 0;
+		}
+		/**
+		* Project one nested section without introducing a second persistence store.
+		* @param parent - native form whose schema validates the complete entry.
+		* @param key - section field used for every read and atomic write.
+		* @returns stable snapshots and mutations fenced by the parent's revision.
+		*/
+		function sectionForm(parent, key) {
+			let previous;
+			let projected;
+			return {
+				getSnapshot() {
+					const current = parent.getSnapshot();
+					if (current !== previous) {
+						previous = current;
+						projected = {
+							...current,
+							value: current.value?.[key],
+							base: section(current.base, key),
+							user: section(current.user, key)
+						};
+					}
+					return projected;
+				},
+				subscribe: (listener) => parent.subscribe(listener),
+				set: (field, value) => parent.mutate([{
+					op: "set",
+					path: [key, field],
+					value
+				}]),
+				unset: (field) => parent.mutate([{
+					op: "unset",
+					path: [key, field]
+				}]),
+				mutate: (ops, revision) => parent.mutate(ops.map((op) => ({
+					...op,
+					path: [key, ...op.path]
+				})), revision)
+			};
+		}
+		//#endregion
 		//#region src/client/index.ts
 		/** Locale namespace owned by this plugin. */
 		const NS = "skinCenter";
-		/** Required services: slots, locale, theme, and the official entry-scoped config forms. */
+		/** Required services: slots + locale (plugin card), theme (preview toggle), and settingsScope + its transport (background scrim). */
 		const inject = [
 			"slots",
 			"locale",
@@ -3070,16 +3126,6 @@ window.__ModuleLoader__.load({
 			"connection",
 			"remote"
 		];
-		function nestedConfigForm(form, section) {
-			return {
-				getSnapshot: () => {
-					const snapshot = form.getSnapshot();
-					return { ...snapshot, value: snapshot.value?.[section] };
-				},
-				subscribe: (listener) => form.subscribe(listener),
-				set: (field, value) => form.mutate([{ op: "set", path: [section, field], value }])
-			};
-		}
 		/**
 		* Register the skin-center dictionaries, the body scope attribute, and the
 		* Skin Center as a first-level settings section.
@@ -3097,40 +3143,61 @@ window.__ModuleLoader__.load({
 				};
 			}, "ui-skin-center: body scope");
 			const theme = ctx.get("theme");
-			const form = ctx.configForms.get("web-ui-skin-center");
-			const background = new BackgroundController(nestedConfigForm(form, "background"));
-			ctx.effect(() => () => background.dispose(), "ui-skin-center: background dispose");
-			const wallpaper = new WallpaperController(nestedConfigForm(form, "wallpaper"));
-			ctx.effect(() => () => wallpaper.dispose(), "ui-skin-center: wallpaper dispose");
+			const background = new BackgroundController(sectionForm(ctx.configForms.get(SKIN_BACKGROUND_NS), "background"));
+			ctx.effect(() => () => {
+				background.dispose();
+			}, "ui-skin-center: background dispose");
+			const wallpaper = new WallpaperController(sectionForm(ctx.configForms.get(SKIN_WALLPAPER_NS), "wallpaper"));
+			ctx.effect(() => () => {
+				wallpaper.dispose();
+			}, "ui-skin-center: wallpaper dispose");
 			installBootRestore(wallpaper);
 			const runtime = bootSkinRuntime({ suppressBackgroundMedia: () => wallpaper.enabled() && wallpaper.activeId() !== null && wallpaper.activeId() !== "" });
-			ctx.effect(() => () => runtime.shutdown(), "ui-skin-center: runtime shutdown");
+			ctx.effect(() => () => {
+				runtime.shutdown();
+			}, "ui-skin-center: runtime shutdown");
 			ctx.effect(() => wallpaper.subscribe(() => {
 				runtime.controller.refresh();
 			}), "ui-skin-center: wallpaper priority refresh");
 			const preview = new PreviewCoordinator(runtime.controller, wallpaper);
-			ctx.effect(() => ctx.on("theme/change", () => wallpaper.recoverScenePlayer()), "ui-skin-center: scene recovery after theme change");
+			ctx.effect(() => ctx.on("theme/change", () => {
+				wallpaper.recoverScenePlayer();
+			}), "ui-skin-center: scene recovery after theme change");
 			const injected = () => ({
 				runtime,
 				preview,
 				theme: {
 					getTheme: () => theme.getTheme(),
 					subscribe: (listener) => ctx.on("theme/change", listener),
-					setTheme: (id) => theme.setTheme(id)
+					setTheme: (id) => {
+						theme.setTheme(id);
+					}
 				},
 				background: {
 					enabled: () => background.enabled(),
-					setEnabled: (value) => background.setEnabled(value),
+					setEnabled: (value) => {
+						background.setEnabled(value);
+					},
 					opacity: () => background.opacity(),
 					blurEmpty: () => background.blurEmpty(),
 					blurContent: () => background.blurContent(),
 					inputCardBlur: () => background.inputCardBlur(),
 					subscribe: (listener) => background.subscribe(listener),
-					set: (opacity) => background.set(opacity),
-					setBlurEmpty: (value) => background.setBlurEmpty(value),
-					setBlurContent: (value) => background.setBlurContent(value),
-					setInputCardBlur: (value) => background.setInputCardBlur(value),
-					dispose: () => background.dispose()
+					set: (opacity) => {
+						background.set(opacity);
+					},
+					setBlurEmpty: (value) => {
+						background.setBlurEmpty(value);
+					},
+					setBlurContent: (value) => {
+						background.setBlurContent(value);
+					},
+					setInputCardBlur: (value) => {
+						background.setInputCardBlur(value);
+					},
+					dispose: () => {
+						background.dispose();
+					}
 				},
 				wallpaper: {
 					enabled: () => wallpaper.enabled(),
@@ -3143,33 +3210,74 @@ window.__ModuleLoader__.load({
 					sound: () => wallpaper.sound(),
 					volume: () => wallpaper.volume(),
 					dirs: () => wallpaper.dirs(),
-					addDir: (dir) => wallpaper.addDir(dir),
-					removeDir: (dir) => wallpaper.removeDir(dir),
+					addDir: (dir) => {
+						wallpaper.addDir(dir);
+					},
+					removeDir: (dir) => {
+						wallpaper.removeDir(dir);
+					},
 					activeId: () => wallpaper.activeId(),
 					trying: () => wallpaper.trying(),
 					subscribe: (listener) => wallpaper.subscribe(listener),
-					setEnabled: (value) => wallpaper.setEnabled(value),
-					setMode: (value) => wallpaper.setMode(value),
-					setFit: (fit) => wallpaper.setFit(fit),
-					setDim: (value) => wallpaper.setDim(value),
-					setBlur: (value) => wallpaper.setBlur(value),
-					setPauseOnHidden: (value) => wallpaper.setPauseOnHidden(value),
-					setSound: (value) => wallpaper.setSound(value),
-					setVolume: (value) => wallpaper.setVolume(value),
+					setEnabled: (value) => {
+						wallpaper.setEnabled(value);
+					},
+					setMode: (value) => {
+						wallpaper.setMode(value);
+					},
+					setFit: (fit) => {
+						wallpaper.setFit(fit);
+					},
+					setDim: (value) => {
+						wallpaper.setDim(value);
+					},
+					setBlur: (value) => {
+						wallpaper.setBlur(value);
+					},
+					setPauseOnHidden: (value) => {
+						wallpaper.setPauseOnHidden(value);
+					},
+					setSound: (value) => {
+						wallpaper.setSound(value);
+					},
+					setVolume: (value) => {
+						wallpaper.setVolume(value);
+					},
 					applySelection: (descriptor) => {
-						preview.runWallpaper(() => wallpaper.applySelection(descriptor));
+						preview.runWallpaper(() => {
+							wallpaper.applySelection(descriptor);
+						});
 					},
-					clearSelection: () => wallpaper.clearSelection(),
-					sync: (descriptor) => wallpaper.sync(descriptor),
+					clearSelection: () => {
+						wallpaper.clearSelection();
+					},
+					sync: (descriptor) => {
+						wallpaper.sync(descriptor);
+					},
 					tryOn: (descriptor) => {
-						preview.runWallpaper(() => wallpaper.tryOn(descriptor));
+						preview.runWallpaper(() => {
+							wallpaper.tryOn(descriptor);
+						});
 					},
-					exitTryOn: () => wallpaper.exitTryOn(),
-					recoverScenePlayer: () => wallpaper.recoverScenePlayer(),
-					dispose: () => wallpaper.dispose()
+					exitTryOn: () => {
+						wallpaper.exitTryOn();
+					},
+					recoverScenePlayer: () => {
+						wallpaper.recoverScenePlayer();
+					},
+					dispose: () => {
+						wallpaper.dispose();
+					}
 				}
 			});
-			// Settings menu kept clean - background & skin runtime active without extra settings section
+			ctx.slots.inject("settings.section", () => ctx.slots.register({
+				name: "settings.section",
+				id: "skin-center",
+				order: 120,
+				label: () => ctx.locale.bind("skinCenter")("title"),
+				locale: "skinCenter",
+				inject: injected
+			}, SkinCenterSection));
 		}
 		//#endregion
 		exports.NS = NS;

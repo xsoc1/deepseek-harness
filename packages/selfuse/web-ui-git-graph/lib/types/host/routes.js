@@ -70,7 +70,8 @@ async function readJsonBody(req) {
     if (text === '')
         return null;
     try {
-        return JSON.parse(text);
+        const payload = JSON.parse(text);
+        return payload;
     }
     catch {
         return null;
@@ -118,7 +119,7 @@ export function registerGitRoutes(ctx, service) {
     let heartbeatTimer;
     const removeSubscriber = (subscriber) => {
         subscriber.statusAbort?.abort(new Error('git status subscriber closed'));
-        subscriber.statusAbort = undefined;
+        delete subscriber.statusAbort;
         subscribers.delete(subscriber);
         if (subscribers.size === 0) {
             guard?.stop();
@@ -172,7 +173,7 @@ export function registerGitRoutes(ctx, service) {
             }
             finally {
                 if (subscriber.statusAbort === controller)
-                    subscriber.statusAbort = undefined;
+                    delete subscriber.statusAbort;
             }
         }));
     };
@@ -317,3 +318,4 @@ export function registerGitRoutes(ctx, service) {
         subscribers.clear();
     };
 }
+//# sourceMappingURL=routes.js.map

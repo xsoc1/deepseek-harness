@@ -1,22 +1,24 @@
 {
   "name": "@dsh-selfuse/soul-md",
   "version": "0.2.8",
-  "description": "DeepSeek Harness 的 soul.md 风格人设卡插件：把 markdown 人设文件注入系统提示词（soul:persona），文件变更热重载，让 Agent 边干活边角色扮演；附 Web UI 设置栏。",
+  "description": "Load local soul.md persona cards through native DSH prompt sections and configuration forms.",
   "type": "module",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
+  "scripts": { "build": "tsc -b && tsdown" },
   "exports": {
-    ".": "./index.js",
-    "./client": "./client.js",
+    ".": { "types": "./lib/types/index.d.ts", "default": "./lib/index.js" },
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
-    "index.js",
-    "client.js",
+    "lib",
+    "cordis.patch.yml",
     "README.md",
     "README.zh.md",
     "LICENSE",
-    "examples",
-    "vendor"
+    "examples"
   ],
   "homepage": "https://github.com/Scorp1o117/dsh-soul-md",
   "keywords": [
@@ -34,17 +36,30 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Scorp1o117/dsh-soul-md.git"
+    "url": "git+https://github.com/xsoc1/deepseek-harness.git",
+    "directory": "packages/selfuse/soul-md"
   },
   "bugs": {
     "url": "https://github.com/Scorp1o117/dsh-soul-md/issues"
   },
-  "dependencies": {
-    "@deepseek-ai/schemastery": "workspace:*"
-  },
   "peerDependencies": {
-    "react": "^18.2.0",
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/cordis-plugin-loader": "workspace:~",
+    "@deepseek-ai/schemastery": "workspace:~",
     "@deepseek-ai/dsh-home-paths": "workspace:*",
-    "@deepseek-ai/dsh-settings": "workspace:*"
-  }
+    "@deepseek-ai/dsh-launch-environment": "workspace:*",
+    "@deepseek-ai/dsh-system-prompt": "workspace:*"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/schemastery": "workspace:~",
+    "@deepseek-ai/dsh-home-paths": "workspace:*",
+    "@deepseek-ai/dsh-launch-environment": "workspace:*",
+    "@deepseek-ai/dsh-system-prompt": "workspace:*",
+    "@deepseek-ai/cordis-plugin-loader": "workspace:~",
+    "@deepseek-ai/cordis-plugin-include": "workspace:~",
+    "vitest": "^4.1.8", "typescript": "^6.0.3", "tsdown": "^0.22.2"
+  },
+  "private": true,
+  "selfuseUpstream": "git+https://github.com/Scorp1o117/dsh-soul-md.git"
 }

@@ -18,3 +18,4 @@ function isPairingAccess(value) {
         && value !== null
         && typeof value.isPairedDevice === 'function';
 }
+//# sourceMappingURL=access.js.map

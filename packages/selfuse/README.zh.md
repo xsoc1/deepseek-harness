@@ -9,32 +9,44 @@ kind: "package-group"
 
 ## 概述
 
-本组包含 selfuse DSH 部署使用或保留的本地与第三方整合包。包在此目录中不代表它已在活跃 profile 启用。DSH 官方源码、候选升级、selfuse 配置和生成的运行态各有归属，不能相互覆盖。
+本组保存用于开发和兼容测试的本地与第三方集成。目录存在不代表它已在官方 Windows Desktop 激活。桌面运行态、本 WSL 源码工作树和生成的候选 profile 分别归属不同状态。退役集成归档在构建工作区之外。
 
 ## 目录
 
-- 归属
-- 部署
-- 历史会话
-- 包状态
-- 开发备注
+- [插件包](#packages)
+- [相关文档](#related-documentation)
+- [开发备注](#dev-note)
 
-## 归属
+-----
 
-官方仓库与 selfuse 变更分别跟踪。`config/selfuse/` 定义部署组成和预设；本目录保存整合源码或兼容产物；`scripts/selfuse/` 生成、安装和检查部署。活跃 DSH 用户目录含生成的 profile、设置、技能和会话数据，但不是配置的唯一源码。
+<a id="packages"></a>
+## 插件包
 
-## 部署
+保留包的激活与验收要求相互独立：
 
-活跃服务继续使用现有 checkout，直到隔离候选通过构建、包测试、全部文档门禁和应用冒烟。`scripts/selfuse/generate-profile.mjs` 生成候选 profile；`scripts/selfuse/install.mjs` 安装选定候选。不能为了让文档门禁通过而直接对活跃 DSH 用户目录运行这些命令。
+| 包 | 职责 |
+|---|---|
+| [backup](backup/README.zh.md) | 备份与恢复操作 |
+| [content-risk-guard](content-risk-guard/README.zh.md) | 本地私密内容检查 |
+| [task-notify](task-notify/README.zh.md) | 保留的运行结束通知 |
+| [git-workflow](git-workflow/README.zh.md) | Git 工作流集成 |
+| [memory-panel](memory-panel/README.zh.md) | 本地 Markdown 记忆管理 |
+| [skin-center](skin-center/README.zh.md) | 皮肤和壁纸管理 |
+| [skin-layout-compat](skin-layout-compat/README.zh.md) | 仅用于皮肤的布局属性适配 |
+| [soul-md](soul-md/README.zh.md) | 个人上下文文件集成 |
+| [plugin-mount](plugin-mount/README.zh.md) | 宿主根作用域激活保护 |
+| [web-ui-git-graph](web-ui-git-graph/README.zh.md) | Git 图和分支选择 |
 
-## 历史会话
+<a id="related-documentation"></a>
+## 相关文档
 
-会话头保留创建时的 preset id。恢复旧会话前应保留或重映射这些 id；否则新会话可能正常而恢复失败。启动前的 `--presets-only` 路径只补齐缺失的标准预设，不覆盖 profile 设置或技能。
+- [Selfuse 配置](../../config/selfuse/profiles.build.yml) — 开发候选组成和旧预设别名。
+- [Selfuse 脚本](../../scripts/selfuse/README.zh.md) — 隔离生成和安装；不是现用 Desktop 启动器。
+- `xsoc1/dsh-selfuse/docs/current-deployment.md` — 官方 Desktop 安装与会话归档。
 
-## 包状态
+<a id="dev-note"></a>
+## 开发备注
 
-目录中既有活跃 selfuse 包，也有旧市场、WSL 工作区 bundle 等已退役或未启用包，以及旧桌面集成所需的冻结兼容产物。应检查生成的 profile，而不能假定每份清单都被加载。有功能重叠时优先使用当前官方 CLI。
+五个退役 EAC 集成、market、skill-router 和 wsl-workspace 已移到本工作树以外的本地 `dsh-retired-20261001/source-packages` 归档。task-notify 仍为候选依赖。源码测试使用可丢弃用户目录；保留旧会话头，独立验收 Desktop 功能。发布前须通过完整门禁。
 
-### 开发备注
-
-本次升级应先在隔离候选 checkout 和可丢弃 DSH 用户目录中验证。发布前在 `AGENTS.md` 和 selfuse 部署指南记录准确的官方修订、第三方来源、测试和仍未验证的运行行为。
+旧设置聚合页、社区目录、skins 载具和 web-ui-all 已归档到 `dsh-retired-20261001/native-ui-packages`。候选配置直接加载 Git 图和皮肤中心。SSH、任务板、MinerU 及其旧 ClientRuntime/ApiProxy 包归档到 `dsh-retired-20261001/conditional-packages`；改用官方 SSH 和计划任务。插件数据和会话保持不变。

@@ -108,6 +108,22 @@ const GROUP_ORDER = [
 
 const SERVICE_ROLES: ServiceRole[] = [
   {
+    key: 'memoryPanel',
+    pkg: '@dsh-selfuse/memory-panel',
+    title: 'Optional local Markdown settings service',
+    mode: 'service',
+    consumers: ['@dsh-selfuse/memory-panel'],
+    note: 'The private memory panel reads local Markdown for humans; it neither injects model context nor belongs to the default official Desktop profile.',
+  },
+  {
+    key: 'backupPanel',
+    pkg: '@dsh-selfuse/backup',
+    title: 'Optional local archive settings service',
+    mode: 'service',
+    consumers: ['@dsh-selfuse/backup'],
+    note: 'The private backup layer owns the Host service and its Client Remote tab; it is not part of the default official Desktop profile.',
+  },
+  {
     key: 'hmr',
     pkg: 'hmr',
     title: 'Serialized module and configuration reloads',

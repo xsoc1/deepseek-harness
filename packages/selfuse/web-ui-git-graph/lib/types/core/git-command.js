@@ -56,7 +56,7 @@ export const gitPathArgv = (marker) => ['rev-parse', '--git-path', marker];
  */
 export const operationMarkersArgv = () => [
     'rev-parse',
-    ...OPERATION_MARKERS.flatMap((marker) => ['--git-path', marker]),
+    ...OPERATION_MARKERS.flatMap(marker => ['--git-path', marker]),
 ];
 const OVERWRITE_PATTERNS = [
     {
@@ -168,3 +168,4 @@ export function validateBranchName(name) {
         return 'too-long';
     return null;
 }
+//# sourceMappingURL=git-command.js.map

@@ -48,7 +48,8 @@ export function collectActiveSelfuseBuilds(root: string = DEFAULT_ROOT): Selfuse
     if (pkg.name !== name) throw new Error(`selfuse build: package name mismatch: ${name}`)
     visiting.add(name)
     const dependencies = record(pkg.dependencies ?? {})
-    for (const dependency of Object.keys(dependencies)) visit(dependency)
+    const peers = record(pkg.peerDependencies ?? {})
+    for (const dependency of new Set([...Object.keys(dependencies), ...Object.keys(peers)])) visit(dependency)
     visiting.delete(name)
     visited.add(name)
     const scripts = record(pkg.scripts ?? {})
@@ -65,13 +66,18 @@ export function collectActiveSelfuseBuilds(root: string = DEFAULT_ROOT): Selfuse
   return builds
 }
 
-function main(): void {
-  for (const { name, script } of collectActiveSelfuseBuilds()) {
+/**
+ * Build active private packages through the invoking package manager.
+ * @param root - Repository containing the profile and package sources.
+ * @param environment - Lifecycle environment inherited by the child builds.
+ */
+export function runActiveSelfuseBuilds(root: string = DEFAULT_ROOT, environment: NodeJS.ProcessEnv = process.env): void {
+  for (const { name, script } of collectActiveSelfuseBuilds(root)) {
     console.log(`selfuse build: ${name} (${script})`)
-    const invocation = pnpmInvocation(['--filter', name, 'run', script])
+    const invocation = pnpmInvocation(['run', script], environment)
     const result = spawnSync(invocation.command, invocation.args, {
-      cwd: DEFAULT_ROOT,
-      env: process.env,
+      cwd: join(root, 'packages/selfuse', name.slice('@dsh-selfuse/'.length)),
+      env: environment,
       stdio: 'inherit',
     })
     if (result.error !== undefined) throw result.error
@@ -81,4 +87,4 @@ function main(): void {
   }
 }
 
-if (import.meta.main) main()
+if (import.meta.main) runActiveSelfuseBuilds()

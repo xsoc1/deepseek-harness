@@ -34,10 +34,10 @@ All tools accept `workdir`, defaulting to the session work directory. Relative p
 
 ## Install
 
-Use the official plugin CLI for the intended profile:
+This private package is an integrated workspace candidate, not an independently published npm release. Build it in the selfuse source tree before composing its profile patch:
 
 ```sh
-dsh plugin --profile web add @dsh-selfuse/git-workflow
+pnpm --filter @dsh-selfuse/git-workflow run build
 ```
 
 ## Safety
@@ -66,7 +66,10 @@ The tool schemas remain stable across calls. Each returned Git result extends th
 - `git_commit` needs the repository's Git identity configured.
 - Unusual path encodings may not be fully represented in `git_log` file output.
 - Push, pull, and rebase are deliberately not exposed by this plugin.
+- Activation in the installed Windows Desktop and PowerShell execution remain unverified.
 
 ### Dev Note
 
-Run the package tests and a sandbox-denial case when upgrading DSH's shell interface. The integrated source, not an older standalone checkout path, is the development authority.
+No invariant companion is published because Git is the external authority and each tool reads it directly, without an independently maintained Session projection.
+
+The package owns strict TypeScript source and a repeatable `tsc -b && tsdown` build. The runtime tests load the actual bundle into native tools, subprocess, sandbox-policy and Bash services against disposable Git repositories. They cover bounded history, complete branch names, quoted commits, diff results, rejected traversal, disposal and read-only refusal. Pure parser tests run separately through `pnpm --filter @dsh-selfuse/git-workflow test`. Keep both tests when upgrading the shell interface; they do not establish installed Desktop acceptance.

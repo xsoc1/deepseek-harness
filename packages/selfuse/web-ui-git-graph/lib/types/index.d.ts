@@ -15,7 +15,5 @@ export declare const inject: string[];
  * Mount the git service and its routes.
  * @param ctx - context carrying webServer, subprocess, and workspaceRegistry.
  */
-export declare const apply: typeof applyImpl;
-declare function applyImpl(ctx: Context): void;
-export {};
+export declare const apply: (ctx: Context, config: unknown) => void;
 //# sourceMappingURL=index.d.ts.map

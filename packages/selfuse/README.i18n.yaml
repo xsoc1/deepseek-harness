@@ -9,23 +9,17 @@
   en: a8c09b5c131c4e00
   zh: 59161a103a8ad989
 /selfuse-packages/summary:
-  en: 123b4ec72b9c602d
-  zh: 4a00ff3ce9816f1a
+  en: 1342bc82e5ac49fb
+  zh: fb4bba1da2e7142f
 /selfuse-packages/table-of-contents:
-  en: 063f80eff4d886f7
-  zh: 76686c96cf2264af
-/selfuse-packages/ownership:
-  en: 190f55fd938237cc
-  zh: d10420adbe5215dd
-/selfuse-packages/deployment:
-  en: 35fb0ee57c2a9158
-  zh: 091fc865dfe48dcd
-/selfuse-packages/historical-sessions:
-  en: 3aa179643fea791a
-  zh: e6246075998f8a45
-/selfuse-packages/package-status:
-  en: a36eef38962eceff
-  zh: 2c040a32e4f42537
-/selfuse-packages/package-status/dev-note:
-  en: 961b574a8b32b43c
-  zh: eb42e7caa7d7ef08
+  en: 1eb35b015a6c423f
+  zh: 6930b3ac819e48fa
+/selfuse-packages/packages:
+  en: ce569291120580f7
+  zh: b59776bf670114fc
+/selfuse-packages/related-documentation:
+  en: 83885ab83905600f
+  zh: 4fd42e5f125b9b8b
+/selfuse-packages/dev-note:
+  en: 688c2365d91fbc80
+  zh: ac6864c2b1aef698

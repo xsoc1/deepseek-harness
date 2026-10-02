@@ -28,6 +28,20 @@
     // not declaration path aliases, keep each package/vendor source compiled
     // under its own tsconfig boundary.
     "paths": {
+      "@dsh-selfuse/backup": ["./packages/selfuse/backup/src/index.ts"],
+      "@dsh-selfuse/plugin-mount": ["./packages/selfuse/plugin-mount/src/index.ts"],
+      "@dsh-selfuse/backup/client": ["./packages/selfuse/backup/src/client/index.ts"],
+      "@dsh-selfuse/memory-panel": ["./packages/selfuse/memory-panel/src/index.ts"],
+      "@dsh-selfuse/memory-panel/client": ["./packages/selfuse/memory-panel/src/client/index.ts"],
+      "@dsh-selfuse/git-workflow": ["./packages/selfuse/git-workflow/src/index.ts"],
+      "@dsh-selfuse/task-notify": ["./packages/selfuse/task-notify/src/index.ts"],
+      "@dsh-selfuse/soul-md": ["./packages/selfuse/soul-md/src/index.ts"],
+      "@dsh-selfuse/skin-center": ["./packages/selfuse/skin-center/src/index.ts"],
+      "@dsh-selfuse/skin-center/client": ["./packages/selfuse/skin-center/src/client/index.ts"],
+      "@dsh-selfuse/web-ui-git-graph": ["./packages/selfuse/web-ui-git-graph/src/index.ts"],
+      "@dsh-selfuse/web-ui-git-graph/client": ["./packages/selfuse/web-ui-git-graph/src/client/index.ts"],
+      "@dsh-selfuse/skin-layout-compat": ["./packages/selfuse/skin-layout-compat/src/index.ts"],
+      "@dsh-selfuse/skin-layout-compat/client": ["./packages/selfuse/skin-layout-compat/src/client/index.ts"],
       "@deepseek-ai/dsh-client-product-analytics": ["./packages/client/product-analytics/src/index.ts"],
       "@deepseek-ai/dsh-client-product-analytics/types": ["./packages/client/product-analytics/src/events.ts"],
       "@deepseek-ai/dsh-client-product-analytics/client": ["./packages/client/product-analytics/src/client/index.ts"],

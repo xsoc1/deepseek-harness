@@ -39,7 +39,7 @@
     "packages/client/tsdown.client.ts",
     "scripts/client-build-environment.ts",
     "scripts/bundle-input-isolation.ts",
-    "scripts/*.client.spec.ts",
+    "scripts/**/*.client.spec.ts",
     "scripts/client-bundle-css.spec.ts",
     "scripts/client-bundle-purity.spec.ts"
   ],
@@ -48,10 +48,13 @@
   // in turn. `exclude` wins over `include`, so the test glob above stays broad.
   "exclude": [
     "packages/client/*/tests/**/*.host.spec.ts",
-    "packages/selfuse/**",
-
   ],
   "references": [
+    { "path": "./packages/selfuse/backup/tsconfig.client.json" },
+    { "path": "./packages/selfuse/memory-panel/tsconfig.client.json" },
+    { "path": "./packages/selfuse/skin-center/tsconfig.client.json" },
+    { "path": "./packages/selfuse/web-ui-git-graph/tsconfig.client.json" },
+    { "path": "./packages/selfuse/skin-layout-compat" },
     { "path": "./packages/client/product-analytics/tsconfig.client.json" },
     { "path": "./apps/desktop/tsconfig.client.json" },
     { "path": "./packages/util/atomic-write" },

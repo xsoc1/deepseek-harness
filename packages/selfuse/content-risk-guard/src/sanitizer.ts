@@ -25,7 +25,8 @@ function scanTexts(text: string): { texts: string[]; complete: boolean } {
         fragments.push(value)
         if (/^[\s]*[\[{\"]/.test(value)) {
           try {
-            visit(JSON.parse(value) as unknown, depth + 1)
+            const nested: unknown = JSON.parse(value)
+            visit(nested, depth + 1)
           } catch {
             // A string that looks like JSON may still be ordinary tool text.
           }

@@ -1,0 +1,35 @@
+{
+  "name": "@dsh-selfuse/task-notify",
+  "version": "0.1.0",
+  "private": true,
+  "description": "任务完成通知（web 版）：监听会话 turn/end 事件，弹 Windows 系统通知；子代理会话不通知",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xsoc1/deepseek-harness.git",
+    "directory": "packages/selfuse/task-notify"
+  },
+  "scripts": { "build": "tsc -b && tsdown" },
+  "peerDependencies": { "@deepseek-ai/cordis": "workspace:~" },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-session": "workspace:*",
+    "@deepseek-ai/dsh-session-title": "workspace:*",
+    "typescript": "^6.0.3",
+    "tsdown": "^0.22.2"
+  }
+}

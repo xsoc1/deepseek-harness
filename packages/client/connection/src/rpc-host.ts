@@ -1,7 +1,7 @@
 /** Host registry and HTTP adapter for generic Connection RPC channels. */
 
 import { Context, Service } from '@deepseek-ai/cordis'
-import type { WebRoute, WebServer } from '@deepseek-ai/dsh-host-webserver'
+import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import type { PeerScope } from '@deepseek-ai/dsh-typert-protocol'
 import {
   RpcId,
@@ -188,7 +188,7 @@ export class HostConnectionService extends Service implements HostConnectionHand
         await bridge(req, res, fetchHandler)
       },
     }
-    const webServer = (owner.get('webServer') ?? owner.root.get('webServer')) as WebServer | undefined
+    const webServer = (owner.get('webServer') ?? owner.root.get('webServer'))
     if (webServer) {
       return owner.effect(
         () => webServer.register(route),

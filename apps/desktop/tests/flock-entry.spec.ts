@@ -5,12 +5,21 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { expect, it, vi } from 'vitest'
-import { createFlockEntryLoader } from '../scripts/flock-entry.ts'
+import { createFlockEntryLoader, flockBinaryRelativePath } from '../scripts/flock-entry.ts'
 
 type Entry = Awaited<ReturnType<ReturnType<typeof createFlockEntryLoader>>>
 
 const entry = { tryLockExclusive: vi.fn() } as Entry
 const BUILD_TEXT = 'pnpm run build:native-system && pnpm --dir native/system run build:ts'
+
+it.each([
+  ['linux', true, join('bin', 'glibc', 'system.node')],
+  ['linux', false, join('bin', 'musl', 'system.node')],
+  ['darwin', true, join('bin', 'system.node')],
+  ['darwin', false, join('bin', 'system.node')],
+] as const)('selects only the runtime flock addon on %s (glibc=%s)', (platform, glibc, expected) => {
+  expect(flockBinaryRelativePath(platform, glibc)).toBe(expected)
+})
 
 function notFound(): NodeJS.ErrnoException {
   return Object.assign(new Error("Cannot find module 'lib/flock.js'"), { code: 'ERR_MODULE_NOT_FOUND' })

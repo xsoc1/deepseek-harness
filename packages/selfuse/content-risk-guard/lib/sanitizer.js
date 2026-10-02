@@ -14,7 +14,8 @@ function scanTexts(text) {
                 fragments.push(value);
                 if (/^[\s]*[\[{\"]/.test(value)) {
                     try {
-                        visit(JSON.parse(value), depth + 1);
+                        const nested = JSON.parse(value);
+                        visit(nested, depth + 1);
                     }
                     catch {
                         // A string that looks like JSON may still be ordinary tool text.

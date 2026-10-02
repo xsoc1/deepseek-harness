@@ -42,3 +42,4 @@ export function errorMessage(error, t) {
             return t('error.requestFailed', { error: error.message });
     }
 }
+//# sourceMappingURL=error-copy.js.map

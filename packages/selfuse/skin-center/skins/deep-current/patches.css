@@ -250,7 +250,7 @@ textarea[data-phase]::placeholder {
 [data-dsh-part="dialog"],
 [data-dsh-part="plugin-item"],
 [data-dsh-part="marketplace-card"] {
-  border-color: var(--dsw-alias-border-l2);
+  border: none;
   box-shadow: var(--dsw-shadow-lv1);
 }
 

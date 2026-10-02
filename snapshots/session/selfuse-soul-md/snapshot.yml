@@ -1,0 +1,10 @@
+version: 1
+scenario: selfuse-soul-md
+profile: headless
+composition: selfuse-soul-md
+recording: authored
+header:
+  class: selfuse-soul-md
+  pin: true
+platform: posix
+permission: read-only

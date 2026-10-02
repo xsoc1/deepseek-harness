@@ -34,10 +34,10 @@ kind: "package-bundle"
 
 ## 安装
 
-在目标 profile 使用官方插件 CLI：
+此私有包是整合工作区中的候选插件，并非已独立发布的 npm 版本。先在 selfuse 源码树中构建，再组合其 profile 补丁：
 
 ```sh
-dsh plugin --profile web add @dsh-selfuse/git-workflow
+pnpm --filter @dsh-selfuse/git-workflow run build
 ```
 
 ## 安全
@@ -66,7 +66,10 @@ Agent 接收五个 Git 工具 schema，调用后得到渲染为可读文本的�
 - `git_commit` 要求仓库已经配置 Git 身份。
 - 非常规路径编码可能无法在 `git_log` 文件输出中完整表示。
 - 本插件有意不暴露 push、pull 和 rebase。
+- 尚未验收已安装 Windows Desktop 中的激活及 PowerShell 执行。
 
 ### 开发备注
 
-升级 DSH shell 接口时应运行本包测试和一个沙箱拒绝案例。开发应以整合后的源码为准，而不是旧版独立 checkout 路径。
+没有发布不变量伴随包：Git 是外部权威状态，每个工具直接读取它，没有独立维护的 Session 投影。
+
+本包维护严格 TypeScript 源码和可重复的 `tsc -b && tsdown` 构建。运行测试把实际 bundle 装入原生 tools、subprocess、sandbox-policy 和 Bash 服务，在临时 Git 仓库中覆盖限量日志、完整分支名、带引号的提交、diff 结果、穿越路径拒绝、卸载和只读策略拒绝。纯解析器测试另由 `pnpm --filter @dsh-selfuse/git-workflow test` 执行。升级 shell 接口时须保留两类测试；它们不是已安装 Desktop 的验收。

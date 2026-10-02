@@ -2,7 +2,7 @@
 
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 
@@ -20,7 +20,7 @@ const BUILD_COMMAND_TEXT = BUILD_COMMANDS.map(args => `pnpm ${args.join(' ')}`).
 export interface FlockEntryLoaderSteps {
   /** Import `@deepseek-ai/node-addon-system/flock`; rejects with `ERR_MODULE_NOT_FOUND` while its `lib/` is unbuilt. */
   readonly importEntry: () => Promise<FlockEntry>
-  /** Whether every binary the host platform package declares in `prebuilds.json` exists. */
+  /** Whether the flock addon selected for this runtime's platform and libc exists. */
   readonly hostAddonBuilt: () => boolean
   /** Compile the host addon and emit the entry's JavaScript; rejects when a build fails. */
   readonly build: () => Promise<void>
@@ -55,6 +55,16 @@ export function createFlockEntryLoader(steps: FlockEntryLoaderSteps): () => Prom
   }
 }
 
+/**
+ * Select the flock addon relative to its platform package.
+ * @param platform - supported POSIX host platform.
+ * @param glibc - whether the Linux Node report identifies glibc.
+ * @returns the addon path; macOS has no libc directory.
+ */
+export function flockBinaryRelativePath(platform: 'linux' | 'darwin', glibc: boolean): string {
+  return platform === 'linux' ? join('bin', glibc ? 'glibc' : 'musl', 'system.node') : join('bin', 'system.node')
+}
+
 function hostAddonBuilt(): boolean {
   const { platform, arch } = process
   // flock itself rejects other platforms; the probe only reports missing builds for supported ones.
@@ -62,13 +72,14 @@ function hostAddonBuilt(): boolean {
   const entryManifest = createRequire(import.meta.url).resolve('@deepseek-ai/node-addon-system/package.json')
   let prebuilds: string
   try {
-    prebuilds = createRequire(entryManifest).resolve(`@deepseek-ai/node-addon-system-${platform}-${arch}/prebuilds.json`)
+    prebuilds = createRequire(entryManifest).resolve(`@deepseek-ai/node-addon-system-${platform}-${arch}/package.json`)
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw error
     return false
   }
-  const manifest = JSON.parse(readFileSync(prebuilds, 'utf8')) as { readonly binaries: readonly { readonly path: string }[] }
-  return manifest.binaries.every(binary => existsSync(join(dirname(prebuilds), binary.path)))
+  // Node's report types omit the libc field supplied by Linux reports.
+  const report = process.report.getReport() as { header: { glibcVersionRuntime?: string } }
+  return existsSync(join(dirname(prebuilds), flockBinaryRelativePath(platform, !!report.header.glibcVersionRuntime)))
 }
 
 async function buildNativeSystem(): Promise<void> {

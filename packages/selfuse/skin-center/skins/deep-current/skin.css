@@ -129,7 +129,6 @@
   --dsw-specific-bubble-highlight: #e6f2ef;
   --dsw-specific-input-major: #fff;
   --dsw-specific-login-input: #fff;
-  --dsw-specific-menu: #fffffff5;
   --dsw-specific-selector: #e8f1ef;
   --dsw-specific-sidebar-fill: #0b2a33;
   --dsw-specific-sidebar-nav-item-active: #63e6be24;
@@ -259,7 +258,6 @@ body[data-ds-dark-theme] {
   --dsw-specific-bubble-highlight: #153d48;
   --dsw-specific-input-major: #0e2b35;
   --dsw-specific-login-input: #0e2b35;
-  --dsw-specific-menu: #0c2731f5;
   --dsw-specific-selector: #123641;
   --dsw-specific-sidebar-fill: #061820;
   --dsw-specific-sidebar-nav-item-active: #63e6be24;
